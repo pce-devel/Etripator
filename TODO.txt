@@ -1,8 +1,3 @@
 TODO :
-	rework csv format.... bank;offset;start;length is stupid.
-		rom_bank;logical_address_start;logical_address_end may
-		be better.
-	remove UNS for unknow instructions and add a .db data + comments
-		with file and org offsets
-	test with cdrom images		
+	add offset relocation (that's mainly for cdrom)
 	doc
