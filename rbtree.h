@@ -16,7 +16,7 @@
 /* Red Black tree node */
 struct Node_
 {
-	uint8_t       color	/* Node color (Red or Black) */
+	uint8_t       color;	/* Node color (Red or Black) */
 	struct Node_ *parent;	/* Parent                    */
 	struct Node_ *child[2];	/* Left and right child      */
 	
