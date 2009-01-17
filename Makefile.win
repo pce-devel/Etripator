@@ -1,0 +1,54 @@
+# Project: etripator
+# Makefile created by Dev-C++ 4.9.9.2
+
+CPP  = g++.exe -D__DEBUG__
+CC   = gcc.exe -D__DEBUG__
+WINDRES = windres.exe
+RES  = 
+OBJ  = csv.o etripator.o section.o winmmap.o strndup.o opcodes.o irq.o labels.o options.o $(RES)
+LINKOBJ  = csv.o etripator.o section.o winmmap.o strndup.o opcodes.o irq.o labels.o options.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib"  -g3 
+INCS =  -I"C:/Dev-Cpp/include"  -I"." 
+CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include"  -I"." 
+BIN  = etripator.exe
+CXXFLAGS = $(CXXINCS)   -g3
+CFLAGS = $(INCS)   -g3
+RM = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before etripator.exe all-after
+
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CC) $(LINKOBJ) -o "etripator.exe" $(LIBS)
+
+csv.o: csv.c
+	$(CC) -c csv.c -o csv.o $(CFLAGS)
+
+etripator.o: etripator.c
+	$(CC) -c etripator.c -o etripator.o $(CFLAGS)
+
+section.o: section.c
+	$(CC) -c section.c -o section.o $(CFLAGS)
+
+winmmap.o: winmmap.c
+	$(CC) -c winmmap.c -o winmmap.o $(CFLAGS)
+
+strndup.o: strndup.c
+	$(CC) -c strndup.c -o strndup.o $(CFLAGS)
+
+opcodes.o: opcodes.c
+	$(CC) -c opcodes.c -o opcodes.o $(CFLAGS)
+
+irq.o: irq.c
+	$(CC) -c irq.c -o irq.o $(CFLAGS)
+
+labels.o: labels.c
+	$(CC) -c labels.c -o labels.o $(CFLAGS)
+
+options.o: options.c
+	$(CC) -c options.c -o options.o $(CFLAGS)
