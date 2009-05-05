@@ -6,6 +6,10 @@
 #include <ctype.h>
 #include <csv.h>
 
+#if !HAVE_STRNDUP
+#include <strndup.h>
+#endif
+
 /*
  * Token serializers
  */

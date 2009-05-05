@@ -1,6 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
+#ifndef _MSC_VER
 #include <getopt.h>
+#else
+#include <getopt_win.h>
+#endif
 #include "options.h"
 
 /* Print usage */

@@ -2,3 +2,7 @@
 *.o
 junk
 .svn
+build
+*.ncb
+*.suo
+*.user

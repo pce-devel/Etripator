@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #ifdef _WIN32
@@ -217,7 +219,7 @@ void deleteSectionProcessor(SectionProcessor* iProcessor)
 int processDataSection(SectionProcessor* iProcessor)
 {
 	int j;
-	char eor;
+	char eor = 0;
 	off_t fileEnd;
 	
 	fileEnd = iProcessor->processed->start + iProcessor->processed->size;
