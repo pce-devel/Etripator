@@ -277,7 +277,7 @@ Opcode pce_opcode[256] = {
   /* F6 */  { "INC ", 2 ,  8 },  /* INC  ZZ, X          */
   /* F7 */  { "SMB7", 2 ,  7 },  /* SMB7 ZZ             */
   /* F8 */  { "SED ", 1 ,  0 },  /* SED                 */
-  /* F9 */  { "SBC ", 3 ,  9 },  /* SBC  hhll, Y        */
+  /* F9 */  { "SBC ", 3 , 17 },  /* SBC  hhll, Y        */
   /* FA */  { "PLX ", 1 ,  0 },  /* PLX                 */
   /* FB */  { ".db ", 1 , 22 },  /* UNUSED              */
   /* FC */  { ".db ", 1 , 22 },  /* UNUSED              */
