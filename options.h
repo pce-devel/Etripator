@@ -8,9 +8,10 @@ struct CommandLineOptions_
 {
 	uint8_t extractIRQ;
 	uint8_t cdrom;
-	char *csvFileName;
+	char *cfgFileName;
 	char *romFileName;
 	char *mainFileName;
+	int useOldCSV;
 };
 typedef struct CommandLineOptions_ CommandLineOptions;
 

@@ -12,11 +12,287 @@
 #endif
 #include <fcntl.h>
 #include <string.h>
+#include <limits.h>
+
 #include "csv.h"
 #include "section.h"
 #include "labels.h"
 
+#ifdef _MSC_VER
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#endif
+
 #define TOKEN_COUNT 5
+
+static const char* supportedSectionTypeName[] =
+{
+	"bin_data", "inc_data", "code", NULL
+};
+
+/*
+ * Validate section type
+ */
+static int validateType(const char* value, Section *currentSection)
+{
+	int i;
+		
+	for( i=0; supportedSectionTypeName[i] != NULL; ++i )
+	{
+		if(strcasecmp(value, supportedSectionTypeName[i]) == 0)
+		{
+			currentSection->type = i;
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/*
+ * Validate bank 
+ */
+static int validateBank(const char* value, Section *currentSection)
+{
+	unsigned long bank;
+	
+	bank = strtoul(value, NULL, 16);
+	if(bank == ULONG_MAX)
+	{
+		return 0;
+	}
+	
+	currentSection->bank = (uint8_t)bank;
+	
+	return 1;
+}
+
+/*
+ * Validate org 
+ */
+static int validateOrg(const char* value, Section *currentSection)
+{
+	unsigned long org;
+	
+	org = strtoul(value, NULL, 16);
+	if(org == ULONG_MAX)
+	{
+		return 0;
+	}
+	
+	currentSection->org = (uint16_t)org;
+	
+	return 1;
+}
+
+
+/*
+ * Validate offset 
+ */
+static int validateOffset(const char* value, Section *currentSection)
+{
+	unsigned long offset;
+	
+	offset = strtoul(value, NULL, 16);
+	if(offset  == ULONG_MAX)
+	{
+		return 0;
+	}
+	
+	currentSection->start  = offset ;
+	
+	return 1;
+}
+
+/*
+ * Validate size
+ */
+static int validateSize(const char* value, Section *currentSection)
+{
+	long size;
+	
+	size = strtol(value, NULL, 16);
+	if(size  == LONG_MAX)
+	{
+		return 0;
+	}
+	
+	currentSection->size = (int32_t)size;
+	
+	return 1;
+}
+
+static struct
+{
+	const char* key;
+	int (*validate)(const char* value, Section* section); 
+} sectionValidator [TOKEN_COUNT] =
+{
+	{ "type",   validateType},
+	{ "bank",   validateBank},
+	{ "org",    validateOrg},
+	{ "offset", validateOffset},
+	{ "size",   validateSize}
+};
+
+#define TYPE_MASK   1
+#define BANK_MASK   (1<<1)
+#define ORG_MASK    (1<<2)
+#define OFFSET_MASK (1<<3)
+#define SIZE_MASK   (1<<4)
+
+static int validateTuple(const char *key, const char *value, uint32_t *flag, Section* currentSection)
+{
+	int i;
+	for(i=0; i<TOKEN_COUNT; ++i)
+	{
+		if(strcmp(sectionValidator[i].key, key) == 0)
+		{
+			if(*flag & (1 << i))
+			{
+				fprintf( stderr, "[error] %s already set\n", key );
+				return 0;
+			}
+			*flag |= (1 << i);
+			return sectionValidator[i].validate(value, currentSection);
+		}
+	}
+	return 0;
+}
+
+/*
+ * Check section attributes and compute start offset if needed.
+ */
+ static int finalizeSection( uint32_t flag, Section* currentSection )
+ {
+	if( !(flag & (TYPE_MASK)) )
+	{
+		fprintf( stderr, "[%s] : missing type.\n", currentSection->name );
+		return 0;
+	}
+	
+	if( !(flag & (BANK_MASK)) )
+	{
+		fprintf( stderr, "[%s] : missing bank.\n", currentSection->name );
+		return 0;
+	}
+	
+	if( !(flag & (ORG_MASK)) )
+	{
+		fprintf( stderr, "[%s] : missing org.\n", currentSection->name );
+		return 0;
+	}
+	
+	if( !(flag & OFFSET_MASK) )
+	{
+		currentSection->start = (currentSection->bank << 13) | (currentSection->org & 0x1fff);
+	}
+
+	if((currentSection->type != CODE) && (currentSection->size <= 0))
+	{
+		fprintf(stderr, "[%s] : Automatic section size detection doesn't work for data.\n", currentSection->name);
+		return 0;
+	}
+	return 1;
+ }
+
+/*
+ * Extract sections from a CFG file
+ */ 
+int readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount)
+{
+	FILE *stream;
+	int ret, nMatched, line;
+	long last;
+	uint32_t flag;
+	Section *current;
+	char filename[33], key[17], value[65];
+	size_t capacity;
+	
+	/* Some sections at the beginning of the array may be reserved */
+	capacity = *iSectionCount + 4;
+	
+	/* Open file */
+	stream = fopen( iFileName, "rb" );
+	if( stream == NULL )
+	{
+		fprintf( stderr, "Unable to open %s\n", iFileName );
+		return 0;
+	}
+
+	/* Allocate sections */
+	*iSection = (Section*)malloc(capacity * sizeof(Section));
+	current = *iSection + *iSectionCount;
+
+	line = 0;
+	nMatched = 1;
+	ret = 1;
+	while( nMatched != EOF )
+	{
+		flag = 0;
+		
+		current->bank  = 0;
+		current->org   = 0;
+		current->start = 0;
+		current->size  =-1;
+		
+		nMatched = fscanf( stream, " [ %32[a-zA-Z0-9._-] ] \n", filename );
+		if( nMatched != 1 )
+		{
+			fprintf( stderr, "[%s:%d] Unable to parse.\n", iFileName, line);
+			ret = 0;
+			break;
+		}
+		++line;
+		current->name = strdup( filename );
+		
+		while(1)
+		{
+			last = ftell( stream );
+			nMatched = fscanf( stream, " %16[a-zA-Z] = %32[0-9a-zA-Z_] \n", key, value );
+			if( nMatched != 2 )
+				break;
+				
+			ret = validateTuple(key, value, &flag, current);
+			if(!ret)
+			{
+				fprintf(stderr, "[%s:%d] Wrong key/pair (%s,%s)\n", iFileName, line, key, value);
+				break;
+			}
+
+			++line;
+		}
+		ret = finalizeSection( flag, current );
+		if(!ret)
+		{
+			break;
+		}
+		
+		*iSectionCount += 1;
+		if(*iSectionCount < capacity)
+		{
+			Section *tmp;
+			
+			capacity += 4;
+			tmp = (Section*)realloc( *iSection, capacity * sizeof(Section));
+			if(tmp == NULL)
+			{
+				fprintf( stderr, "Unable to realloc :(\n" );
+				free(*iSection);
+				*iSection = NULL;
+				*iSectionCount = 0;
+				return 0;
+			}
+			*iSection = tmp;
+		}
+
+		current = *iSection + *iSectionCount;
+		
+		fseek( stream, last, SEEK_SET );
+	}
+	
+	fclose(stream);
+	return ret;
+}
 
 /*
  * Extract sections from a CSV file

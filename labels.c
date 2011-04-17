@@ -93,15 +93,18 @@ int getLabels(FILE* iStream, Section* iSection, LabelRepository* iRepository)
 		return 1;
 		
 	printf("\n%s:\n", iSection->name);
-	
+
 	nBytesProcessed = 0;
 	offset          = iSection->org;
 	
 	/* Jump to section start */
 	fseek(iStream, iSection->start, SEEK_SET);
-	
+		
+	/* Push the section org */
+	if(pushLabel(iRepository + ((offset>>13) & 0xff), offset) == 0)
+		return 0;
+
 	/* Walk along section */
-	
 	eor    = 0;
 	while(!eor)
 	{

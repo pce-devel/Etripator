@@ -1,3 +1,2 @@
 TODO :
-	add offset relocation (that's mainly for cdrom)
 	doc

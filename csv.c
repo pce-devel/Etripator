@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <csv.h>
+#include "csv.h"
 
 #if !HAVE_STRNDUP
-#include <strndup.h>
+#include "strndup.h"
 #endif
 
 /*

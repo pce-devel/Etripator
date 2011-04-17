@@ -1,7 +1,7 @@
 #ifndef _STRNDUP_H
 #define _STRNDUP_H
 
-#if HAVE_STRNDUP
+#if HAVE_STRNDUP | _HAVE_STRING_ARCH_strndup
 
 /* Get strndup() declaration.  */
 #include <string.h>

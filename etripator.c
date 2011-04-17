@@ -23,7 +23,8 @@ void exit_callback()
 {}
 
 /* Main */
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
   FILE* out;
   FILE* in;
   FILE* mainFile;
@@ -32,7 +33,7 @@ int main(int argc, char** argv) {
   unsigned int size;
   unsigned int offset;
   unsigned int i;
-  int err;
+  int err, failure;
 
   CommandLineOptions cmdOptions;
 
@@ -41,7 +42,7 @@ int main(int argc, char** argv) {
 
   SectionProcessor processor;
 
-  LabelRepository         labels[8];
+  LabelRepository labels[8];
  
   /* Extract command line options */
   err = getCommandLineOptions(argc, argv, &cmdOptions);
@@ -51,23 +52,33 @@ int main(int argc, char** argv) {
 	return (err < 0) ? 1 : 0;
   }
 
-   /* Read csv file */
+  failure = 1;
+
+  /* Read cfg file */
   sectionCount = cmdOptions.extractIRQ ? 5 : 0;
   section      = NULL;
-  if(!readSectionsFromCSV(cmdOptions.csvFileName,';',&section, &sectionCount)) {
-  	fprintf(stderr,"Unable to read %s. Only irq will be desassembled.\n", cmdOptions.csvFileName);
-  	if(section) free(section);
-  	sectionCount = 5;
-  	section = (Section*)malloc(sectionCount * sizeof(Section));
-
-	cmdOptions.extractIRQ = 1;
+  
+  if(cmdOptions.useOldCSV)
+  {
+	  err = readSectionsFromCSV(cmdOptions.cfgFileName, ';', &section, &sectionCount);
+  }
+  else
+  {
+	  err = readSectionsFromCFG(cmdOptions.cfgFileName, &section, &sectionCount);
+  }
+  
+  if(!err)
+  {
+  	fprintf(stderr,"Unable to read %s.\n", cmdOptions.cfgFileName);
+  	goto error_1;
   }
 
   /* Open rom */
   in = fopen(cmdOptions.romFileName, "rb");
-  if(!in) {
+  if(in == NULL)
+  {
 	fprintf(stderr,"Can't open %s\n", cmdOptions.romFileName);
-	exit(1);
+	goto error_1;
   }  
 
   fseek(in, 0, SEEK_END);
@@ -83,7 +94,7 @@ int main(int argc, char** argv) {
   	if(getIRQSections(in, section) == 0)
   	{
 		fprintf(stderr, "An error occured while reading irq vector offsets\n");
-		return 1;
+		goto error_2;
   	}
   }
 
@@ -97,7 +108,7 @@ int main(int argc, char** argv) {
   	{
   		section[i].start += headerJump;
   	}
-   }
+  }
   
   /* Get labels */
   for(i=0; i<8; ++i)
@@ -110,7 +121,7 @@ int main(int argc, char** argv) {
 	if(getLabels(in, section+i, labels) == 0)
 	{
 		fprintf(stderr, "An error occured while fetching labels\n");
-		return 1;
+		goto error_3;
 	}
   }
 
@@ -123,11 +134,13 @@ int main(int argc, char** argv) {
   initializeSectionProcessor(&processor);
 
   /* Disassemble and output */
-  for(i=0; i<sectionCount; ++i) {
+  for(i=0; i<sectionCount; ++i)
+  {
 	out = fopen(section[i].name, "wb");
-	if(!out) {
+	if(out == NULL)
+	{
 		fprintf(stderr,"Can't open %s\n", section[i].name);
-		exit(1);
+		goto error_4;
 	}
 
 	if(section[i].type != BIN_DATA)
@@ -147,7 +160,8 @@ int main(int argc, char** argv) {
     /* Reset section processor */
     resetSectionProcessor(in, out, section+i, &processor);
 
-	if(section[i].type == CODE) {
+	if(section[i].type == CODE)
+	{
 		/* Process opcodes */
 		while(!eor) {
 			eor = processOpcode(labels, &processor);
@@ -166,58 +180,71 @@ int main(int argc, char** argv) {
 	}
 	
 	fclose(out);
+	out = NULL;
   }
 
+  fclose(in);
+  in = NULL;
+  
   /* Open main asm file */
   mainFile = fopen(cmdOptions.mainFileName, "w");
-  if(mainFile != NULL)
-  {
-  	for(i=0; i<sectionCount; ++i)
-  	{
-  		switch(section[i].type)
-  		{
-  			case CODE:
-  			case INC_DATA:
-  				fprintf(mainFile, "\n\t.include \"%s\"\n", section[i].name);
-  				break;
-  				
-  			case BIN_DATA:
-  				fprintf(mainFile, "\n\t.data\n\t.bank %x\n\t.org $%04x\n\t.incbin \"%s\"\n",
-						section[i].bank,
-						section[i].org,
-						section[i].name);
-  				break;
-  		};
- 	}
-  	
-  	if(cmdOptions.extractIRQ)
-  	{
-  			fprintf(mainFile, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
-			for(i=0; i<5; ++i)
-			{
-				fprintf(mainFile, "\t.dw $%04x\n", section[i].org);
-			}
-  	}
-  	
-	fclose(mainFile);
-  }
-  else
+  if(mainFile == NULL)
   {
   	fprintf(stderr, "Unable to open %s\n", cmdOptions.mainFileName);
+  	goto error_4;
   }
   
-  deleteSectionProcessor(&processor);
+  for(i=0; i<sectionCount; ++i)
+  {
+	  switch(section[i].type)
+	  {
+		case CODE:
+		case INC_DATA:
+			fprintf(mainFile, "\n\t.include \"%s\"\n", section[i].name);
+			break;
+			
+		case BIN_DATA:
+			fprintf(mainFile, "\n\t.data\n\t.bank %x\n\t.org $%04x\n\t.incbin \"%s\"\n",
+					section[i].bank,
+					section[i].org,
+					section[i].name);
+			break;
+	  };
+  }
+  	
+  if(cmdOptions.extractIRQ)
+  {
+		fprintf(mainFile, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
+		for(i=0; i<5; ++i)
+		{
+			fprintf(mainFile, "\t.dw $%04x\n", section[i].org);
+		}
+  }
+  	
+  fclose(mainFile);
+  failure = 0;
   
+error_4:
+  deleteSectionProcessor(&processor);
+
+error_3:  
   for(i=0; i<7; ++i)
   {
 	deleteLabelRepository(labels + i);
   }
 
-  for(i=5; i<sectionCount; ++i) {
+error_2:
+  if(in != NULL)
+	fclose(in);
+
+error_1:
+  i = cmdOptions.extractIRQ ? 5 : 0;
+  for(; i<sectionCount; ++i)
+  {
   	free(section[i].name);
   	section[i].name = NULL;
   }
   free(section);
 
-  return 0;
+  return failure;
 }

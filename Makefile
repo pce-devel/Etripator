@@ -6,7 +6,7 @@ RM      := /bin/rm
 CD      := cd
 TAR     := tar
 
-CFLAGS := $(CFLAGS) -W -Wall -g -DDEBUG -I.
+CFLAGS := $(CFLAGS) -W -Wall -g -DDEBUG 
 
 LIBS   :=  -lm
 

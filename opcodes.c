@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <opcodes.h>
+#include "opcodes.h"
 
 char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {
   {  NULL,         NULL,       NULL,     NULL,     NULL,    NULL,  NULL },
