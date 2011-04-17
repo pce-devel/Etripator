@@ -6,3 +6,6 @@ build
 *.ncb
 *.suo
 *.user
+ipch
+*.sdf
+*.opensdf

@@ -61,7 +61,7 @@ Opcode pce_opcode[256] = {
   /* 1E */  { "ASL ", 3 , 16 },  /* ASL  hhll, X        */
   /* 1F */  { "BBR1", 3 , 20 },  /* BBR1 ZZ, lhhll      */
   /* 20 */  { "JSR ", 3 , 19 },  /* JSR  lhhll          */
-  /* 21 */  { "AND ", 3 , 11 },  /* AND  (ZZ, X)        */
+  /* 21 */  { "AND ", 2 , 11 },  /* AND  (ZZ, X)        */
   /* 22 */  { "SAX ", 1 ,  0 },  /* SAX                 */
   /* 23 */  { "ST2 ", 2 ,  2 },  /* ST2  #nn            */
   /* 24 */  { "BIT ", 2 ,  7 },  /* BIT  ZZ             */
