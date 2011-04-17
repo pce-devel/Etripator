@@ -27,7 +27,7 @@
 #define strcasecmp _stricmp
 #endif
 
-#define TOKEN_COUNT 5
+#define TOKEN_COUNT 6
 
 static const char* supportedSectionTypeName[] =
 {
@@ -125,6 +125,29 @@ static int validateSize(const char* value, Section *currentSection)
 	return 1;
 }
 
+/*
+ * Validate section Id
+ */
+static int validateId(const char* value, Section *currentSection)
+{
+	unsigned long id;
+	
+	id = strtoul(value, NULL, 16);
+	if(id  == ULONG_MAX)
+	{
+		return 0;
+	}
+
+	if(id > 0xff)
+	{
+		return 0;
+	}
+	
+	currentSection->id  = (uint8_t)id;
+	
+	return 1;
+}
+
 static struct
 {
 	const char* key;
@@ -135,7 +158,8 @@ static struct
 	{ "bank",   validateBank},
 	{ "org",    validateOrg},
 	{ "offset", validateOffset},
-	{ "size",   validateSize}
+	{ "size",   validateSize},
+	{ "id",     validateId}
 };
 
 #define TYPE_MASK   1
@@ -143,6 +167,7 @@ static struct
 #define ORG_MASK    (1<<2)
 #define OFFSET_MASK (1<<3)
 #define SIZE_MASK   (1<<4)
+#define ID_MASK     (1<<5)
 
 static int validateTuple(const char *key, const char *value, uint32_t *flag, Section* currentSection)
 {
@@ -239,7 +264,8 @@ int readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCou
 		current->org   = 0;
 		current->start = 0;
 		current->size  =-1;
-		
+		current->id    = *iSectionCount;
+
 		nMatched = fscanf( stream, " [ %32[a-zA-Z0-9._-] ] \n", filename );
 		if( nMatched != 1 )
 		{
@@ -406,7 +432,8 @@ int readSectionsFromCSV(char* iFileName, char iSeparator, Section** iSection, si
 		ptr[line].size   = strtol(token[4].value.string, (char**)NULL, 16);
 		
 		ptr[line].start  = (ptr[line].bank << 13) | (ptr[line].org & 8191);
-		
+		ptr[line].id     = line;
+
 		/* Data validation */
 		if((ptr[line].type != CODE) && (ptr[line].size <= 0))
 		{
@@ -446,7 +473,6 @@ int readSectionsFromCSV(char* iFileName, char iSeparator, Section** iSection, si
  */
 int initializeSectionProcessor(SectionProcessor* iProcessor)
 {
-	iProcessor->sectionId = 0;
 	iProcessor->processed = NULL;
 	iProcessor->in        = NULL;
 	iProcessor->out       = NULL;
@@ -466,9 +492,8 @@ int initializeSectionProcessor(SectionProcessor* iProcessor)
 /*
  * Reset section processor
  */
-void resetSectionProcessor(FILE* iIn, FILE* iOut, int iId, Section* iProcessed, SectionProcessor* iProcessor)
+void resetSectionProcessor(FILE* iIn, FILE* iOut, Section* iProcessed, SectionProcessor* iProcessor)
 {
-	iProcessor->sectionId = iId;
 	iProcessor->processed = iProcessed;
 	iProcessor->in        = iIn;
 	iProcessor->out       = iOut;
@@ -712,7 +737,7 @@ char processOpcode(SectionProcessor* iProcessor) {
 	    (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset < nextOrgOffset) )
 	{
 		/* Print label*/
-		sprintf(line, "l%04x_%02x: ", iProcessor->labelRepository.labels[iProcessor->labelIndex].offset,  iProcessor->sectionId);
+		sprintf(line, "l%04x_%02x: ", iProcessor->labelRepository.labels[iProcessor->labelIndex].offset,  iProcessor->processed->id);
 
 		/* Add displacement */
 		if(iProcessor->labelRepository.labels[iProcessor->labelIndex].offset != iProcessor->orgOffset)
@@ -827,11 +852,11 @@ char processOpcode(SectionProcessor* iProcessor) {
 		/* Add section to jump label */
 		if(pce_opcode[inst].type == 20)
 		{
-			data[3] = iProcessor->sectionId & 0xff;
+			data[3] = iProcessor->processed->id & 0xff;
 		}
 		else if(pce_opcode[inst].type == 19)
 		{
-			data[2] = iProcessor->sectionId & 0xff;
+			data[2] = iProcessor->processed->id & 0xff;
 		}
 
 		/* Print data */

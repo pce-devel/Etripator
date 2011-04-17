@@ -45,6 +45,9 @@ brackets. The supported fields are :
 	                     missing size) means that the disassembly will
 	                     stop when a RTS or RTI instruction is found.
 	                     This field is mandatory for data sections.
+	* id               : section id. If this option is set, all the 
+	                     label will be postfixed with this value.
+						 Otherwise the section index will be used.
 
 There must be only one occurence of each field per section.
 

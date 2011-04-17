@@ -18,6 +18,7 @@ struct Section_ {
 	uint16_t org;   /* org */
 	off_t    start; /* start address (file offset in bytes) */
 	int32_t  size;  /* section size */
+	uint8_t  id;    /* section id */
 };
 typedef struct Section_ Section;
 
@@ -47,7 +48,6 @@ int readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCou
  */
 struct SectionProcessor_
 {
-	int      sectionId;     /* Section id */
 	Section  *processed;    /* Section being processed */
 	FILE     *in;           /* Input file (rom or cd image) */
 	FILE     *out;          /* Output */
@@ -75,7 +75,7 @@ int initializeSectionProcessor(SectionProcessor*);
 /*
  * Reset section processor
  */
-void resetSectionProcessor(FILE*, FILE*, int, Section*, SectionProcessor*);
+void resetSectionProcessor(FILE*, FILE*, Section*, SectionProcessor*);
   
 /*
  * Delete section processor

@@ -43,6 +43,7 @@ int getIRQSections(FILE* iRomFile, Section* iSectionArray)
 		iSectionArray[i].type  = CODE;
 		iSectionArray[i].start = ((offset[1] & 0x1f) << 8) | offset[0];
 		iSectionArray[i].size  = -1;
+		iSectionArray[i].id    = i;
 
 		printf("%s found at %04x (%lx)\n", iSectionArray[i].name, iSectionArray[i].org, iSectionArray[i].start);
 	}

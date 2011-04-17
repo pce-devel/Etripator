@@ -133,7 +133,7 @@ int main(int argc, char** argv)
 	eor = 0;
 
     /* Reset section processor */
-    resetSectionProcessor(in, out, i, section+i, &processor);
+    resetSectionProcessor(in, out, section+i, &processor);
 	
 	if(section[i].type == CODE)
 	{
