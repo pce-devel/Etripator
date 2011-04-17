@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 
-#include "section.h"
 #include "opcodes.h"
 #include "rbtree.h"
 
@@ -65,11 +64,5 @@ int pushLabel(LabelRepository*, uint16_t);
 
 /* Finalize label repository */
 void finalizeLabelRepositoty(LabelRepository*);
-
-/* Parse section to identify potential labels */
-int getLabels(FILE*, Section*, LabelRepository*);
-
-/* Initialize label index so that it points to the label close to current org offset */
-void getLabelIndex(LabelRepository*, SectionProcessor*);
 
 #endif /* _LABELS_H_ */

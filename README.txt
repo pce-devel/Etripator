@@ -44,7 +44,7 @@ brackets. The supported fields are :
 	* size             : section size. For code section, a negative (or
 	                     missing size) means that the disassembly will
 	                     stop when a RTS or RTI instruction is found.
-	                     This field is mandatory for data sections.                     
+	                     This field is mandatory for data sections.
 
 There must be only one occurence of each field per section.
 

@@ -21,8 +21,8 @@ char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {
   { "$%02x",      "%02x, X",   NULL,     NULL,     NULL,    NULL,  NULL },
   { "$%02x",      "%02x, Y",   NULL,     NULL,     NULL,    NULL,  NULL },
   { "$%02x",      "%02x, ",   "$%02x",  "%02x, ", "$%02x", "%02x", NULL },
-  { "l_%02x",     "%02x",      NULL,     NULL,     NULL,    NULL,  NULL },
-  { "<$%02x, ",   "l_%02x",   "%02x",    NULL,     NULL,    NULL,  NULL },
+  { "l%02x",      "%02x",     "_%02x",   NULL,     NULL,    NULL,  NULL },
+  { "<$%02x, ",   "l%02x",    "%02x",    "_%02x",  NULL,    NULL,  NULL },
   { "[$%02x",     "%02x, X]",  NULL,     NULL,     NULL,    NULL,  NULL },
   { "$%02x",       NULL,       NULL,     NULL,     NULL,    NULL,  NULL }
 };
@@ -43,8 +43,8 @@ Opcode pce_opcode[256] = {
   /* 0C */  { "TSB ", 3 , 14 },  /* TRB  hhll           */
   /* 0D */  { "ORA ", 3 , 14 },  /* ORA  hhll           */
   /* 0E */  { "ASL ", 3 , 14 },  /* ASL  hhll           */
-  /* 0F */  { "BBR0", 3 , 20 },  /* BBR0 ZZ, l_hhll     */
-  /* 10 */  { "BPL ", 2 , 19 },  /* BPL  l_hhll         */
+  /* 0F */  { "BBR0", 3 , 20 },  /* BBR0 ZZ, lhhll      */
+  /* 10 */  { "BPL ", 2 , 19 },  /* BPL  lhhll          */
   /* 11 */  { "ORA ", 2 , 12 },  /* ORA  (ZZ), Y        */
   /* 12 */  { "ORA ", 2 , 10 },  /* ORA  (ZZ)           */
   /* 13 */  { "ST1 ", 2 ,  2 },  /* ST1  #nn            */
@@ -59,8 +59,8 @@ Opcode pce_opcode[256] = {
   /* 1C */  { "TRB ", 3 , 14 },  /* TRB  hhll           */
   /* 1D */  { "ORA ", 3 , 16 },  /* ORA  hhll, X        */
   /* 1E */  { "ASL ", 3 , 16 },  /* ASL  hhll, X        */
-  /* 1F */  { "BBR1", 3 , 20 },  /* BBR1 ZZ, l_hhll     */
-  /* 20 */  { "JSR ", 3 , 19 },  /* JSR  l_hhll         */
+  /* 1F */  { "BBR1", 3 , 20 },  /* BBR1 ZZ, lhhll      */
+  /* 20 */  { "JSR ", 3 , 19 },  /* JSR  lhhll          */
   /* 21 */  { "AND ", 3 , 11 },  /* AND  (ZZ, X)        */
   /* 22 */  { "SAX ", 1 ,  0 },  /* SAX                 */
   /* 23 */  { "ST2 ", 2 ,  2 },  /* ST2  #nn            */
@@ -75,8 +75,8 @@ Opcode pce_opcode[256] = {
   /* 2C */  { "BIT ", 3 , 14 },  /* BIT  hhll           */
   /* 2D */  { "AND ", 3 , 14 },  /* AND  hhll           */
   /* 2E */  { "ROL ", 3 , 14 },  /* ROL  hhll           */
-  /* 2F */  { "BBR2", 3 , 20 },  /* BBR2 ZZ, l_hhll     */
-  /* 30 */  { "BMI ", 2 , 19 },  /* BMI  l_hhll         */
+  /* 2F */  { "BBR2", 3 , 20 },  /* BBR2 ZZ, lhhll      */
+  /* 30 */  { "BMI ", 2 , 19 },  /* BMI  lhhll          */
   /* 31 */  { "AND ", 2 , 12 },  /* AND  (ZZ), Y        */
   /* 32 */  { "AND ", 2 , 10 },  /* AND  (ZZ)           */
   /* 33 */  { ".db ", 1 , 22 },  /* UNUSED              */
@@ -91,12 +91,12 @@ Opcode pce_opcode[256] = {
   /* 3C */  { "BIT ", 3 , 16 },  /* BIT  hhll, X        */
   /* 3D */  { "AND ", 3 , 16 },  /* AND  hhll, X        */
   /* 3E */  { "ROL ", 3 , 16 },  /* ROL  hhll, X        */
-  /* 3F */  { "BBR3", 3 , 20 },  /* BBR3 ZZ, l_hhll     */
+  /* 3F */  { "BBR3", 3 , 20 },  /* BBR3 ZZ, lhhll      */
   /* 40 */  { "RTI ", 1 ,  0 },  /* RTI                 */
   /* 41 */  { "EOR ", 2 , 11 },  /* EOR  (ZZ, X)        */ 
   /* 42 */  { "SAY ", 1 ,  0 },  /* SAY                 */
   /* 43 */  { "TMA ", 2 ,  2 },  /* TMA  #nn            */ 
-  /* 44 */  { "BSR ", 2 , 19 },  /* BSR  l_hhll         */  
+  /* 44 */  { "BSR ", 2 , 19 },  /* BSR  lhhll          */  
   /* 45 */  { "EOR ", 2 ,  7 },  /* EOR  ZZ             */
   /* 46 */  { "LSR ", 2 ,  7 },  /* LSR  ZZ             */
   /* 47 */  { "RMB4", 2 ,  7 },  /* RMB4 ZZ             */
@@ -104,11 +104,11 @@ Opcode pce_opcode[256] = {
   /* 49 */  { "EOR ", 2 ,  2 },  /* EOR  #nn            */
   /* 4A */  { "LSR ", 1 ,  1 },  /* LSR  A              */
   /* 4B */  { ".db ", 1 , 22 },  /* UNUSED              */
-  /* 4C */  { "JMP ", 3 , 19 },  /* JMP  l_hhll         */
+  /* 4C */  { "JMP ", 3 , 19 },  /* JMP  lhhll          */
   /* 4D */  { "EOR ", 3 , 14 },  /* EOR  hhll           */
   /* 4E */  { "LSR ", 3 , 14 },  /* LSR  hhll           */
-  /* 4F */  { "BBR4", 3 , 20 },  /* BBR4 ZZ, l_hhll     */
-  /* 50 */  { "BVC ", 2 , 19 },  /* BVC  l_hhll         */
+  /* 4F */  { "BBR4", 3 , 20 },  /* BBR4 ZZ, lhhll      */
+  /* 50 */  { "BVC ", 2 , 19 },  /* BVC  lhhll          */
   /* 51 */  { "EOR ", 2 , 12 },  /* EOR  (ZZ),Y         */ 
   /* 52 */  { "EOR ", 2 , 10 },  /* EOR  (ZZ)           */ 
   /* 53 */  { "TAM ", 2 ,  2 },  /* TAM  #nn            */ 
@@ -123,7 +123,7 @@ Opcode pce_opcode[256] = {
   /* 5C */  { ".db ", 1 , 22 },  /* UNUSED              */
   /* 5D */  { "EOR ", 3 , 16 },  /* EOR  hhll, X        */
   /* 5E */  { "LSR ", 3 , 16 },  /* LSR  hhll, X        */
-  /* 5F */  { "BBR5", 3 , 20 },  /* BBR5 ZZ, l_hhll     */
+  /* 5F */  { "BBR5", 3 , 20 },  /* BBR5 ZZ, lhhll      */
   /* 60 */  { "RTS ", 1 ,  0 },  /* RTS                 */
   /* 61 */  { "ADC ", 2 , 11 },  /* ADC  (ZZ, X)        */
   /* 62 */  { "CLA ", 1 ,  0 },  /* CLA                 */
@@ -139,8 +139,8 @@ Opcode pce_opcode[256] = {
   /* 6C */  { "JMP ", 3 , 15 },  /* JMP  (hhll)         */
   /* 6D */  { "ADC ", 3 , 14 },  /* ADC  hhll           */
   /* 6E */  { "ROR ", 3 , 14 },  /* ROR  hhll           */
-  /* 6F  */ { "BBR6", 3 , 20 },  /* BBR6 ZZ, l_hhll     */
-  /* 70 */  { "BVS ", 2 , 19 },  /* BVS  l_hhll         */
+  /* 6F  */ { "BBR6", 3 , 20 },  /* BBR6 ZZ, lhhll      */
+  /* 70 */  { "BVS ", 2 , 19 },  /* BVS  lhhll          */
   /* 71 */  { "ADC ", 2 , 12 },  /* ADC  (ZZ), Y        */
   /* 72 */  { "ADC ", 2 , 10 },  /* ADC  (ZZ)           */
   /* 73 */  { "TII ", 7 , 18 },  /* TII  shsl,dhdl,lhll */
@@ -155,8 +155,8 @@ Opcode pce_opcode[256] = {
   /* 7C */  { "JMP ", 3 , 21 },  /* JMP  (hhll, X)      */
   /* 7D */  { "ADC ", 3 , 16 },  /* ADC  hhll, X        */
   /* 7E */  { "ROR ", 3 , 16 },  /* ROR  hhll, X        */
-  /* 7F */  { "BBR7", 3 , 20 },  /* BBR7 ZZ, l_hhll     */
-  /* 80 */  { "BRA ", 2 , 19 },  /* BRA  l_hhll         */
+  /* 7F */  { "BBR7", 3 , 20 },  /* BBR7 ZZ, lhhll      */
+  /* 80 */  { "BRA ", 2 , 19 },  /* BRA  lhhll          */
   /* 81 */  { "STA ", 2 , 11 },  /* STA  (ZZ, X)        */
   /* 82 */  { "CLX ", 1 ,  0 },  /* CLX                 */
   /* 83 */  { "TST ", 3 ,  3 },  /* TST  #nn, ZZ        */
@@ -171,8 +171,8 @@ Opcode pce_opcode[256] = {
   /* 8C */  { "STY ", 3 , 14 },  /* STY  hhll           */
   /* 8D */  { "STA ", 3 , 14 },  /* STA  hhll           */
   /* 8E */  { "STX ", 3 , 14 },  /* STX  hhll           */
-  /* 8F */  { "BBS0", 3 , 20 },  /* BBS0 ZZ, l_hhll     */
-  /* 90 */  { "BCC ", 2 , 19 },  /* BCC  l_hhll         */
+  /* 8F */  { "BBS0", 3 , 20 },  /* BBS0 ZZ, lhhll      */
+  /* 90 */  { "BCC ", 2 , 19 },  /* BCC  lhhll          */
   /* 91 */  { "STA ", 2 , 12 },  /* STA  (ZZ), Y        */
   /* 92 */  { "STA ", 2 , 10 },  /* STA  (ZZ)           */
   /* 93 */  { "TST ", 4 ,  5 },  /* TST  #nn, hhll      */
@@ -187,7 +187,7 @@ Opcode pce_opcode[256] = {
   /* 9C */  { "STZ ", 3 , 14 },  /* STZ  hhll           */
   /* 9D */  { "STA ", 3 , 16 },  /* STA  hhll, X        */
   /* 9E */  { "STZ ", 3 , 16 },  /* STZ  hhll, X        */
-  /* 9F */  { "BBS1", 3 , 20 },  /* BBS1 ZZ, l_hhll     */
+  /* 9F */  { "BBS1", 3 , 20 },  /* BBS1 ZZ, lhhll      */
   /* A0 */  { "LDY ", 2 ,  2 },  /* LDY  #nn            */
   /* A1 */  { "LDA ", 2 , 11 },  /* LDA  (ZZ, X)        */
   /* A2 */  { "LDX ", 2 ,  2 },  /* LDA  #nn            */
@@ -203,8 +203,8 @@ Opcode pce_opcode[256] = {
   /* AC */  { "LDY ", 3 , 14 },  /* LDY  hhll           */
   /* AD */  { "LDA ", 3 , 14 },  /* LDA  hhll           */
   /* AE */  { "LDX ", 3 , 14 },  /* LDX  hhll           */
-  /* AF */  { "BBS2", 3 , 20 },  /* BBS2 ZZ, l_hhll     */
-  /* B0 */  { "BCS ", 2 , 19 },  /* BCS  l_hhll         */
+  /* AF */  { "BBS2", 3 , 20 },  /* BBS2 ZZ, lhhll      */
+  /* B0 */  { "BCS ", 2 , 19 },  /* BCS  lhhll         */
   /* B1 */  { "LDA ", 2 , 12 },  /* LDA  (ZZ), Y        */
   /* B2 */  { "LDA ", 2 , 10 },  /* LDA  (ZZ)           */
   /* B3 */  { "TST ", 4 ,  6 },  /* TST  #nn, hhll, X   */
@@ -219,7 +219,7 @@ Opcode pce_opcode[256] = {
   /* BC */  { "LDY ", 3 , 16 },  /* LDY  hhll, X        */
   /* BD */  { "LDA ", 3 , 16 },  /* LDA  hhll, X        */
   /* BE */  { "LDX ", 3 , 17 },  /* LDX  hhll, Y        */
-  /* BF */  { "BBS3", 3 , 20 },  /* BBS3 ZZ, l_hhll     */
+  /* BF */  { "BBS3", 3 , 20 },  /* BBS3 ZZ, lhhll      */
   /* C0 */  { "CPY ", 2 ,  2 },  /* CPY  #nn            */
   /* C1 */  { "CMP ", 2 , 11 },  /* CMP  (ZZ, X)        */
   /* C2 */  { "CLY ", 1 ,  0 },  /* CLY                 */
@@ -235,8 +235,8 @@ Opcode pce_opcode[256] = {
   /* CC */  { "CPY ", 3 , 14 },  /* CPY  hhll           */      
   /* CD */  { "CMP ", 3 , 14 },  /* CMP  hhll           */
   /* CE */  { "DEC ", 3 , 14 },  /* DEC  hhll           */
-  /* CF */  { "BBS4", 3 , 20 },  /* BBS4 ZZ, l_hhll     */
-  /* D0 */  { "BNE ", 2 , 19 },  /* BNE  l_hhll         */
+  /* CF */  { "BBS4", 3 , 20 },  /* BBS4 ZZ, lhhll      */
+  /* D0 */  { "BNE ", 2 , 19 },  /* BNE  lhhll          */
   /* D1 */  { "CMP ", 2 , 12 },  /* CMP  (ZZ), Y        */
   /* D2 */  { "CMP ", 2 , 10 },  /* CMP  (ZZ)           */
   /* D3 */  { "TIN ", 7 , 18 },  /* TIN  shsl,dhdl,lhlh */
@@ -251,7 +251,7 @@ Opcode pce_opcode[256] = {
   /* DC */  { ".db ", 1 , 22 },  /* UNUSED              */
   /* DD */  { "CMP ", 3 , 16 },  /* CMP  hhll, X        */
   /* DE */  { "DEC ", 3 , 16 },  /* DEC  hhll, X        */
-  /* DF */  { "BBS5", 3 , 20 },  /* BBS5 ZZ, l_hhll     */
+  /* DF */  { "BBS5", 3 , 20 },  /* BBS5 ZZ, lhhll      */
   /* E0 */  { "CPX ", 2 ,  2 },  /* CPX  #nn            */
   /* E1 */  { "SBC ", 2 , 11 },  /* SBC  (ZZ,X)         */
   /* E2 */  { ".db ", 1 , 22 },  /* UNUSED              */
@@ -267,8 +267,8 @@ Opcode pce_opcode[256] = {
   /* EC */  { "CPX ", 3 , 14 },  /* CPX  hhll           */
   /* ED */  { "SBC ", 3 , 14 },  /* SBC  hhll           */
   /* EE */  { "INC ", 3 , 14 },  /* INC  hhll           */
-  /* EF */  { "BBS6", 3 , 20 },  /* BBS6 ZZ, l_hhll     */  
-  /* F0 */  { "BEQ ", 2 , 19 },  /* BEQ  l_hhll         */
+  /* EF */  { "BBS6", 3 , 20 },  /* BBS6 ZZ, lhhll      */  
+  /* F0 */  { "BEQ ", 2 , 19 },  /* BEQ  lhhll          */
   /* F1 */  { "SBC ", 2 , 12 },  /* SBC  (ZZ), Y        */
   /* F2 */  { "SBC ", 2 , 10 },  /* SBC  (ZZ)           */
   /* F3 */  { "TAI ", 7 , 18 },  /* TAI  shsl,dhdl,lhlh */
@@ -283,5 +283,5 @@ Opcode pce_opcode[256] = {
   /* FC */  { ".db ", 1 , 22 },  /* UNUSED              */
   /* FD */  { "SBC ", 3 , 16 },  /* SBC  hhll, X        */
   /* FE */  { "INC ", 3 , 16 },  /* INC  hhll, X        */
-  /* FF */  { "BBS7", 3 , 20 }   /* BBS7 ZZ, l_hhll     */
+  /* FF */  { "BBS7", 3 , 20 }   /* BBS7 ZZ, lhhll      */
 };

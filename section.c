@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+#pragma warning(disable : 4996)
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #ifndef _MSC_VER
@@ -192,6 +196,7 @@ static int validateTuple(const char *key, const char *value, uint32_t *flag, Sec
 		fprintf(stderr, "[%s] : Automatic section size detection doesn't work for data.\n", currentSection->name);
 		return 0;
 	}
+
 	return 1;
  }
 
@@ -439,8 +444,9 @@ int readSectionsFromCSV(char* iFileName, char iSeparator, Section** iSection, si
 /*
  * Initialize section processor
  */
-void initializeSectionProcessor(SectionProcessor* iProcessor)
+int initializeSectionProcessor(SectionProcessor* iProcessor)
 {
+	iProcessor->sectionId = 0;
 	iProcessor->processed = NULL;
 	iProcessor->in        = NULL;
 	iProcessor->out       = NULL;
@@ -453,15 +459,16 @@ void initializeSectionProcessor(SectionProcessor* iProcessor)
 	memset(iProcessor->data, 0, 6);
 	
 	iProcessor->buffer      = NULL;
-	
 	iProcessor->labelIndex  = 0;
+	return initializeLabelRepository(&iProcessor->labelRepository);
 }
 
 /*
  * Reset section processor
  */
-void resetSectionProcessor(FILE* iIn, FILE* iOut, Section* iProcessed, SectionProcessor* iProcessor)
+void resetSectionProcessor(FILE* iIn, FILE* iOut, int iId, Section* iProcessed, SectionProcessor* iProcessor)
 {
+	iProcessor->sectionId = iId;
 	iProcessor->processed = iProcessed;
 	iProcessor->in        = iIn;
 	iProcessor->out       = iOut;
@@ -473,8 +480,9 @@ void resetSectionProcessor(FILE* iIn, FILE* iOut, Section* iProcessed, SectionPr
 
 	iProcessor->instruction = 0,
 	memset(iProcessor->data, 0, 6);
-	
-	iProcessor->labelIndex  = 0;
+
+	iProcessor->labelIndex = 0;
+	resetLabelRepository(&iProcessor->labelRepository);
 }
   
 /*
@@ -487,6 +495,8 @@ void deleteSectionProcessor(SectionProcessor* iProcessor)
 		free(iProcessor->buffer);
 		iProcessor->buffer = NULL;
 	}
+
+	deleteLabelRepository(&iProcessor->labelRepository);
 }
 
 /*
@@ -564,13 +574,122 @@ int processDataSection(SectionProcessor* iProcessor)
 	return 1;
 }
 
+/* Parse section to identify potential labels */
+int getLabels(SectionProcessor* iProcessor)
+{
+	int32_t nBytesProcessed;
+	unsigned char inst, data[6], eor;
+	uint16_t labelOffset, offset;
+	int delta,i=0;
+
+	LabelRepository *repository = &(iProcessor->labelRepository);
+	Section *section = iProcessor->processed;
+	FILE    *in      = iProcessor->in;
+
+	if(section->type != CODE)
+		return 1;
+		
+	printf("\n%s:\n", section->name);
+
+	nBytesProcessed = 0;
+	offset          = section->org;
+	
+	/* Jump to section start */
+	fseek(in, section->start, SEEK_SET);
+		
+	/* Push the section org */
+	if(pushLabel(repository, offset) == 0)
+		return 0;
+
+	/* Walk along section */
+	eor    = 0;
+	while(!eor)
+	{
+		/* Read instruction */
+		fread(&inst, 1, 1, iProcessor->in);
+
+		/* Read data */
+		if(pce_opcode[inst].size > 1)
+		{
+			fread(data, 1, pce_opcode[inst].size-1, in);
+		}
+		
+		nBytesProcessed += pce_opcode[inst].size;
+		offset          += pce_opcode[inst].size;
+
+		if(isLocalJump(inst))
+		{
+
+			/* For BBR* and BBS* displacement is stored in the 2nd byte */
+			i = (((inst) & 0x0F) == 0x0F) ? 1 : 0;
+
+			/* Detect negative number */
+			if(data[i] & 128)
+				delta = - ((data[i] - 1) ^ 0xff);
+			else
+				delta = data[i];
+
+			labelOffset = offset + delta;
+			/* Insert offset to repository */
+			if(pushLabel(repository, labelOffset) == 0)
+				return 0;
+
+			printf("%04x short jump to %04x\n", offset, labelOffset);
+		}
+		else 
+		{
+			if(isFarJump(inst))
+			{
+				labelOffset = data[0] | (data[1] << 8);
+				/* Insert offset to repository */
+				if(pushLabel(repository, labelOffset) == 0)
+					return 0;
+
+				printf("%04x long jump to %04x\n", offset, labelOffset);
+			}
+		}
+		
+		/* Search end of section */
+		if( (section->size < 0) && ((inst == 0x40) || (inst == 0x60)) )
+		{
+			section->size = nBytesProcessed;
+			eor            = 1;
+		}
+		else if( nBytesProcessed >= section->size )
+		{
+			eor = 1;
+		}		
+	}
+
+	finalizeLabelRepositoty(repository);
+
+	return 1;
+}
+
+/* Initialize label index so that it points to the label close to current org offset */
+void getLabelIndex(SectionProcessor* iProcessor)
+{
+	int i;
+	
+	/* Room for huge improvments */
+	for(i=iProcessor->labelIndex; i<iProcessor->labelRepository.last; ++i)
+	{
+		if(iProcessor->labelRepository.labels[i].offset >= iProcessor->orgOffset)
+		{
+			break;
+		}
+	}
+	
+	iProcessor->labelIndex = i;
+}
+
 /* Maximum number of characters per line */
 #define MAX_CHAR_PER_LINE 80
 
 /*
  * Process opcode
  */
-char processOpcode(struct LabelRepository_* iLabelRepository, SectionProcessor* iProcessor) {
+char processOpcode(SectionProcessor* iProcessor) {
 	int i, delta;
 	uint8_t inst, data[6], isJump, page;
 	char line[MAX_CHAR_PER_LINE], eor, *ptr;
@@ -583,30 +702,30 @@ char processOpcode(struct LabelRepository_* iLabelRepository, SectionProcessor* 
 	fread(&inst, 1, 1, iProcessor->in);
 
 	/* Get label index */
-	getLabelIndex(iLabelRepository + iProcessor->page, iProcessor);
+	getLabelIndex(iProcessor);
 
 	nextOrgOffset = iProcessor->orgOffset + pce_opcode[inst].size;
 	
 	/* Is there a label ? */
-	if((iProcessor->labelIndex < iLabelRepository[iProcessor->page].last) &&
-	   ((iLabelRepository[iProcessor->page].labels[iProcessor->labelIndex].offset >= iProcessor->orgOffset) &&
-	    (iLabelRepository[iProcessor->page].labels[iProcessor->labelIndex].offset < nextOrgOffset)))
+	if( (iProcessor->labelIndex < iProcessor->labelRepository.last) &&
+	    (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset >= iProcessor->orgOffset) &&
+	    (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset < nextOrgOffset) )
 	{
 		/* Print label*/
-		sprintf(line, "l_%04x: ", iLabelRepository[iProcessor->page].labels[iProcessor->labelIndex].offset);
+		sprintf(line, "l%04x_%02x: ", iProcessor->labelRepository.labels[iProcessor->labelIndex].offset,  iProcessor->sectionId);
 
 		/* Add displacement */
-		if(iLabelRepository[iProcessor->page].labels[iProcessor->labelIndex].offset != iProcessor->orgOffset)
+		if(iProcessor->labelRepository.labels[iProcessor->labelIndex].offset != iProcessor->orgOffset)
 		{
-			iLabelRepository[iProcessor->page].labels[iProcessor->labelIndex].displacement = iLabelRepository[iProcessor->page].labels[iProcessor->labelIndex].offset - iProcessor->orgOffset;
+			iProcessor->labelRepository.labels[iProcessor->labelIndex].displacement = iProcessor->labelRepository.labels[iProcessor->labelIndex].offset - iProcessor->orgOffset;
 		}
 	}
 	else
 	{
-		memset(line, ' ', 8 * sizeof(char));
+		memset(line, ' ', 10 * sizeof(char));
 	}
 
-	ptr += 8;
+	ptr += 10;
 
 	/* Print opcode sting */
 	memcpy(ptr, pce_opcode[inst].name, 4 * sizeof(char));
@@ -705,6 +824,16 @@ char processOpcode(struct LabelRepository_* iLabelRepository, SectionProcessor* 
 			data[0] = i;		
 		}
 
+		/* Add section to jump label */
+		if(pce_opcode[inst].type == 20)
+		{
+			data[3] = iProcessor->sectionId & 0xff;
+		}
+		else if(pce_opcode[inst].type == 19)
+		{
+			data[2] = iProcessor->sectionId & 0xff;
+		}
+
 		/* Print data */
 		if(pce_opcode[inst].type)
 		{
@@ -720,15 +849,15 @@ char processOpcode(struct LabelRepository_* iLabelRepository, SectionProcessor* 
 	if(isJump)
 	{
 		/* Search in label database ( todo : dicotomic search ) */
-		for(i=0; i < iLabelRepository[iProcessor->page].last; ++i)
+		for(i=0; i < iProcessor->labelRepository.last; ++i)
 		{
-			if(iLabelRepository[iProcessor->page].labels[i].offset == offset)
+			if(iProcessor->labelRepository.labels[i].offset == offset)
 			{
 				/* Displacement may not exceed 7 (maximum opcode data size) */
-				if(iLabelRepository[iProcessor->page].labels[i].displacement != 0)
+				if(iProcessor->labelRepository.labels[i].displacement != 0)
 				{
 					ptr[0] = '+';
-					ptr[1] = '0' + iLabelRepository[iProcessor->page].labels[i].displacement;
+					ptr[1] = '0' + iProcessor->labelRepository.labels[i].displacement;
 					ptr += 2;
 				}
 				break;
@@ -744,4 +873,5 @@ char processOpcode(struct LabelRepository_* iLabelRepository, SectionProcessor* 
 
 	return eor;
 }
+
 

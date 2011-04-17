@@ -12,7 +12,6 @@
 #include "csv.h"
 #include "section.h"
 #include "opcodes.h"
-#include "labels.h"
 #include "irq.h"
 #include "options.h"
 
@@ -31,7 +30,6 @@ int main(int argc, char** argv)
   
   char eor;
   unsigned int size;
-  unsigned int offset;
   unsigned int i;
   int err, failure;
 
@@ -41,8 +39,6 @@ int main(int argc, char** argv)
   size_t sectionCount;
 
   SectionProcessor processor;
-
-  LabelRepository labels[8];
  
   /* Extract command line options */
   err = getCommandLineOptions(argc, argv, &cmdOptions);
@@ -110,26 +106,6 @@ int main(int argc, char** argv)
   	}
   }
   
-  /* Get labels */
-  for(i=0; i<8; ++i)
-  {
-	initializeLabelRepository(labels + i);
-  }
-
-  for(i=0; i<sectionCount; ++i)
-  {
-	if(getLabels(in, section+i, labels) == 0)
-	{
-		fprintf(stderr, "An error occured while fetching labels\n");
-		goto error_3;
-	}
-  }
-
-  for(i=0; i<8; ++i)
-  {
-	finalizeLabelRepositoty(labels + i);
-  }
-
   /* Initialize section processor */
   initializeSectionProcessor(&processor);
 
@@ -147,24 +123,31 @@ int main(int argc, char** argv)
 	{
 		/* Print header */
 		fprintf(out, "\t.%s\n"
-			     "\t.bank %x\n"
-			      "\t.org $%04x\n",
-			      (section[i].type == CODE) ? "code" : "data", section[i].bank,
-			      section[i].org);
+					 "\t.bank %x\n"
+					 "\t.org $%04x\n",
+					 (section[i].type == CODE) ? "code" : "data", section[i].bank,
+					 section[i].org);
 	}
 
-	fseek(in, section[i].start, SEEK_SET); // TOKILL
-	offset = section[i].start;             // TOKILL
+	fseek(in, section[i].start, SEEK_SET);
 	eor = 0;
 
     /* Reset section processor */
-    resetSectionProcessor(in, out, section+i, &processor);
-
+    resetSectionProcessor(in, out, i, section+i, &processor);
+	
 	if(section[i].type == CODE)
 	{
+		/* Fetch labels */
+		if(!getLabels(&processor))
+		{
+			goto error_4;
+		}
+
+		fseek(in, section[i].start, SEEK_SET);
+
 		/* Process opcodes */
 		while(!eor) {
-			eor = processOpcode(labels, &processor);
+			eor = processOpcode(&processor);
 
 			if(!cmdOptions.extractIRQ)
 			{
@@ -226,12 +209,6 @@ int main(int argc, char** argv)
   
 error_4:
   deleteSectionProcessor(&processor);
-
-error_3:  
-  for(i=0; i<7; ++i)
-  {
-	deleteLabelRepository(labels + i);
-  }
 
 error_2:
   if(in != NULL)
