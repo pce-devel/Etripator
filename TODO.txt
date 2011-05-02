@@ -1,2 +1,1 @@
-TODO :
-	doc
+TODO list can be found at : https://github.com/BlockoS/Etripator/issues?milestone=1&state=open
