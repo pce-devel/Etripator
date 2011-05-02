@@ -7,7 +7,6 @@
   use it on your own risk. blablabla...
 */
 #include "config.h"
-#include "csv.h"
 #include "section.h"
 #include "opcodes.h"
 #include "irq.h"
@@ -51,16 +50,8 @@ int main(int argc, char** argv)
   /* Read cfg file */
   sectionCount = cmdOptions.extractIRQ ? 5 : 0;
   section      = NULL;
-  
-  if(cmdOptions.useOldCSV)
-  {
-	  err = readSectionsFromCSV(cmdOptions.cfgFileName, ';', &section, &sectionCount);
-  }
-  else
-  {
-	  err = readSectionsFromCFG(cmdOptions.cfgFileName, &section, &sectionCount);
-  }
-  
+
+  err = readSectionsFromCFG(cmdOptions.cfgFileName, &section, &sectionCount);
   if(!err)
   {
   	fprintf(stderr,"Unable to read %s.\n", cmdOptions.cfgFileName);

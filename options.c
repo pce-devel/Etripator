@@ -10,10 +10,7 @@ void usage()
 			"--help or -h       : displays this message.\n"
 			"--out or -o <file> : main asm file containing includes for all sections \n"
 			"                     as long the irq vector table if the irq-detect\n"
-			"                     option is enabled.\n"
-			"--csv              : the <cfg> configuration file is a csv file.\n"
-			"                     WARNING, csv files are now replaced by cfg files.\n"
-			"                     This option may be removed in future release.\n");
+			"                     option is enabled.\n");
 }
 
 /* Extract command line options */
@@ -25,7 +22,6 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
 		{"cd",	       0, 0, 'c'},
 		{"help",       0, 0, 'h'},
 		{"out",        1, 0, 'o'},
-		{"csv",        0, 0,  0xff },
 		{ 0,           0, 0,  0 }
 	};
 	int idx, opt;
@@ -36,7 +32,6 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
 	iOptions->cfgFileName  = NULL;
 	iOptions->romFileName  = NULL;
 	iOptions->mainFileName = "main.asm";
-	iOptions->useOldCSV    = 0;
 	
 	/* Note : IRQ detection is disabled with the cdrom option */
 	while ((opt = getopt_long (argc, argv, shortOptions, longOptions, &idx)) > 0)
@@ -60,10 +55,6 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
 			case 'h':
 				return 0;
 
-			case 0xff:
-				iOptions->useOldCSV = 1;
-				break;
-				
 			default:
 				return -1;
 		}		

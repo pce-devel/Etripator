@@ -11,7 +11,6 @@ struct CommandLineOptions_
 	char *cfgFileName;
 	char *romFileName;
 	char *mainFileName;
-	int useOldCSV;
 };
 typedef struct CommandLineOptions_ CommandLineOptions;
 

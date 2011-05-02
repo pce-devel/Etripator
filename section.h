@@ -32,11 +32,6 @@ enum SectionType {
 int readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount);
 
 /*
- * Extract sections from a CSV file
- */
-int readSectionsFromCSV(char* iFileName, char iSeparator, Section** iSection, size_t* iSectionCount);
-
-/*
  * Extract sections from a config file
  */
 int readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount);

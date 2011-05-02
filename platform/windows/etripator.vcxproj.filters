@@ -9,7 +9,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\csv.c" />
     <ClCompile Include="..\..\etripator.c" />
     <ClCompile Include="..\..\irq.c" />
     <ClCompile Include="..\..\labels.c" />
@@ -20,15 +19,11 @@
     <ClCompile Include="getopt1.c">
       <Filter>platform\windows</Filter>
     </ClCompile>
-    <ClCompile Include="winmmap.c">
-      <Filter>platform\windows</Filter>
-    </ClCompile>
     <ClCompile Include="getopt.c">
       <Filter>platform\windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\csv.h" />
     <ClInclude Include="..\..\irq.h" />
     <ClInclude Include="..\..\labels.h" />
     <ClInclude Include="..\..\opcodes.h" />
@@ -42,9 +37,6 @@
       <Filter>platform\windows</Filter>
     </ClInclude>
     <ClInclude Include="stdint.h">
-      <Filter>platform\windows</Filter>
-    </ClInclude>
-    <ClInclude Include="winmmap.h">
       <Filter>platform\windows</Filter>
     </ClInclude>
     <ClInclude Include="..\..\config.h" />
