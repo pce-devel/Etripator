@@ -1,7 +1,7 @@
-#ifndef _OPTIONS_H_
-#define _OPTIONS_H_
+#ifndef OPTIONS_H
+#define OPTIONS_H
 
-#include <stdint.h>
+#include "config.h"
 
 /* Command line options */
 struct CommandLineOptions_
@@ -21,4 +21,4 @@ void usage();
 /* Extract command line options */
 int getCommandLineOptions(int, char**, CommandLineOptions*);
 
-#endif /* _OPTIONS_H_ */
+#endif // OPTIONS_H

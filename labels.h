@@ -1,8 +1,7 @@
-#ifndef _LABELS_H_
-#define _LABELS_H_
+#ifndef LABELS_H
+#define LABELS_H
 
-#include <stdio.h>
-
+#include "config.h"
 #include "opcodes.h"
 #include "rbtree.h"
 
@@ -65,4 +64,4 @@ int pushLabel(LabelRepository*, uint16_t);
 /* Finalize label repository */
 void finalizeLabelRepositoty(LabelRepository*);
 
-#endif /* _LABELS_H_ */
+#endif // LABELS_H

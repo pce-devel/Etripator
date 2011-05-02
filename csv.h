@@ -1,4 +1,5 @@
-#ifndef _CVS_H_
+#ifndef CVS_H
+#define CVS_H
 
 /*
  * - CSV Token -
@@ -68,4 +69,4 @@ int CSVExtractTokensFromLine(CSVState* iState,
  */
 int CSVJumpToNextLine(CSVState* iState);
 
-#endif // _CSV_H_
+#endif // CSV_H

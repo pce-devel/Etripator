@@ -1,14 +1,5 @@
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include "config.h"
 #include "csv.h"
-
-#if !HAVE_STRNDUP
-#include "strndup.h"
-#endif
 
 /*
  * Token serializers
@@ -24,8 +15,19 @@ static int CSVTokenSerializeInteger(char* iStart, char* iEnd, CSVToken* iToken) 
  
 /* String */
 static int CSVTokenSerializeString(char* iStart, char* iEnd, CSVToken* iToken) {
-	iToken->value.string = (char*)strndup(iStart, iEnd - iStart);
-	return (iToken->value.string != NULL);
+	ptrdiff_t size = iEnd - iStart;
+	if(size <= 0)
+	{
+		return 0;
+	}
+
+	iToken->value.string = (char*)malloc(size);
+	if(iToken->value.string == NULL)
+	{
+		return 0;
+	}
+	memcpy(iToken->value.string, iStart, size);
+	return 1;
 }
 
 /*

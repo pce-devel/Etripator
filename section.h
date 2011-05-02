@@ -1,9 +1,7 @@
 #ifndef _SECTION_H_
 #define _SECTION_H_
 
-#include <stdint.h>
-#include <sys/types.h>
-
+#include "config.h"
 #include "labels.h"
 
 /*

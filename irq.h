@@ -1,10 +1,10 @@
-#ifndef _IRQ_H_
-#define _IRQ_H_
+#ifndef IRQ_H
+#define IRQ_H
 
-#include <stdio.h>
+#include "config.h"
 #include "section.h"
 
 /* Get irq code offsets from rom */
 int getIRQSections(FILE*, Section*);
 
-#endif /* _IRQ_H_ */
+#endif /* IRQ_H */

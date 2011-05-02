@@ -1,25 +1,5 @@
-#ifdef _MSC_VER
-#pragma warning(disable : 4996)
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifndef _MSC_VER
-#include <unistd.h>
-#endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#ifdef _WIN32
-#include <winmmap.h>
-#else
-#include <sys/mman.h>
-#endif
-#include <fcntl.h>
-#include <string.h>
-#include <limits.h>
-
-#include "csv.h"
 #include "section.h"
+#include "csv.h"
 #include "labels.h"
 
 #ifdef _MSC_VER

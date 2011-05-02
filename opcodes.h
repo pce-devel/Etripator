@@ -1,5 +1,5 @@
-#ifndef _OPCODES_H_
-#define _OPCODES_H_
+#ifndef OPCODES_H
+#define OPCODES_H
 
 /*
   Opcodes:
@@ -50,4 +50,4 @@ extern char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT];
 /* PC engine opcodes */
 extern Opcode pce_opcode[256];
 
-#endif
+#endif // OPCODES_H

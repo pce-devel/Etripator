@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include "config.h"
 #include "opcodes.h"
 
 char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {

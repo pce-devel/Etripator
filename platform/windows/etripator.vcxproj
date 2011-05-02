@@ -107,10 +107,10 @@
     <ClCompile Include="..\..\section.c" />
     <ClCompile Include="getopt.c" />
     <ClCompile Include="getopt1.c" />
-    <ClCompile Include="strndup.c" />
     <ClCompile Include="winmmap.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\config.h" />
     <ClInclude Include="..\..\csv.h" />
     <ClInclude Include="..\..\irq.h" />
     <ClInclude Include="..\..\labels.h" />
@@ -121,7 +121,6 @@
     <ClInclude Include="getopt_win.h" />
     <ClInclude Include="inttypes.h" />
     <ClInclude Include="stdint.h" />
-    <ClInclude Include="strndup.h" />
     <ClInclude Include="winmmap.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include "labels.h"
 
 #define LABEL_ARRAY_INC 16

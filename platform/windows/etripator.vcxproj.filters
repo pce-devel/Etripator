@@ -20,13 +20,12 @@
     <ClCompile Include="getopt1.c">
       <Filter>platform\windows</Filter>
     </ClCompile>
-    <ClCompile Include="strndup.c">
-      <Filter>platform\windows</Filter>
-    </ClCompile>
     <ClCompile Include="winmmap.c">
       <Filter>platform\windows</Filter>
     </ClCompile>
-    <ClCompile Include="getopt.c" />
+    <ClCompile Include="getopt.c">
+      <Filter>platform\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\csv.h" />
@@ -48,8 +47,6 @@
     <ClInclude Include="winmmap.h">
       <Filter>platform\windows</Filter>
     </ClInclude>
-    <ClInclude Include="strndup.h">
-      <Filter>platform\windows</Filter>
-    </ClInclude>
+    <ClInclude Include="..\..\config.h" />
   </ItemGroup>
 </Project>

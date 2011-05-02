@@ -1,10 +1,7 @@
-#ifndef _RED_BLACK_TREE_H_
-#define _RED_BLACK_TREE_H_
+#ifndef RED_BLACK_TREE_H
+#define RED_BLACK_TREE_H
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
+#include "config.h"
 
 #define LEFT  0
 #define RIGHT 1
@@ -39,4 +36,4 @@ void Destroy(Node** root);
 /* Check tree */
 int Check(Node* node);
 
-#endif /* _RED_BLACK_TREE_H_ */
+#endif // RED_BLACK_TREE_H

@@ -6,9 +6,7 @@
   i'm not responsible of any damage this program wil cause.
   use it on your own risk. blablabla...
 */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "config.h"
 #include "csv.h"
 #include "section.h"
 #include "opcodes.h"
