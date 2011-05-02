@@ -37,17 +37,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">build\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">build\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\build\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)\obj\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">build\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">build\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\build\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)\obj\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -63,13 +65,17 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <BuildLog>
+      <Path>$(OutDir)\$(MSBuildProjectName).log</Path>
+    </BuildLog>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -84,32 +90,36 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <BuildLog>
+      <Path>$(OutDir)\$(MSBuildProjectName).log</Path>
+    </BuildLog>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="csv.c" />
-    <ClCompile Include="etripator.c" />
+    <ClCompile Include="..\..\csv.c" />
+    <ClCompile Include="..\..\etripator.c" />
+    <ClCompile Include="..\..\irq.c" />
+    <ClCompile Include="..\..\labels.c" />
+    <ClCompile Include="..\..\opcodes.c" />
+    <ClCompile Include="..\..\options.c" />
+    <ClCompile Include="..\..\rbtree.c" />
+    <ClCompile Include="..\..\section.c" />
     <ClCompile Include="getopt.c" />
     <ClCompile Include="getopt1.c" />
-    <ClCompile Include="irq.c" />
-    <ClCompile Include="labels.c" />
-    <ClCompile Include="opcodes.c" />
-    <ClCompile Include="options.c" />
-    <ClCompile Include="rbtree.c" />
-    <ClCompile Include="section.c" />
     <ClCompile Include="strndup.c" />
     <ClCompile Include="winmmap.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="csv.h" />
+    <ClInclude Include="..\..\csv.h" />
+    <ClInclude Include="..\..\irq.h" />
+    <ClInclude Include="..\..\labels.h" />
+    <ClInclude Include="..\..\opcodes.h" />
+    <ClInclude Include="..\..\options.h" />
+    <ClInclude Include="..\..\rbtree.h" />
+    <ClInclude Include="..\..\section.h" />
     <ClInclude Include="getopt_win.h" />
     <ClInclude Include="inttypes.h" />
-    <ClInclude Include="irq.h" />
-    <ClInclude Include="labels.h" />
-    <ClInclude Include="opcodes.h" />
-    <ClInclude Include="options.h" />
-    <ClInclude Include="rbtree.h" />
-    <ClInclude Include="section.h" />
     <ClInclude Include="stdint.h" />
     <ClInclude Include="strndup.h" />
     <ClInclude Include="winmmap.h" />

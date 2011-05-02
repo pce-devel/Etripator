@@ -17,9 +17,6 @@
     <ClCompile Include="..\..\options.c" />
     <ClCompile Include="..\..\rbtree.c" />
     <ClCompile Include="..\..\section.c" />
-    <ClCompile Include="..\..\getopt.c">
-      <Filter>platform\windows</Filter>
-    </ClCompile>
     <ClCompile Include="getopt1.c">
       <Filter>platform\windows</Filter>
     </ClCompile>
@@ -29,6 +26,7 @@
     <ClCompile Include="winmmap.c">
       <Filter>platform\windows</Filter>
     </ClCompile>
+    <ClCompile Include="getopt.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\csv.h" />
