@@ -22,6 +22,7 @@
     <ClCompile Include="getopt.c">
       <Filter>platform\windows</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\cfg.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\irq.h" />
@@ -40,5 +41,6 @@
       <Filter>platform\windows</Filter>
     </ClInclude>
     <ClInclude Include="..\..\config.h" />
+    <ClInclude Include="..\..\cfg.h" />
   </ItemGroup>
 </Project>
