@@ -12,7 +12,6 @@
 
 #if defined(_MSC_VER)
 #include "platform/windows/getopt_win.h"
-#include "platform/windows/winmmap.h"
 #include "platform/windows/stdint.h"
 #else
 #include <unistd.h>
