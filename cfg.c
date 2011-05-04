@@ -10,6 +10,7 @@ struct CFGParser
 	char *lineBuffer;           /*< Char buffer large enough to contains a "chomped" line. */
 	size_t lineBufferSize;      /*< Line buffer size. */
 	size_t lineStringLength;    /*< Length of the string stored in the line buffer. */
+	FILE *input;                /*< File being parser. */
 };
 
 /**
@@ -64,6 +65,74 @@ static void CleanupCFGParser(struct CFGParser* parser)
 }
 
 /**
+ * \brief Read a line from file.
+ *
+ * The starting and trailing spaces are removed.
+ * \param parser CFG parser
+ * \return \see CFG_ERR
+ */
+static CFG_ERR ReadLine(struct CFGParser* parser)
+{
+	char byte;
+	size_t nRead;
+
+	char *ptr = parser->lineBuffer;
+	char *end = parser->lineBuffer + parser->lineBufferSize;
+
+	// Skip starting spaces
+	do
+	{
+		nRead = fread(&byte, 1, 1, parser->input);
+	} while( (nRead == 1) && 
+			 ((byte == ' ') || (byte == '\t')) );
+
+	if(nRead == 0)
+	{
+		parser->lineStringLength = 0;
+		return feof(parser->input) ? CFG_FILE_EOF : CFG_FILE_READ_ERROR;
+	}
+
+	// Read the rest of the line
+	while( (nRead) && (byte != '\n') && (byte != '\r') )
+	{
+		*(ptr++) = byte;
+		
+		if(ptr == end)
+		{
+			CFG_ERR err = ResizeLineBuffer(parser, parser->lineBufferSize * 2);
+			if(err != CFG_OK)
+			{
+				// We are in big troubles if resize fails.
+				return err;
+			}
+			ptr = parser->lineBuffer;
+			end = parser->lineBuffer + parser->lineBufferSize;
+		}
+
+		nRead = fread(&byte, 1, 1, parser->input);
+	}
+
+	// Check if we read something
+	if(ptr == parser->lineBuffer)
+	{
+		ptr[0] = '\0';
+		parser->lineStringLength = 0;
+		return feof(parser->input) ? CFG_FILE_EOF : CFG_OK;
+	}
+
+	// Remove trailing spaces
+	do
+	{
+		--ptr;
+	} while( (ptr != parser->lineBuffer) && ((*ptr == ' ') || (*ptr == '\t')) );
+
+	parser->lineStringLength = ptr - parser->lineBuffer;
+	ptr[1] = '\0';
+
+	return feof(parser->input) ? CFG_FILE_EOF : CFG_OK;
+}
+
+/**
  * \brief Parse CFG file
  *
  * \param filename CFG/Ini filename.
@@ -92,19 +161,25 @@ CFG_ERR ParseCFG(const char* filename, struct CFGPayload* payload)
 	if(input == NULL)
 	{
 		fprintf(stderr, "Unable to open %s : %s", filename, strerror(errno));
-		return CFG_FOPEN_ERR;
+		return CFG_FILE_OPEN_ERR;
 	}
 	
-	parser.payload    = payload;
+	parser.payload          = payload;
 	parser.lineBuffer       = NULL;
 	parser.lineBufferSize   = 0;
 	parser.lineStringLength = 0;
-	
+	parser.input            = input;
+
 	err = ResizeLineBuffer(&parser, 256);
 
 	if(err == CFG_OK)
 	{
 		// TODO
+		// 1. readline
+		// ?. section
+		// ?. key/value
+		// ?. name validation
+		// ?. character escape
 
 		CleanupCFGParser(&parser);
 	}

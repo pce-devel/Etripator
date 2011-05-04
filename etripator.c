@@ -3,10 +3,12 @@
   Author   : Vincent Cruz
   Date     : 2004-End of the world
   [include licence here]
-  i'm not responsible of any damage this program wil cause.
+  i'm not responsible of any damage this program will cause.
   use it on your own risk. blablabla...
 */
 #include "config.h"
+#include "cfg.h"
+
 #include "section.h"
 #include "opcodes.h"
 #include "irq.h"
