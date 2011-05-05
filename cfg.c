@@ -13,6 +13,24 @@ struct CFGParser
 	FILE *input;                /*< File being parser. */
 };
 
+
+#define CFG_FORBIDDEN_CHAR_COUNT 4
+static const char g_CFGForbiddenChar[CFG_FORBIDDEN_CHAR_COUNT] = 
+{
+	'=', ';', ' ', '\t'
+};
+
+#define CFG_ESCAPED_CHAR_COUNT 9
+static const char g_CFGEscapedChar[CFG_ESCAPED_CHAR_COUNT] = 
+{
+	'n', 'r', 't', '\'', '"', '\\', '?', '=', ';'
+};
+
+static const char g_CFGTranslatedChar[CFG_ESCAPED_CHAR_COUNT] = 
+{
+	'\n', '\r', '\t', '\'', '"', '\\', '?', '=', ';'
+};
+
 /**
  * \brief Increase line buffer size.
  *
@@ -133,6 +151,106 @@ static CFG_ERR ReadLine(struct CFGParser* parser)
 }
 
 /**
+ * \brief Validate string and transform escaped char.
+ *
+ * \param parser CFG parser
+ * \return \see CFG_ERR
+ */
+static CFG_ERR ValidateString(char* start, char* end)
+{
+	char *ptr = NULL;
+
+	// Skip starting spaces
+	for( ; (start != end) && ((*start == ' ') || (*start == '\t')); ++start)
+	{}
+
+	if(start >= end)
+	{
+		return CFG_EMPTY_STRING;
+	}
+
+	// Skip trailing spaces
+	for( ; (end != start) && ((*end == ' ') || (*end == '\t')); --end)
+	{}
+
+	// Validate the rest of the string
+	for(ptr=start; (ptr <= end); ++ptr)
+	{
+		if(memchr(g_CFGForbiddenChar, *((unsigned char*)ptr), CFG_FORBIDDEN_CHAR_COUNT) != NULL)
+		{
+			return CFG_INVALID_SECTION_NAME;		
+		}
+		if(*ptr == '\\')
+		{
+			char *escPtr;
+
+			if(ptr > end)
+			{
+				return CFG_INVALID_SECTION_NAME;
+			}
+
+			escPtr = (char*)memchr(g_CFGEscapedChar, *((unsigned char*)ptr+1), CFG_ESCAPED_CHAR_COUNT);
+			if(escPtr == NULL)
+			{
+				return CFG_INVALID_SECTION_NAME;		
+			}
+
+			ptr[0] = g_CFGTranslatedChar[escPtr - g_CFGEscapedChar];
+			--end;
+			memmove(ptr+1, ptr+2, end-ptr);
+		}
+	}
+
+	end[1] = '\0';
+
+	return CFG_OK;
+}
+
+/**
+ * \brief Validate section.
+ *
+ * \param parser CFG parser
+ * \return \see CFG_ERR
+ */
+static CFG_ERR ValidateSection(struct CFGParser* parser)
+{
+	char *ptr;
+	size_t i, end; 
+	CFG_ERR err = CFG_OK;
+
+	// Look for closing delimiter
+	for( end=parser->lineStringLength, ptr=parser->lineBuffer + end;
+		 (end > 0) && (*ptr != ']'); 
+		 --ptr, --end )
+	{}
+
+	if(end == 0)
+	{
+		return CFG_MISSING_SECTION_DELIMITER;
+	}
+
+	// Validate the remaing chars
+	for( i=end+1, ptr=parser->lineBuffer+end+1; 
+		 (i<parser->lineStringLength) && ((*ptr == ' ' ) || (*ptr == '\t'));
+		 ++ptr, ++i )
+	{}
+
+	// The only valid string after a section closing delimiter is a commentary
+	if((i < parser->lineStringLength) && (*ptr != ';'))
+	{
+		return CFG_INVALID_SECTION_DECLARATION;
+	}
+						
+	err = ValidateString(parser->lineBuffer+1, parser->lineBuffer+end-1);
+	if(err == CFG_OK)
+	{
+		// call section callback
+	}
+
+	return err;
+}
+
+/**
  * \brief Parse CFG file
  *
  * \param filename CFG/Ini filename.
@@ -174,12 +292,23 @@ CFG_ERR ParseCFG(const char* filename, struct CFGPayload* payload)
 
 	if(err == CFG_OK)
 	{
-		// TODO
-		// 1. readline
-		// ?. section
-		// ?. key/value
-		// ?. name validation
-		// ?. character escape
+		while(err == CFG_OK)
+		{
+			err = ReadLine(&parser);
+
+			if((err == CFG_OK) && (parser.lineStringLength))
+			{
+
+				if(parser.lineBuffer[0] == '[')
+				{
+					err = ValidateSection(&parser);
+				}
+				else if(parser.lineBuffer[0] != ';')
+				{
+					// todo : Validate key/value pair
+				}
+			}
+		}
 
 		CleanupCFGParser(&parser);
 	}

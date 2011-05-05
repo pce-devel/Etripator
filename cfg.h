@@ -6,16 +6,18 @@
  */
 typedef enum
 {
-	CFG_OK = 0,                    /*< Success. */
-	CFG_INVALID_PARAMETERS,        /*< At least one of the parameter has an invalid value. */
-	CFG_FILE_OPEN_ERR,             /*< An error occured while opening source file. */
-	CFG_FILE_READ_ERROR,           /*< An error occured while reading source file. */
-	CFG_FILE_EOF,                  /*< The source file end was reached. */
-	CFG_MISSING_SECTION_DELIMITER, /*< The closing section delimiter is missing. */
-	CFG_INVALID_SECTION_NAME,      /*< The section contains invalid characters. */
-	CFG_INVALID_KEY_NAME,          /*< The key contains invalid characters. */
-	CFG_INVALID_VALUE_NAME,        /*< The value contains invalid characters. */
-	CFG_MEMORY_ISSUE               /*< Something went wrong with the memory. */
+	CFG_OK = 0,                      /*< Success. */
+	CFG_INVALID_PARAMETERS,          /*< At least one of the parameter has an invalid value. */
+	CFG_FILE_OPEN_ERR,               /*< An error occured while opening source file. */
+	CFG_FILE_READ_ERROR,             /*< An error occured while reading source file. */
+	CFG_FILE_EOF,                    /*< The source file end was reached. */
+	CFG_EMPTY_STRING,                /*< Empty string. */
+	CFG_MISSING_SECTION_DELIMITER,   /*< The closing section delimiter is missing. */
+	CFG_INVALID_SECTION_NAME,        /*< The section contains invalid characters. */
+	CFG_INVALID_SECTION_DECLARATION, /*< The section declaration is invalid. */ 
+	CFG_INVALID_KEY_NAME,            /*< The key contains invalid characters. */
+	CFG_INVALID_VALUE_NAME,          /*< The value contains invalid characters. */
+	CFG_MEMORY_ISSUE                 /*< Something went wrong with the memory. */
 } CFG_ERR;
 
 /**
