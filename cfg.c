@@ -11,6 +11,7 @@ struct CFGParser
 	size_t lineBufferSize;      /*< Line buffer size. */
 	size_t lineStringLength;    /*< Length of the string stored in the line buffer. */
 	FILE *input;                /*< File being parser. */
+	int sectionCount;           /*< Section count. */
 };
 
 
@@ -245,9 +246,13 @@ static CFG_ERR ValidateSection(struct CFGParser* parser)
 	err = ValidateString(parser->lineBuffer+1, parser->lineBuffer+end, &ptr);
 	if(err == CFG_OK)
 	{
-		if(parser->payload->sectionCallback(parser->payload->data, ptr) <= 0)
+		if(parser->payload->beginSectionCallback(parser->payload->data, ptr) <= 0)
 		{
 			err = CFG_SECTION_CALLBACK_FAILED;
+		}
+		else
+		{
+			++parser->sectionCount;
 		}
 	}
 
@@ -283,7 +288,6 @@ static CFG_ERR ValidateKeyValue(struct CFGParser* parser)
 	{
 		return err;
 	}
-
 	
 	// Look for comments
 	for(end=separatorPos+1, ptr=parser->lineBuffer+separatorPos+1; (end<parser->lineStringLength) && (ptr[1] != ';'); ++end, ++ptr)
@@ -321,7 +325,8 @@ CFG_ERR ParseCFG(const char* filename, struct CFGPayload* payload)
 	}
 
 	if( (payload->data == NULL) || 
-		(payload->sectionCallback == NULL) ||
+		(payload->beginSectionCallback == NULL) ||
+		(payload->endSectionCallback == NULL) ||
 		(payload->keyValueCallback == NULL) )
 	{
 		return CFG_INVALID_PARAMETERS;
@@ -339,26 +344,47 @@ CFG_ERR ParseCFG(const char* filename, struct CFGPayload* payload)
 	parser.lineBufferSize   = 0;
 	parser.lineStringLength = 0;
 	parser.input            = input;
+	parser.sectionCount     = 0;
 
 	err = ResizeLineBuffer(&parser, 256);
+	
+	payload->line = 0;
 
 	if(err == CFG_OK)
 	{
 		while(err == CFG_OK)
 		{
+			++payload->line;
 			err = ReadLine(&parser);
 
 			if(((err == CFG_OK) || (err == CFG_FILE_EOF)) && (parser.lineStringLength))
 			{
-
 				if(parser.lineBuffer[0] == '[')
 				{
-					err = ValidateSection(&parser);
+					if(parser.sectionCount)
+					{
+						if(payload->endSectionCallback(payload->data) <= 0)
+						{
+							err = CFG_SECTION_CALLBACK_FAILED;
+						}
+					}
+					if(err == CFG_OK)
+					{
+						err = ValidateSection(&parser);
+					}
 				}
 				else if(parser.lineBuffer[0] != ';')
 				{
 					err = ValidateKeyValue(&parser);
 				}
+			}
+		}
+
+		if((err == CFG_FILE_EOF) && (parser.sectionCount))
+		{
+			if(payload->endSectionCallback(payload->data) <= 0)
+			{
+				err = CFG_SECTION_CALLBACK_FAILED;
 			}
 		}
 

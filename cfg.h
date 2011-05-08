@@ -28,6 +28,8 @@ struct CFGPayload
 {
 	void *data; /*!< Use data which will be passed as argument to one the callback function. */
 
+	int  line;  /*!< Current line number. */
+
 	/**
 	 * \brief Section start callback
 	 *
@@ -40,7 +42,20 @@ struct CFGPayload
 	 *     <=0 failure
 	 *     >0 success 
 	 */
-	int (*sectionCallback) (void *data, const char* sectionName);
+	int (*beginSectionCallback) (void *data, const char* sectionName);
+
+	/**
+	 * \brief Section end callback
+	 *
+	 * This callback will be called when the current section is over (ie at end of file or when a new section starts).
+	 *
+	 * \param data user provided data 
+	 * 
+	 * \return 
+	 *     <=0 failure
+	 *     >0 success 
+	 */
+	int (*endSectionCallback) (void *data);
 
 	/**
 	 * \brief Key value callback
