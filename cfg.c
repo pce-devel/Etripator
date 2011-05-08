@@ -111,7 +111,7 @@ static CFG_ERR ReadLine(struct CFGParser* parser)
 	}
 
 	// Read the rest of the line
-	while( (nRead) && (byte != '\n') && (byte != '\r') )
+	while( (nRead) && (byte != '\n') )
 	{
 		*(ptr++) = byte;
 		
@@ -156,7 +156,7 @@ static CFG_ERR ReadLine(struct CFGParser* parser)
  * \param parser CFG parser
  * \return \see CFG_ERR
  */
-static CFG_ERR ValidateString(char* start, char* end)
+static CFG_ERR ValidateString(char* start, char* end, char **out)
 {
 	char *ptr = NULL;
 
@@ -164,13 +164,13 @@ static CFG_ERR ValidateString(char* start, char* end)
 	for( ; (start != end) && ((*start == ' ') || (*start == '\t')); ++start)
 	{}
 
-	if(start >= end)
+	if(start == end)
 	{
 		return CFG_EMPTY_STRING;
 	}
 
 	// Skip trailing spaces
-	for( ; (end != start) && ((*end == ' ') || (*end == '\t')); --end)
+	for(--end ; (end != start) && ((*end == ' ') || (*end == '\t')); --end)
 	{}
 
 	// Validate the rest of the string
@@ -178,7 +178,7 @@ static CFG_ERR ValidateString(char* start, char* end)
 	{
 		if(memchr(g_CFGForbiddenChar, *((unsigned char*)ptr), CFG_FORBIDDEN_CHAR_COUNT) != NULL)
 		{
-			return CFG_INVALID_SECTION_NAME;		
+			return CFG_INVALID_STRING;
 		}
 		if(*ptr == '\\')
 		{
@@ -186,13 +186,13 @@ static CFG_ERR ValidateString(char* start, char* end)
 
 			if(ptr > end)
 			{
-				return CFG_INVALID_SECTION_NAME;
+				return CFG_INVALID_STRING;
 			}
 
 			escPtr = (char*)memchr(g_CFGEscapedChar, *((unsigned char*)ptr+1), CFG_ESCAPED_CHAR_COUNT);
 			if(escPtr == NULL)
 			{
-				return CFG_INVALID_SECTION_NAME;		
+				return CFG_INVALID_STRING;		
 			}
 
 			ptr[0] = g_CFGTranslatedChar[escPtr - g_CFGEscapedChar];
@@ -202,6 +202,7 @@ static CFG_ERR ValidateString(char* start, char* end)
 	}
 
 	end[1] = '\0';
+	*out = start;
 
 	return CFG_OK;
 }
@@ -219,14 +220,14 @@ static CFG_ERR ValidateSection(struct CFGParser* parser)
 	CFG_ERR err = CFG_OK;
 
 	// Look for closing delimiter
-	for( end=parser->lineStringLength, ptr=parser->lineBuffer + end;
-		 (end > 0) && (*ptr != ']'); 
-		 --ptr, --end )
+	for( end=1, ptr=parser->lineBuffer + 1;
+		 (end < parser->lineStringLength) && (*ptr != ']'); 
+		 ++ptr, ++end )
 	{}
-
+	
 	if(end == 0)
 	{
-		return CFG_MISSING_SECTION_DELIMITER;
+		return CFG_SECTION_MISSING_DELIMITER;
 	}
 
 	// Validate the remaing chars
@@ -238,13 +239,64 @@ static CFG_ERR ValidateSection(struct CFGParser* parser)
 	// The only valid string after a section closing delimiter is a commentary
 	if((i < parser->lineStringLength) && (*ptr != ';'))
 	{
-		return CFG_INVALID_SECTION_DECLARATION;
+		return CFG_SECTION_INVALID_DECLARATION;
 	}
-						
-	err = ValidateString(parser->lineBuffer+1, parser->lineBuffer+end-1);
+
+	err = ValidateString(parser->lineBuffer+1, parser->lineBuffer+end, &ptr);
 	if(err == CFG_OK)
 	{
-		// call section callback
+		if(parser->payload->sectionCallback(parser->payload->data, ptr) <= 0)
+		{
+			err = CFG_SECTION_CALLBACK_FAILED;
+		}
+	}
+
+	return err;
+}
+
+/**
+ * \brief Validate key/value.
+ *
+ * \param parser CFG parser
+ * \return \see CFG_ERR
+ */
+static CFG_ERR ValidateKeyValue(struct CFGParser* parser)
+{
+	char *ptr, *key, *value;
+	size_t separatorPos, end; 
+	CFG_ERR err = CFG_OK;
+
+	// Look for equal sign
+	for( separatorPos=0, ptr=parser->lineBuffer;
+		 (separatorPos < parser->lineStringLength) && (*ptr != '='); 
+		 ++ptr, ++separatorPos )
+	{}
+	
+ 	if((separatorPos == 0) || (separatorPos == parser->lineStringLength))
+	{
+		return CFG_MISSING_SEPARATOR;
+	}
+
+	// Validate key
+	err = ValidateString(parser->lineBuffer, parser->lineBuffer+separatorPos, &key);
+	if(err != CFG_OK)
+	{
+		return err;
+	}
+
+	
+	// Look for comments
+	for(end=separatorPos+1, ptr=parser->lineBuffer+separatorPos+1; (end<parser->lineStringLength) && (ptr[1] != ';'); ++end, ++ptr)
+	{}
+
+	// Validate value
+	err = ValidateString(parser->lineBuffer+separatorPos+1, parser->lineBuffer+end+1, &value);
+	if(err == CFG_OK)
+	{
+		if(parser->payload->keyValueCallback(parser->payload->data, key, value) <= 0)
+		{
+			err = CFG_KEY_VALUE_CALLBACK_FAILED;
+		}
 	}
 
 	return err;
@@ -296,7 +348,7 @@ CFG_ERR ParseCFG(const char* filename, struct CFGPayload* payload)
 		{
 			err = ReadLine(&parser);
 
-			if((err == CFG_OK) && (parser.lineStringLength))
+			if(((err == CFG_OK) || (err == CFG_FILE_EOF)) && (parser.lineStringLength))
 			{
 
 				if(parser.lineBuffer[0] == '[')
@@ -305,7 +357,7 @@ CFG_ERR ParseCFG(const char* filename, struct CFGPayload* payload)
 				}
 				else if(parser.lineBuffer[0] != ';')
 				{
-					// todo : Validate key/value pair
+					err = ValidateKeyValue(&parser);
 				}
 			}
 		}

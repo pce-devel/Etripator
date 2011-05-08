@@ -12,11 +12,12 @@ typedef enum
 	CFG_FILE_READ_ERROR,             /*< An error occured while reading source file. */
 	CFG_FILE_EOF,                    /*< The source file end was reached. */
 	CFG_EMPTY_STRING,                /*< Empty string. */
-	CFG_MISSING_SECTION_DELIMITER,   /*< The closing section delimiter is missing. */
-	CFG_INVALID_SECTION_NAME,        /*< The section contains invalid characters. */
-	CFG_INVALID_SECTION_DECLARATION, /*< The section declaration is invalid. */ 
-	CFG_INVALID_KEY_NAME,            /*< The key contains invalid characters. */
-	CFG_INVALID_VALUE_NAME,          /*< The value contains invalid characters. */
+	CFG_INVALID_STRING,              /*< Invalid string. */
+	CFG_SECTION_MISSING_DELIMITER,   /*< Closing section delimiter is missing. */
+	CFG_SECTION_INVALID_DECLARATION, /*< Section declaration is invalid. */
+	CFG_SECTION_CALLBACK_FAILED,     /*< Section callback failed. */
+	CFG_KEY_VALUE_CALLBACK_FAILED,   /*< Key/Value callback failed. */
+	CFG_MISSING_SEPARATOR,           /*< Missing equal separator. */
 	CFG_MEMORY_ISSUE                 /*< Something went wrong with the memory. */
 } CFG_ERR;
 
@@ -35,12 +36,11 @@ struct CFGPayload
 	 * \param data user provided data 
 	 * \param sectionName section name
 	 * 
-	 * \return
-	 *     CFG_MISSING_SECTION_DELIMITER if the closing section delimiter is missing.
-	 *     CFG_INVALID_SECTION_NAME if the section name contains a invalid characters.
-	 *     CFG_OK on success.
+	 * \return 
+	 *     <=0 failure
+	 *     >0 success 
 	 */
-	CFG_ERR (*sectionCallback) (void *data, const char* sectionName);
+	int (*sectionCallback) (void *data, const char* sectionName);
 
 	/**
 	 * \brief Key value callback
@@ -52,11 +52,10 @@ struct CFGPayload
 	 * \param value value name
 	 * 
 	 * \return
-	 *     CFG_INVALID_KEY_NAME if the key contains an invalid characters.
-	 *     CFG_INVALID_VALUE_NAME if the value contains an invalid characters.
-	 *     CFG_OK on success.
+	 *     <=0 failure
+	 *     >0 success 
 	 */
-	CFG_ERR (*keyValueCallback)    (void *data, const char* key, const char* value);
+	int (*keyValueCallback)    (void *data, const char* key, const char* value);
 };
 
 /**
