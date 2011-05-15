@@ -42,5 +42,8 @@
     </ClInclude>
     <ClInclude Include="..\..\config.h" />
     <ClInclude Include="..\..\cfg.h" />
+    <ClInclude Include="config_win.h">
+      <Filter>platform\windows</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

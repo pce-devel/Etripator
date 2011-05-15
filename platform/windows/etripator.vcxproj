@@ -117,6 +117,7 @@
     <ClInclude Include="..\..\options.h" />
     <ClInclude Include="..\..\rbtree.h" />
     <ClInclude Include="..\..\section.h" />
+    <ClInclude Include="config_win.h" />
     <ClInclude Include="getopt_win.h" />
     <ClInclude Include="inttypes.h" />
     <ClInclude Include="stdint.h" />
