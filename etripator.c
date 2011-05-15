@@ -7,6 +7,7 @@
   use it on your own risk. blablabla...
 */
 #include "config.h"
+#include "message.h"
 #include "cfg.h"
 
 #include "section.h"
@@ -17,8 +18,10 @@
 /*
   exit callback
  */
-void exit_callback()
-{}
+void exit_callback(void)
+{
+	PrintMsgClose();
+}
 
 /* Main */
 int main(int argc, char** argv)
@@ -39,7 +42,11 @@ int main(int argc, char** argv)
   size_t sectionCount;
 
   SectionProcessor processor;
- 
+
+  atexit(exit_callback);
+
+  PrintMsgOpenFile(NULL);
+
   /* Extract command line options */
   err = getCommandLineOptions(argc, argv, &cmdOptions);
   if(err <= 0)
@@ -57,7 +64,7 @@ int main(int argc, char** argv)
   serr = readSectionsFromCFG(cmdOptions.cfgFileName, &section, &sectionCount);
   if(serr != SECTION_OK)
   {
-  	fprintf(stderr,"Unable to read %s.\n", cmdOptions.cfgFileName);
+  	ERROR_MSG("Unable to read %s", cmdOptions.cfgFileName);
   	goto error_1;
   }
 
@@ -65,7 +72,7 @@ int main(int argc, char** argv)
   in = fopen(cmdOptions.romFileName, "rb");
   if(in == NULL)
   {
-	fprintf(stderr,"Can't open %s\n", cmdOptions.romFileName);
+	ERROR_MSG("Unable to open %s : %s", cmdOptions.romFileName, strerror(errno));
 	goto error_1;
   }  
 
@@ -81,7 +88,7 @@ int main(int argc, char** argv)
   {
   	if(getIRQSections(in, section) == 0)
   	{
-		fprintf(stderr, "An error occured while reading irq vector offsets\n");
+		ERROR_MSG("An error occured while reading irq vector offsets");
 		goto error_2;
   	}
   }
@@ -107,7 +114,7 @@ int main(int argc, char** argv)
 	out = fopen(section[i].name, "wb");
 	if(out == NULL)
 	{
-		fprintf(stderr,"Can't open %s\n", section[i].name);
+		ERROR_MSG("Can't open %s : %s", section[i].name, strerror(errno));
 		goto error_4;
 	}
 
@@ -165,7 +172,7 @@ int main(int argc, char** argv)
   mainFile = fopen(cmdOptions.mainFileName, "w");
   if(mainFile == NULL)
   {
-  	fprintf(stderr, "Unable to open %s\n", cmdOptions.mainFileName);
+  	ERROR_MSG("Unable to open %s : %s", cmdOptions.mainFileName, strerror(errno));
   	goto error_4;
   }
   

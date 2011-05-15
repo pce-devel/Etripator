@@ -14,7 +14,6 @@ struct CFGParser
 	int sectionCount;           /*< Section count. */
 };
 
-
 #define CFG_FORBIDDEN_CHAR_COUNT 4
 static const char g_CFGForbiddenChar[CFG_FORBIDDEN_CHAR_COUNT] = 
 {
@@ -31,6 +30,42 @@ static const char g_CFGTranslatedChar[CFG_ESCAPED_CHAR_COUNT] =
 {
 	'\n', '\r', '\t', '\'', '"', '\\', '?', '=', ';'
 };
+
+/**
+ * \brief Get the message associated to current CFG parsing error.
+ *
+ * \param err  Error value.
+ * \return Error message.
+ */
+const char* GetCFGErrorMsg(CFG_ERR err)
+{
+	static const char* errMsg[] =
+	{
+		"Success",
+		"At least one of the parameter has an invalid value",
+		"An error occured while opening source file",
+		"An error occured while reading source file",
+		"The source file end was reached",
+		"Empty string",
+		"Invalid string",
+		"Closing section delimiter is missing",
+		"Section declaration is invalid",
+		"Section callback failed",
+		"Key/Value callback failed",
+		"Missing equal separator",
+		"Unexpected memory error",
+		"Unknown error"
+	};
+
+	if((err >= CFG_OK) && (err < CFG_UNKNOWN_ERROR))
+	{
+		return errMsg[err];
+	}
+	else
+	{
+		return errMsg[CFG_UNKNOWN_ERROR];
+	}
+}
 
 /**
  * \brief Increase line buffer size.
@@ -335,7 +370,6 @@ CFG_ERR ParseCFG(const char* filename, struct CFGPayload* payload)
 	input = fopen(filename, "rb");
 	if(input == NULL)
 	{
-		fprintf(stderr, "Unable to open %s : %s", filename, strerror(errno));
 		return CFG_FILE_OPEN_ERR;
 	}
 	

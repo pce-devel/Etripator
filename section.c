@@ -1,4 +1,5 @@
 #include "section.h"
+#include "message.h"
 #include "labels.h"
 #include "cfg.h"
 
@@ -234,19 +235,19 @@ static int beginCFGSection(void *data, const char* sectionName)
 
 	if( !(flag & (TYPE_MASK)) )
 	{
-		fprintf( stderr, "[%s] : missing type.\n", currentSection->name );
+		ERROR_MSG("[%s] : missing type.\n", currentSection->name );
 		return 0;
 	}
 	
 	if( !(flag & (BANK_MASK)) )
 	{
-		fprintf( stderr, "[%s] : missing bank.\n", currentSection->name );
+		ERROR_MSG("[%s] : missing bank.\n", currentSection->name );
 		return 0;
 	}
 	
 	if( !(flag & (ORG_MASK)) )
 	{
-		fprintf( stderr, "[%s] : missing org.\n", currentSection->name );
+		ERROR_MSG("[%s] : missing org.\n", currentSection->name );
 		return 0;
 	}
 	
@@ -257,7 +258,7 @@ static int beginCFGSection(void *data, const char* sectionName)
 
 	if((currentSection->type != CODE) && (currentSection->size <= 0))
 	{
-		fprintf(stderr, "[%s] : Automatic section size detection doesn't work for data.\n", currentSection->name);
+		ERROR_MSG("[%s] Automatic section size detection doesn't work for data.\n", currentSection->name);
 		return 0;
 	}
 
@@ -282,7 +283,7 @@ static int validateCFGTuple(void *data, const char* key, const char* value)
 		{
 			if(validator->flag & (1 << i))
 			{
-				fprintf( stderr, "[error] %s already set\n", key );
+				ERROR_MSG("%s already set", key );
 				return 0;
 			}
 			validator->flag |= (1 << i);
@@ -340,6 +341,7 @@ SECTION_ERR readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSe
 	cfgErr = ParseCFG(iFileName, &payload);
 	if(cfgErr != CFG_OK)
 	{
+		ERROR_MSG("%s[%d] %s", iFileName, payload.line, GetCFGErrorMsg(cfgErr));
 		return SECTION_PARSING_ERROR;
 	}
 
@@ -461,7 +463,7 @@ int processDataSection(SectionProcessor* iProcessor)
 			iProcessor->buffer = (uint8_t*)malloc(256);
 			if(iProcessor->buffer == NULL)
 			{
-				fprintf(stderr, "Not enough memory\n");
+				ERROR_MSG("Allocation failed : %s", strerror(errno));
 				return 0;
 			}
 		}

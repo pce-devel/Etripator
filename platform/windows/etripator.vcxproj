@@ -50,7 +50,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -101,6 +101,7 @@
     <ClCompile Include="..\..\etripator.c" />
     <ClCompile Include="..\..\irq.c" />
     <ClCompile Include="..\..\labels.c" />
+    <ClCompile Include="..\..\message.c" />
     <ClCompile Include="..\..\opcodes.c" />
     <ClCompile Include="..\..\options.c" />
     <ClCompile Include="..\..\rbtree.c" />
@@ -113,6 +114,7 @@
     <ClInclude Include="..\..\config.h" />
     <ClInclude Include="..\..\irq.h" />
     <ClInclude Include="..\..\labels.h" />
+    <ClInclude Include="..\..\message.h" />
     <ClInclude Include="..\..\opcodes.h" />
     <ClInclude Include="..\..\options.h" />
     <ClInclude Include="..\..\rbtree.h" />

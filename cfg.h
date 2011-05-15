@@ -18,8 +18,17 @@ typedef enum
 	CFG_SECTION_CALLBACK_FAILED,     /*< Section callback failed. */
 	CFG_KEY_VALUE_CALLBACK_FAILED,   /*< Key/Value callback failed. */
 	CFG_MISSING_SEPARATOR,           /*< Missing equal separator. */
-	CFG_MEMORY_ISSUE                 /*< Something went wrong with the memory. */
+	CFG_MEMORY_ISSUE,                /*< Something went wrong with the memory. */
+	CFG_UNKNOWN_ERROR                /*< Unknown error. \note: must be the last one. */
 } CFG_ERR;
+
+/**
+ * \brief Get the message associated to current CFG parsing error.
+ *
+ * \param err  Error value.
+ * \return Error message.
+ */
+const char* GetCFGErrorMsg(CFG_ERR err);
 
 /**
  * \brief Payload structure for CFG/Ini file parser
