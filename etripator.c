@@ -11,6 +11,7 @@
 #include "cfg.h"
 
 #include "section.h"
+#include "decode.h"
 #include "opcodes.h"
 #include "irq.h"
 #include "options.h"

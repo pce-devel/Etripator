@@ -98,6 +98,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\cfg.c" />
+    <ClCompile Include="..\..\decode.c" />
     <ClCompile Include="..\..\etripator.c" />
     <ClCompile Include="..\..\irq.c" />
     <ClCompile Include="..\..\labels.c" />
@@ -112,6 +113,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\cfg.h" />
     <ClInclude Include="..\..\config.h" />
+    <ClInclude Include="..\..\decode.h" />
     <ClInclude Include="..\..\irq.h" />
     <ClInclude Include="..\..\labels.h" />
     <ClInclude Include="..\..\message.h" />
