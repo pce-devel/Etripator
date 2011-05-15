@@ -31,6 +31,7 @@ int main(int argc, char** argv)
   unsigned int size;
   unsigned int i;
   int err, failure;
+  SECTION_ERR serr;
 
   CommandLineOptions cmdOptions;
 
@@ -53,8 +54,8 @@ int main(int argc, char** argv)
   sectionCount = cmdOptions.extractIRQ ? 5 : 0;
   section      = NULL;
 
-  err = readSectionsFromCFG(cmdOptions.cfgFileName, &section, &sectionCount);
-  if(!err)
+  serr = readSectionsFromCFG(cmdOptions.cfgFileName, &section, &sectionCount);
+  if(serr != SECTION_OK)
   {
   	fprintf(stderr,"Unable to read %s.\n", cmdOptions.cfgFileName);
   	goto error_1;

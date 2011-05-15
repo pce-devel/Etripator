@@ -11,6 +11,9 @@
 #include <stdio.h>
 
 #if defined(_MSC_VER)
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+
 #include "platform/windows/getopt_win.h"
 #include "platform/windows/stdint.h"
 #else

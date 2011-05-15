@@ -1,12 +1,6 @@
 #include "section.h"
 #include "labels.h"
-
-#ifdef _MSC_VER
-#define strncasecmp _strnicmp
-#define strcasecmp _stricmp
-#endif
-
-#define TOKEN_COUNT 6
+#include "cfg.h"
 
 static const char* supportedSectionTypeName[] =
 {
@@ -127,19 +121,7 @@ static int validateId(const char* value, Section *currentSection)
 	return 1;
 }
 
-static struct
-{
-	const char* key;
-	int (*validate)(const char* value, Section* section); 
-} sectionValidator [TOKEN_COUNT] =
-{
-	{ "type",   validateType},
-	{ "bank",   validateBank},
-	{ "org",    validateOrg},
-	{ "offset", validateOffset},
-	{ "size",   validateSize},
-	{ "id",     validateId}
-};
+#define KEY_COUNT 6
 
 #define TYPE_MASK   1
 #define BANK_MASK   (1<<1)
@@ -148,30 +130,108 @@ static struct
 #define SIZE_MASK   (1<<4)
 #define ID_MASK     (1<<5)
 
-static int validateTuple(const char *key, const char *value, uint32_t *flag, Section* currentSection)
+/**
+ * \brief CFG key parsing helper
+ */
+typedef struct
 {
-	int i;
-	for(i=0; i<TOKEN_COUNT; ++i)
+	const char* key;
+	int (*validate)(const char* value, Section* section); 
+} KeyValidator;
+
+ /**
+  * \brief Helper structure for CFG parsing of sections.
+  */
+ struct SectionValidator
+ {
+	Section*      section;      /**< Section array. */
+	size_t        sectionCount; /**< Number of processed sections. */
+	size_t        capacity;     /**< Section array element count. */
+	Section*      current;      /**< Current section being processed. */
+	uint32_t      flag;         /**< Bitfield where each bit corresponds to a specific key. */
+	int           keyCount;     /**< Number of supported key count. */
+	KeyValidator* keyChecker;   /**< . Set of key validators. */
+ };
+
+/*
+ * \brief Expand section array.
+ *
+ * \param validator  contains the section array to expand.
+ * \return
+ *     SECTION_MEMORY_ISSUE if reallocation failed.
+ *     SECTION_OK if the section array was succesfully expanded.
+ */
+static SECTION_ERR ExpandSection(struct SectionValidator* validator)
+{
+	int count = validator->capacity + 4;
+	Section *tmp;
+
+	tmp = (Section*)malloc(count * sizeof(Section));
+	if(tmp == NULL)
 	{
-		if(strcmp(sectionValidator[i].key, key) == 0)
+		return SECTION_MEMORY_ISSUE;
+	}
+	
+	validator->current = tmp + (validator->current - validator->section);
+
+	if(validator->section != NULL)
+	{
+		memcpy(tmp, validator->section, validator->capacity * sizeof(Section));	
+		free(validator->section);
+	}
+
+	validator->capacity = count;
+	validator->section  = tmp;
+	
+	return SECTION_OK;
+}
+
+/**
+ * \brief Section start callback
+ *
+ * \param data         Section validator
+ * \param sectionName  Section name
+ * \return 0 if an error occured, 1 on success
+ */
+static int beginCFGSection(void *data, const char* sectionName)
+{
+	struct SectionValidator *validator = (struct SectionValidator*)data;
+
+	if(validator->sectionCount == validator->capacity)
+	{
+		if(ExpandSection(validator) != SECTION_OK)
 		{
-			if(*flag & (1 << i))
-			{
-				fprintf( stderr, "[error] %s already set\n", key );
-				return 0;
-			}
-			*flag |= (1 << i);
-			return sectionValidator[i].validate(value, currentSection);
+			return 0;
 		}
 	}
-	return 0;
+
+	validator->current        = validator->section + validator->sectionCount;
+	validator->current->bank  = 0;
+	validator->current->org   = 0;
+	validator->current->start = 0;
+	validator->current->size  =-1;
+	validator->current->id    = validator->sectionCount;
+	validator->current->name  = strdup(sectionName);
+
+	validator->flag  = 0;
+
+	++validator->sectionCount;
+
+	return 1;
 }
 
 /*
- * Check section attributes and compute start offset if needed.
+ * \brief Check section attributes and compute start offset if needed.
+ * \param data         Section validator
+ * \return 0 if an error occured, 1 on success
  */
- static int finalizeSection( uint32_t flag, Section* currentSection )
+ static int finalizeCFGSection( void *data )
  {
+	struct SectionValidator *validator = (struct SectionValidator*)data;
+
+	uint32_t flag           = validator->flag;
+	Section *currentSection = validator->current;
+
 	if( !(flag & (TYPE_MASK)) )
 	{
 		fprintf( stderr, "[%s] : missing type.\n", currentSection->name );
@@ -204,105 +264,95 @@ static int validateTuple(const char *key, const char *value, uint32_t *flag, Sec
 	return 1;
  }
 
-/*
- * Extract sections from a CFG file
- */ 
-int readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount)
+/**
+ * \brief Validate current key value pair.
+ * \param data   Pointer to current section validator.
+ * \param key    Key string.
+ * \param value  Value string.
+ * \return 0 on error, 1 on sucess.
+ */
+static int validateCFGTuple(void *data, const char* key, const char* value)
 {
-	FILE *stream;
-	int ret, nMatched, line;
-	long last;
-	uint32_t flag;
-	Section *current;
-	char filename[33], key[17], value[65];
-	size_t capacity;
-	
-	/* Some sections at the beginning of the array may be reserved */
-	capacity = *iSectionCount + 4;
-	
-	/* Open file */
-	stream = fopen( iFileName, "rb" );
-	if( stream == NULL )
+	struct SectionValidator *validator = (struct SectionValidator*)data;
+
+	int i;
+	for(i=0; i<validator->keyCount; ++i)
 	{
-		fprintf( stderr, "Unable to open %s\n", iFileName );
-		return 0;
-	}
-
-	/* Allocate sections */
-	*iSection = (Section*)malloc(capacity * sizeof(Section));
-	current = *iSection + *iSectionCount;
-
-	line = 0;
-	nMatched = 1;
-	ret = 1;
-	while( nMatched != EOF )
-	{
-		flag = 0;
-		
-		current->bank  = 0;
-		current->org   = 0;
-		current->start = 0;
-		current->size  =-1;
-		current->id    = *iSectionCount;
-
-		nMatched = fscanf( stream, " [ %32[a-zA-Z0-9._-] ] \n", filename );
-		if( nMatched != 1 )
+		if(strcmp(validator->keyChecker[i].key, key) == 0)
 		{
-			fprintf( stderr, "[%s:%d] Unable to parse.\n", iFileName, line);
-			ret = 0;
-			break;
-		}
-		++line;
-		current->name = strdup( filename );
-		
-		while(1)
-		{
-			last = ftell( stream );
-			nMatched = fscanf( stream, " %16[a-zA-Z] = %32[0-9a-zA-Z_] \n", key, value );
-			if( nMatched != 2 )
-				break;
-				
-			ret = validateTuple(key, value, &flag, current);
-			if(!ret)
+			if(validator->flag & (1 << i))
 			{
-				fprintf(stderr, "[%s:%d] Wrong key/pair (%s,%s)\n", iFileName, line, key, value);
-				break;
-			}
-
-			++line;
-		}
-		ret = finalizeSection( flag, current );
-		if(!ret)
-		{
-			break;
-		}
-		
-		*iSectionCount += 1;
-		if(*iSectionCount < capacity)
-		{
-			Section *tmp;
-			
-			capacity += 4;
-			tmp = (Section*)realloc( *iSection, capacity * sizeof(Section));
-			if(tmp == NULL)
-			{
-				fprintf( stderr, "Unable to realloc :(\n" );
-				free(*iSection);
-				*iSection = NULL;
-				*iSectionCount = 0;
+				fprintf( stderr, "[error] %s already set\n", key );
 				return 0;
 			}
-			*iSection = tmp;
+			validator->flag |= (1 << i);
+			return validator->keyChecker[i].validate(value, validator->current);
 		}
-
-		current = *iSection + *iSectionCount;
-		
-		fseek( stream, last, SEEK_SET );
 	}
-	
-	fclose(stream);
-	return ret;
+
+	return 0;
 }
+
+/*
+ * \brief Extract sections from a CFG file
+ *
+ * \param iFileName     CFG file name
+ * \param iSection      Section array (in/out)
+ * \param iSectionCount Number of read sections (in/out)
+ * \return SECTION_OK on success.
+ */ 
+SECTION_ERR readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount)
+{
+	struct CFGPayload payload;
+	struct SectionValidator validator;
+
+	CFG_ERR cfgErr;
+	SECTION_ERR sectionErr;
+
+	static KeyValidator keyCheckers[KEY_COUNT] =
+	{
+		{ "type",   validateType},
+		{ "bank",   validateBank},
+		{ "org",    validateOrg},
+		{ "offset", validateOffset},
+		{ "size",   validateSize},
+		{ "id",     validateId}
+	};
+
+	validator.capacity     = *iSectionCount;
+	validator.sectionCount = *iSectionCount;
+	validator.current      = (Section*)(*iSectionCount); 
+	validator.section      = NULL;
+	validator.keyCount     = KEY_COUNT;
+	validator.keyChecker   = keyCheckers;
+
+	sectionErr = ExpandSection(&validator);
+	if(sectionErr != SECTION_OK)
+	{
+		return sectionErr;
+	}
+
+	payload.data                 = &validator;
+	payload.keyValueCallback     = validateCFGTuple;
+	payload.beginSectionCallback = beginCFGSection;
+	payload.endSectionCallback   = finalizeCFGSection;
+	
+	cfgErr = ParseCFG(iFileName, &payload);
+	if(cfgErr != CFG_OK)
+	{
+		return SECTION_PARSING_ERROR;
+	}
+
+	*iSectionCount = validator.sectionCount;
+	*iSection      = validator.section;
+
+	return SECTION_OK;
+}
+
+
+
+
+
 
 /*
  * Initialize section processor

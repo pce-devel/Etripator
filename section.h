@@ -4,6 +4,19 @@
 #include "config.h"
 #include "labels.h"
 
+/**
+ * \brief Section related errors
+ */
+typedef enum
+{
+	SECTION_OK = 0,                  /*< Success. */
+	SECTION_INVALID_PARAMETERS,      /*< At least one of the parameter has an invalid value. */
+	SECTION_PARSING_ERROR,           /*< Todo . */
+	SECTION_MEMORY_ISSUE             /*< Something went wrong with the memory. */
+} SECTION_ERR;
+
+/**
+
 /*
  * Section :
  *   Define a ROM area.
@@ -29,12 +42,10 @@ enum SectionType {
 /*
  * Extract sections from a CFG file
  */ 
-int readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount);
+SECTION_ERR readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount);
 
-/*
- * Extract sections from a config file
- */
-int readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount);
+
+
 
 /*
  *

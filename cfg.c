@@ -382,6 +382,8 @@ CFG_ERR ParseCFG(const char* filename, struct CFGPayload* payload)
 
 		if((err == CFG_FILE_EOF) && (parser.sectionCount))
 		{
+			err = CFG_OK;
+			
 			if(payload->endSectionCallback(payload->data) <= 0)
 			{
 				err = CFG_SECTION_CALLBACK_FAILED;
