@@ -25,6 +25,11 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <ctype.h>
+
+#ifndef APIENTRY
+#define APIENTRY
+#endif
+
 #endif
 
 #endif // CONFIG_H

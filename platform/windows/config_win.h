@@ -5,12 +5,15 @@
 
 #pragma warning(disable : 4996)
 
+#include <Windows.h>
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
+#define snprintf _snprintf
 
 #include "getopt_win.h"
 #include "stdint.h"
