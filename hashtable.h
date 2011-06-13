@@ -49,15 +49,26 @@ void SLDestroy(SkipList* list);
 int SLAdd(SkipList* list, const char* key, size_t keyLen, uintptr_t value);
 
 /**
+ * \brief Delete an element from the list.
+ *
+ * \param list   Skip list where the value is supposed to be stored.
+ * \param key    Hash key of the element to be deleted.
+ * \param keyLen Length of the hash key.
+ * \param result Retrieved value.
+ * \return 0 if the element was not found, 1 if the element was successfully deleted.
+ */
+int SLDelete(SkipList* list, const char* key, size_t keyLen, uintptr_t *value);
+
+/**
  * \brief Find the value associated to the key.
  *
  * \param list   Skip list where the value is supposed to be stored.
- * \param result Retrieved value.
  * \param key    Hash key.
  * \param keyLen Length of the hash key.
+ * \param result Retrieved value.
  * \return 0 if the element was not found, 1 otherwise.
  */
-int SLFind(const SkipList* list, uintptr_t *result, const char* key, size_t keyLen);
+int SLFind(const SkipList* list, const char* key, size_t keyLen, uintptr_t *result);
 
 
 #endif // HASHTABLE_H

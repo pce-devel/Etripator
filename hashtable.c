@@ -10,6 +10,7 @@
  */
 uint32_t Murmur3( const char *key, size_t len, uint32_t seed )
 {
+	// TODO _rotl under gcc?
     #define mmix3(h,k) do { k *= m1; k = _rotl(k,r1); k *= m2; h *= 3; h ^= k; } while(0);
  
     const uint32_t m1 = 0x0acffe3d, m2 = 0x0e4ef5f3, m3 = 0xa729a897;
@@ -55,7 +56,7 @@ static int RandomLevel(void)
 	while( !(u = CMWC4096()) )
 	{}
 
-
+	// TODO : platform specific code
 #if defined(_MSC_VER)
 	ret   = _BitScanForward(&index, u);
 	level = (index & 0xffffffff);
@@ -186,15 +187,69 @@ int SLAdd(SkipList* list, const char* key, size_t keyLen, uintptr_t value)
 }
 
 /**
+ * \brief Delete an element from the list.
+ *
+ * \param list   Skip list where the value is supposed to be stored.
+ * \param key    Hash key of the element to be deleted.
+ * \param keyLen Length of the hash key.
+ * \param result Retrieved value.
+ * \return 0 if the element was not found, 1 if the element was successfully deleted.
+ */
+int SLDelete(SkipList* list, const char* key, size_t keyLen, uintptr_t *value)
+{
+	SkipListNode *update[MAX_LEVEL];
+	SkipListNode *current = list->head;
+	uint32_t hash;
+	int i;
+
+	memset(update, 0, MAX_LEVEL * sizeof(SkipListNode*));
+
+	hash = Murmur3(key, keyLen, HASH_SEED);
+	
+	for(i=current->level-1; i>=0; i--)
+	{
+		while((current->next[i] != NULL) && (current->next[i]->hash < hash))
+		{
+			current = current->next[i];
+		}
+		update[i] = current;
+	}
+
+	current = current->next[0];
+
+	if((current != NULL) && (current->hash == hash))
+	{
+		*value = current->value;
+
+		for(i=0; i<list->level; i++)
+		{
+			if(update[i]->next[i] != current)
+				break;
+			update[i]->next[i] = current->next[i];
+		}
+
+		free(current);
+
+		for(; (list->level) && (list->head->next[list->level] == NULL); list->level--)
+		{}
+
+		return 1;
+	}
+
+	*value = 0;
+	return 0;
+}
+
+/**
  * \brief Find the value associated to the key.
  *
  * \param list   Skip list where the value is supposed to be stored.
- * \param result Retrieved value.
  * \param key    Hash key.
  * \param keyLen Length of the hash key.
+ * \param result Retrieved value.
  * \return 0 if the element was not found, 1 otherwise.
  */
-int SLFind(const SkipList* list, uintptr_t* result, const char* key, size_t keyLen)
+int SLFind(const SkipList* list, const char* key, size_t keyLen, uintptr_t* result)
 {
 	SkipListNode *current;
 	int i;
