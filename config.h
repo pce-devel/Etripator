@@ -30,6 +30,10 @@
 #define APIENTRY
 #endif
 
+#ifndef ARCH_API
+#define ARCH_API
+#endif
+
 #endif
 
 #endif // CONFIG_H

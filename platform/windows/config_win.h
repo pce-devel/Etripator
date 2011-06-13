@@ -26,4 +26,10 @@
 #include <limits.h>
 #include <ctype.h>
 
+#ifdef ARCH_EXPORTS
+#define ARCH_API __declspec(dllexport)
+#else
+#define ARCH_API __declspec(dllimport)
+#endif
+
 #endif // CONFIG_WIN_H
