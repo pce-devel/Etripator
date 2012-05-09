@@ -5,8 +5,8 @@
 #include "labels.h"
 
 /**
- * \brief Section related errors
- */
+ * Section related errors
+ **/
 typedef enum
 {
 	SECTION_OK = 0,                  /*< Success. */
@@ -16,12 +16,9 @@ typedef enum
 } SECTION_ERR;
 
 /**
-
-/*
- * Section :
  *   Define a ROM area.
  * 	 This area can contain data or code.
- */
+ **/
 struct Section_ {
 	char     type;  /* type (defined below) */
 	char*    name;  /* name */
@@ -39,9 +36,9 @@ enum SectionType {
 	CODE
 };
 
-/*
+/**
  * Extract sections from a CFG file
- */ 
+ **/ 
 SECTION_ERR readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount);
 
 #endif // _SECTION_H_

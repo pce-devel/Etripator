@@ -1,54 +1,73 @@
-
 CC      := gcc
-INSTALL := ginstall
 ECHO    := echo
-RM      := /bin/rm
+RM      := rm
 CD      := cd
 TAR     := tar
 
-CFLAGS := $(CFLAGS) -W -Wall -g -DDEBUG 
+BUILD_DIR := build/GNU
+
+OUTDIR := $(BUILD_DIR)
+CFLAGS  := -W -Wall
+DEBUG   ?= 0
+ifeq ($(DEBUG), 1)
+	OUTDIR := $(OUTDIR)/Debug
+	CFLAGS += -g -DDEBUG
+else
+	OUTDIR := $(OUTDIR)/Release
+	CFLAGS += -O2
+endif
+OBJDIR := $(OUTDIR)/obj
 
 LIBS   :=  -lm
 
-EXE_SRC := rbtree.c csv.c section.c opcodes.c labels.c irq.c options.c etripator.c
-EXE_OBJ := $(EXE_SRC:.c=.o)
-EXE     := etripator
+EXE_SRC := message.c decode.c cfg.c section.c opcodes.c labels.c irq.c options.c etripator.c
+OBJS    := $(EXE_SRC:.c=.o)
+EXE_OBJ := $(addprefix $(OBJDIR)/, $(OBJS))
+EXE     := $(OUTDIR)/etripator
 
-DEPEND := .depend
+DEPEND = .depend
 
-all :: $(EXE)
+all: $(EXE)
 
-dep :: $(DEPEND)
+dep: $(DEPEND)
 
-$(DEPEND) ::
+$(DEPEND):
 	@$(ECHO) "  MKDEP"
 	@$(CC) -MM -MG $(CFLAGS) $(EXE_SRC) > $(DEPEND)
 
-$(EXE) :: $(EXE_OBJ)
+$(EXE): $(EXE_OBJ)
 	@$(ECHO) "  LD        $@"
 	@$(CC) -o $(EXE) $^ $(LIBS)
 
-%.o :: %.c
+$(OBJDIR)/%.o: %.c
 	@$(ECHO) "  CC        $@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-install ::
+$(EXE_OBJ): | $(OBJDIR) $(OUTDIR)
 
-clean :: FORCE
+$(OUTDIR):
+	@mkdir  -p $(OUTDIR)
+
+$(OBJDIR):
+	@mkdir  -p $(OBJDIR)
+
+install:
+
+clean: FORCE
 	@$(ECHO) "  CLEAN     object files"
-	@$(RM) -f $(EXE_OBJ) 
+	@find $(BUILD_DIR) -name "*.o" -exec $(RM) -f {} \;
 
-realclean :: clean
+realclean: clean
 	@$(ECHO) "  CLEAN     $(EXE)"
 	@$(RM) -f $(EXE)
 	@$(ECHO) "  CLEAN     noise files"
 	@$(RM) -f `find . -name "*~" -o -name "\#*"`
 
-c :: clean
+c: clean
 
-rc :: realclean
+rc: realclean
 
-archive :: realclean
+archive: realclean
 	@$(ECHO) "  TBZ2      `date +"%Y/%m/%d"`"
 	@$(CD) ..; $(TAR) jcf etripator-`date +"%Y%m%d"`.tar.bz2 same
 

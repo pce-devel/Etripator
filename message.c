@@ -56,11 +56,7 @@ static void PrintMsgFile(MessageType msgType, const char* file, size_t line, con
 {
 	va_list argList;
 
-#ifdef DEBUG
 	fprintf(g_Stream, "%s %s:%d %s : ", g_MessageTypeLabel[msgType], file, line, function);
-#else
-	fprintf(g_Stream, "%s ", g_MessageTypeLabel[msgType]);
-#endif // DEBUG
 
 	va_start(argList, format);
 	vfprintf(g_Stream, format, argList);

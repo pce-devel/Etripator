@@ -151,7 +151,7 @@ int main(int argc, char** argv)
 
 			if(!cmdOptions.extractIRQ)
 			{
-				if((processor.fileOffset - processor.processed->start) >= processor.processed->size)
+				if((size_t)(processor.fileOffset - processor.processed->start) >= processor.processed->size)
 					eor = 1;
 				else
 					eor = 0;
