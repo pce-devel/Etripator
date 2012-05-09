@@ -14,7 +14,6 @@
     <ClCompile Include="..\..\labels.c" />
     <ClCompile Include="..\..\opcodes.c" />
     <ClCompile Include="..\..\options.c" />
-    <ClCompile Include="..\..\rbtree.c" />
     <ClCompile Include="..\..\section.c" />
     <ClCompile Include="getopt1.c">
       <Filter>platform\windows</Filter>
@@ -31,7 +30,6 @@
     <ClInclude Include="..\..\labels.h" />
     <ClInclude Include="..\..\opcodes.h" />
     <ClInclude Include="..\..\options.h" />
-    <ClInclude Include="..\..\rbtree.h" />
     <ClInclude Include="..\..\section.h" />
     <ClInclude Include="getopt_win.h">
       <Filter>platform\windows</Filter>

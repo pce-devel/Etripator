@@ -41,7 +41,7 @@ brackets. The supported fields are :
 	                     no 'offset' field.
 	* offset           : file offset. This field is useful for CD-ROM
 	                     disassembly.
-	* size             : section size. For code section, a negative (or
+	* size             : section size. For code section, a zero (or
 	                     missing size) means that the disassembly will
 	                     stop when a RTS or RTI instruction is found.
 	                     This field is mandatory for data sections.
@@ -149,29 +149,3 @@ vector table.
         .dw $e0a2
 
 Recompile it with pceas and voila! :p
-
-! OBSOLETE CONFIGURATION USING CSV FILES
------------------------------------------
-
-file.csv contains the description of rom sections to dump or 
-disassemble.
-There are 3 kind of sections: code ,bin_data and inc_data. For each
-section, you specify the base offset (org)  and its size.
-For code section, a negative size means that the disassembly will stop
-when a RTS or RTI instruction is found. The file syntax is as follow :
-
-type;name;bank;org;size
-
-Each section will be dumped into a file called "name".
-"type" is either code or data.
-"bank" is the bank of the section.
-"org" is the org the section.
-"size" is the size of the section.
-
-Note that the csv file can be empty.
-
-Whatever section you specify, the interrupt vectors will be disassembled
-and dumped into files: irq_1, irq_2, irq_nmi, irq_timer and irq_reset.
-
-data sections are dumped into raw binary format (bin_data) or in asm
-code (inc_data).

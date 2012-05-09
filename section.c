@@ -210,7 +210,7 @@ static int beginCFGSection(void *data, const char* sectionName)
 	validator->current->bank  = 0;
 	validator->current->org   = 0;
 	validator->current->start = 0;
-	validator->current->size  =-1;
+	validator->current->size  = 0;
 	validator->current->id    = validator->sectionCount;
 	validator->current->name  = strdup(sectionName);
 
@@ -256,7 +256,7 @@ static int beginCFGSection(void *data, const char* sectionName)
 		currentSection->start = (currentSection->bank << 13) | (currentSection->org & 0x1fff);
 	}
 
-	if((currentSection->type != CODE) && (currentSection->size <= 0))
+	if((currentSection->type != CODE) && (currentSection->size == 0))
 	{
 		ERROR_MSG("[%s] Automatic section size detection doesn't work for data.\n", currentSection->name);
 		return 0;

@@ -147,7 +147,7 @@ static CFG_ERR ReadLine(struct CFGParser* parser)
 	}
 
 	// Read the rest of the line
-	while( (nRead) && (byte != '\n') )
+	while( (nRead) && (byte != '\n') && (byte != '\r') )
 	{
 		*(ptr++) = byte;
 		

@@ -99,8 +99,7 @@ int processDataSection(SectionProcessor* iProcessor)
 	}
 	else
 	{
-		size_t  nRead, size;
-		int32_t total;
+		size_t  nRead, size, total;
 	
 		/* Allocate buffer if needed */
 		if(iProcessor->buffer == NULL)
@@ -135,7 +134,7 @@ int processDataSection(SectionProcessor* iProcessor)
 /* Parse section to identify potential labels */
 int getLabels(SectionProcessor* iProcessor)
 {
-	int32_t nBytesProcessed;
+	size_t nBytesProcessed;
 	unsigned char inst, data[6], eor;
 	uint16_t labelOffset, offset;
 	int delta,i=0;
@@ -208,10 +207,13 @@ int getLabels(SectionProcessor* iProcessor)
 		}
 		
 		/* Search end of section */
-		if( (section->size < 0) && ((inst == 0x40) || (inst == 0x60)) )
+		if(section->size == 0)
 		{
-			section->size = nBytesProcessed;
-			eor            = 1;
+			if((inst == 0x40) || (inst == 0x60))
+			{
+				section->size = nBytesProcessed;
+				eor            = 1;
+			}
 		}
 		else if( nBytesProcessed >= section->size )
 		{

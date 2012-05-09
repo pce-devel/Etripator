@@ -28,7 +28,7 @@ struct Section_ {
 	uint8_t  bank;  /* rom bank */
 	uint16_t org;   /* org */
 	off_t    start; /* start address (file offset in bytes) */
-	int32_t  size;  /* section size */
+	size_t   size;  /* section size */
 	uint8_t  id;    /* section id */
 };
 typedef struct Section_ Section;
