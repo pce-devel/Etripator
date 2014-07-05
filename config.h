@@ -26,9 +26,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
 
-#define strncasecmp _strnicmp
-#define strcasecmp _stricmp
+//#define strncasecmp _strnicmp
+//#define strcasecmp _stricmp
 
 #include <unistd.h>
 #include <getopt.h>
