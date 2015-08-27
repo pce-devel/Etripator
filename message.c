@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2012 Vincent Cruz.
+    copyright (c) 2009--2015 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ static void PrintMsgFile(MessageType msgType, const char* file, size_t line, con
 {
 	va_list argList;
 
-	fprintf(g_Stream, "%s %s:%d %s : ", g_MessageTypeLabel[msgType], file, line, function);
+	fprintf(g_Stream, "%s %s:%zd %s : ", g_MessageTypeLabel[msgType], file, line, function);
 
 	va_start(argList, format);
 	vfprintf(g_Stream, format, argList);
