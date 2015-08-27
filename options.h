@@ -23,11 +23,11 @@
 /* Command line options */
 struct CommandLineOptions_
 {
-	uint8_t extractIRQ;
-	uint8_t cdrom;
-	char *cfgFileName;
-	char *romFileName;
-	char *mainFileName;
+    uint8_t extractIRQ;
+    uint8_t cdrom;
+    char *cfgFileName;
+    char *romFileName;
+    char *mainFileName;
 };
 typedef struct CommandLineOptions_ CommandLineOptions;
 

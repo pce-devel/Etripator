@@ -180,7 +180,7 @@ int getLabels(SectionProcessor* iProcessor)
 	while(!eor)
 	{
 		/* Read instruction */
-		fread(&inst, 1, 1, iProcessor->in);
+		fread(&inst, 1, 1, in);
 
 		/* Read data */
 		if(pce_opcode[inst].size > 1)
