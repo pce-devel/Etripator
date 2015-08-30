@@ -23,8 +23,8 @@
  *  4096 is the initial random value.
  *
  *  Reference : 
- *		* http://groups.google.com/group/comp.lang.c/browse_thread/thread/a9915080a4424068/?pli=1
- *		* http://groups.google.com/group/sci.crypt/browse_thread/thread/305c507efbe85be4?pli=1
+ *      * http://groups.google.com/group/comp.lang.c/browse_thread/thread/a9915080a4424068/?pli=1
+ *      * http://groups.google.com/group/sci.crypt/browse_thread/thread/305c507efbe85be4?pli=1
  */
 unsigned long CMWC4096(void);
 
