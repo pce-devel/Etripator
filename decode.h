@@ -20,28 +20,27 @@
 
 #include "config.h"
 #include "section.h"
+#include "rom.h"
 
 /*
  *
  */
 struct SectionProcessor_
 {
-	Section  *processed;    /* Section being processed */
-	FILE     *in;           /* Input file (rom or cd image) */
-	FILE     *out;          /* Output */
-	off_t	 fileOffset;    /* Current offset in file (will save us calling ftell everytime) */
-	uint16_t orgOffset;     /* Offset in section org */
-	uint8_t  page;          /* Memory page (MPR) */
+    Section  *processed;    /* Section being processed */
+    ROM      *rom;          /* Input ROM */
+    FILE     *out;          /* Output */
 
-	/* Used for code output */
-	uint8_t	instruction;    /* Current instruction */
-	uint8_t data[6];        /* Associated data (its size depends on the instruction) */
-		
-	uint16_t        labelIndex;      /* current label */
-	LabelRepository labelRepository; /* label repository for this section */
+    off_t    physicalAddr; /* Physical address. */
+    uint16_t logicalAddr;  /* Logical address. */
 
-	/* Used for raw binary data output */
-	uint8_t *buffer;       /* Data buffer */
+    off_t   offset;         /* Current section offset */
+
+    uint16_t        labelIndex;      /* current label */
+    LabelRepository labelRepository; /* label repository for this section */
+
+    /* Used for raw binary data output */
+    uint8_t *buffer;       /* Data buffer */
 };
 typedef struct SectionProcessor_ SectionProcessor;
 
@@ -53,7 +52,7 @@ int initializeSectionProcessor(SectionProcessor*);
 /*
  * Reset section processor
  */
-void resetSectionProcessor(FILE*, FILE*, Section*, SectionProcessor*);
+void resetSectionProcessor(ROM*, FILE*, Section*, SectionProcessor*);
   
 /*
  * Delete section processor

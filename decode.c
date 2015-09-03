@@ -23,41 +23,36 @@
  */
 int initializeSectionProcessor(SectionProcessor* iProcessor)
 {
-	iProcessor->processed = NULL;
-	iProcessor->in        = NULL;
-	iProcessor->out       = NULL;
-	
-	iProcessor->fileOffset = 0;
-	iProcessor->orgOffset  = 0;
-	iProcessor->page       = 0;
+    iProcessor->processed = NULL;
+    iProcessor->rom       = NULL;
+    iProcessor->out       = NULL;
 
-	iProcessor->instruction = 0,
-	memset(iProcessor->data, 0, 6);
-	
-	iProcessor->buffer      = NULL;
-	iProcessor->labelIndex  = 0;
-	return initializeLabelRepository(&iProcessor->labelRepository);
+    iProcessor->physicalAddr = 0;
+    iProcessor->logicalAddr = 0;
+
+    iProcessor-> offset = 0;
+
+    iProcessor->buffer      = NULL;
+    iProcessor->labelIndex  = 0;
+    return initializeLabelRepository(&iProcessor->labelRepository);
 }
 
 /*
  * Reset section processor
  */
-void resetSectionProcessor(FILE* iIn, FILE* iOut, Section* iProcessed, SectionProcessor* iProcessor)
+void resetSectionProcessor(ROM* iRom, FILE* iOut, Section* iProcessed, SectionProcessor* iProcessor)
 {
-	iProcessor->processed = iProcessed;
-	iProcessor->in        = iIn;
-	iProcessor->out       = iOut;
+    iProcessor->processed = iProcessed;
+    iProcessor->rom       = iRom;
+    iProcessor->out       = iOut;
 
-	iProcessor->fileOffset = iProcessed->start;
-	iProcessor->orgOffset  = iProcessed->org;
-	iProcessor->page       = (iProcessed->org >> 13) & 0x07;
-	fseek(iIn, iProcessed->start, SEEK_SET);
+    iProcessor->physicalAddr = (iProcessed->bank << 13) | (iProcessed->org & 0x1fff);
+    iProcessor->logicalAddr  = iProcessed->org;
 
-	iProcessor->instruction = 0,
-	memset(iProcessor->data, 0, 6);
+    iProcessor-> offset = 0;
 
-	iProcessor->labelIndex = 0;
-	resetLabelRepository(&iProcessor->labelRepository);
+    iProcessor->labelIndex = 0;
+    resetLabelRepository(&iProcessor->labelRepository);
 }
   
 /*
@@ -65,13 +60,13 @@ void resetSectionProcessor(FILE* iIn, FILE* iOut, Section* iProcessed, SectionPr
  */
 void deleteSectionProcessor(SectionProcessor* iProcessor)
 {
-	if(iProcessor->buffer != NULL)
-	{
-		free(iProcessor->buffer);
-		iProcessor->buffer = NULL;
-	}
+    if(iProcessor->buffer != NULL)
+    {
+        free(iProcessor->buffer);
+        iProcessor->buffer = NULL;
+    }
 
-	deleteLabelRepository(&iProcessor->labelRepository);
+    deleteLabelRepository(&iProcessor->labelRepository);
 }
 
 /*
@@ -79,185 +74,141 @@ void deleteSectionProcessor(SectionProcessor* iProcessor)
  */
 int processDataSection(SectionProcessor* iProcessor)
 {
-	int j;
-	char eor = 0;
-	off_t fileEnd;
-	
-	fileEnd = iProcessor->processed->start + iProcessor->processed->size;
-	
-	if(iProcessor->processed->type == INC_DATA)
-	{
-		uint8_t data[8];
-					
-		while(!eor) {
-			fprintf(iProcessor->out, "  .db ");
-			/* Read data */
-			fread(data, 1, 8, iProcessor->in);
+    uint8_t data;
+    int     i;
+    off_t   addr;
+    if(iProcessor->processed->type == INC_DATA)
+    {
+        int j;
+        for(i=iProcessor->processed->size, addr=iProcessor->physicalAddr; i>0; )
+        {
+            fprintf(iProcessor->out, "  .db ");
 
-			j=0;
-			while(1)
-			{
-				fprintf(iProcessor->out, "$%02x", data[j]);
-
-				++j;
-				++iProcessor->fileOffset;
-				if((j<8) && (iProcessor->fileOffset < fileEnd))
-					fprintf(iProcessor->out, ", ");
-				else
-				{
-					fprintf(iProcessor->out, "\n");
-					break;
-				}
-			}
-
-			if(iProcessor->fileOffset >= fileEnd)
-				eor  = 1;
-		}
-	}
-	else
-	{
-		size_t  nRead, size, total;
-	
-		/* Allocate buffer if needed */
-		if(iProcessor->buffer == NULL)
-		{
-			iProcessor->buffer = (uint8_t*)malloc(256);
-			if(iProcessor->buffer == NULL)
-			{
-				ERROR_MSG("Allocation failed : %s", strerror(errno));
-				return 0;
-			}
-		}
-
-		/* Copy data to binary file */
-		for(total=0; total < iProcessor->processed->size; total += nRead)
-		{
-			size = iProcessor->processed->size - total;
-			if(size > 256)
-				size = 256;
-			if(size == 0)
-				break;
-		
-			nRead = fread(iProcessor->buffer, 1, size, iProcessor->in);
-			if(nRead == 0)
-				break;
-			fwrite(iProcessor->buffer, 1, nRead, iProcessor->out);
-		}
-	}
-	
-	return 1;
+            for(j=0; (i>0) && (j<8); j++, i--)
+            {
+                data = readROM(iProcessor->rom, addr++);
+                fprintf(iProcessor->out, "$%02x%c", data, (i>1) ? ',' : '\n');
+            }
+        }
+    }
+    else
+    {
+        for(i=iProcessor->processed->size, addr=iProcessor->physicalAddr; i>0; i--)
+        {
+            data = readROM(iProcessor->rom, addr++);
+            fwrite(&data, 1, 1, iProcessor->out);
+        }
+    }
+    return 1;
 }
 
 /* Parse section to identify potential labels */
 int getLabels(SectionProcessor* iProcessor)
 {
-	size_t nBytesProcessed;
-	unsigned char inst, data[6], eor;
-	uint16_t labelOffset, offset;
-	int delta,i=0;
+    int eor, i;
+    uint8_t inst;
+    uint8_t data[6];
+    
+    off_t    addr;
+    off_t    end;
+    uint16_t logical, offset;
+    
+    LabelRepository *repository = &(iProcessor->labelRepository);
+    Section *section = iProcessor->processed;
 
-	LabelRepository *repository = &(iProcessor->labelRepository);
-	Section *section = iProcessor->processed;
-	FILE    *in      = iProcessor->in;
+    if(CODE != section->type)
+        return 1;
 
-	if(section->type != CODE)
-		return 1;
-		
-	printf("\n%s:\n", section->name);
+    addr = iProcessor->physicalAddr;
+    end  = addr + section->size;
+    logical = iProcessor->logicalAddr;
 
-	nBytesProcessed = 0;
-	offset          = section->org;
-	
-	/* Jump to section start */
-	fseek(in, section->start, SEEK_SET);
-		
-	/* Push the section org */
-	if(pushLabel(repository, offset) == 0)
-		return 0;
+    printf("\n%s:\n", section->name);
 
-	/* Walk along section */
-	eor    = 0;
-	while(!eor)
-	{
-		/* Read instruction */
-		fread(&inst, 1, 1, in);
+    /* Push the section org */
+    if(pushLabel(repository, logical) == 0)
+        return 0;
 
-		/* Read data */
-		if(pce_opcode[inst].size > 1)
-		{
-			fread(data, 1, pce_opcode[inst].size-1, in);
-		}
-		
-		nBytesProcessed += pce_opcode[inst].size;
-		offset          += pce_opcode[inst].size;
+    /* Walk along section */
+    eor = 0;
+    while(!eor)
+    {
+        /* Read instruction */
+        inst = readROM(iProcessor->rom, addr++);
+        /* Read data (if any) */
+        for(i=0; i<(pce_opcode[inst].size-1); i++)
+        {
+            data[i] = readROM(iProcessor->rom, addr++);
+        }
 
-		if(isLocalJump(inst))
-		{
+        if(isLocalJump(inst))
+        {
+            int delta;
+            /* For BBR* and BBS* displacement is stored in the 2nd byte */
+            i = (((inst) & 0x0F) == 0x0F) ? 1 : 0;
+            /* Detect negative number */
+            if(data[i] & 128)
+                delta = - ((data[i] - 1) ^ 0xff);
+            else
+                delta = data[i];
 
-			/* For BBR* and BBS* displacement is stored in the 2nd byte */
-			i = (((inst) & 0x0F) == 0x0F) ? 1 : 0;
+            offset = logical + delta;
+            /* Insert offset to repository */
+            if(pushLabel(repository, logical) == 0)
+                return 0;
 
-			/* Detect negative number */
-			if(data[i] & 128)
-				delta = - ((data[i] - 1) ^ 0xff);
-			else
-				delta = data[i];
+            printf("%04x short jump to %04x\n", logical, logical);
+        }
+        else 
+        {
+            if(isFarJump(inst))
+            {
+                offset = data[0] | (data[1] << 8);
+                /* Insert offset to repository */
+                if(pushLabel(repository, offset) == 0)
+                    return 0;
 
-			labelOffset = offset + delta;
-			/* Insert offset to repository */
-			if(pushLabel(repository, labelOffset) == 0)
-				return 0;
+                printf("%04x long jump to %04x\n", logical, offset);
+            }
+        }
 
-			printf("%04x short jump to %04x\n", offset, labelOffset);
-		}
-		else 
-		{
-			if(isFarJump(inst))
-			{
-				labelOffset = data[0] | (data[1] << 8);
-				/* Insert offset to repository */
-				if(pushLabel(repository, labelOffset) == 0)
-					return 0;
+        logical += pce_opcode[inst].size;
 
-				printf("%04x long jump to %04x\n", offset, labelOffset);
-			}
-		}
-		
-		/* Search end of section */
-		if(section->size == 0)
-		{
-			if((inst == 0x40) || (inst == 0x60))
-			{
-				section->size = nBytesProcessed;
-				eor            = 1;
-			}
-		}
-		else if( nBytesProcessed >= section->size )
-		{
-			eor = 1;
-		}		
-	}
+        /* Search end of section */
+        if(section->size == 0)
+        {
+            if((inst == 0x40) || (inst == 0x60))
+            {
+                section->size = addr - iProcessor->physicalAddr;
+                eor = 1;
+            }
+        }
+        else if(addr >= end)
+        {
+            eor = 1;
+        }       
+    }
 
-	finalizeLabelRepositoty(repository);
+    finalizeLabelRepositoty(repository);
 
-	return 1;
+    return 1;
 }
 
 /* Initialize label index so that it points to the label close to current org offset */
 void getLabelIndex(SectionProcessor* iProcessor)
 {
-	int i;
-	
-	/* Room for huge improvments */
-	for(i=iProcessor->labelIndex; i<iProcessor->labelRepository.last; ++i)
-	{
-		if(iProcessor->labelRepository.labels[i].offset >= iProcessor->orgOffset)
-		{
-			break;
-		}
-	}
-	
-	iProcessor->labelIndex = i;
+    int i;
+    
+    /* Room for huge improvments */
+    for(i=iProcessor->labelIndex; i<iProcessor->labelRepository.last; ++i)
+    {
+        if(iProcessor->labelRepository.labels[i].offset >= iProcessor->logicalAddr)
+        {
+            break;
+        }
+    }
+    
+    iProcessor->labelIndex = i;
 }
 
 /* Maximum number of characters per line */
@@ -267,189 +218,185 @@ void getLabelIndex(SectionProcessor* iProcessor)
  * Process opcode
  */
 char processOpcode(SectionProcessor* iProcessor) {
-	int i, delta;
-	uint8_t inst, data[6], isJump, page;
-	char line[MAX_CHAR_PER_LINE], eor, *ptr;
-	uint16_t offset, nextOrgOffset;
+    int i, delta;
+    uint8_t inst, data[6], isJump;
+    char line[MAX_CHAR_PER_LINE], eor, *ptr;
+    uint16_t offset;
+    uint16_t logical, nextLogical;
 
-	eor = 0;
-	ptr = line;
+    eor = 0;
+    ptr = line;
 
-	/* Opcode */
-	fread(&inst, 1, 1, iProcessor->in);
+    /* Opcode */
+    inst = readROM(iProcessor->rom, iProcessor->physicalAddr + iProcessor->offset);
 
-	/* Get label index */
-	getLabelIndex(iProcessor);
+    /* Get label index */
+    getLabelIndex(iProcessor);
 
-	nextOrgOffset = iProcessor->orgOffset + pce_opcode[inst].size;
-	
-	/* Is there a label ? */
-	if( (iProcessor->labelIndex < iProcessor->labelRepository.last) &&
-	    (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset >= iProcessor->orgOffset) &&
-	    (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset < nextOrgOffset) )
-	{
-		/* Print label*/
-		sprintf(line, "l%04x_%02x: ", iProcessor->labelRepository.labels[iProcessor->labelIndex].offset,  iProcessor->processed->id);
-
-		/* Add displacement */
-		if(iProcessor->labelRepository.labels[iProcessor->labelIndex].offset != iProcessor->orgOffset)
-		{
-			iProcessor->labelRepository.labels[iProcessor->labelIndex].displacement = iProcessor->labelRepository.labels[iProcessor->labelIndex].offset - iProcessor->orgOffset;
-		}
-	}
-	else
-	{
-		memset(line, ' ', 10 * sizeof(char));
-	}
-
-	ptr += 10;
-
-	/* Print opcode sting */
-	memcpy(ptr, pce_opcode[inst].name, 4 * sizeof(char));
-	ptr += 4;
-
-	/* Add spacing */  
-	memset(ptr, ' ', 4 * sizeof(char));
-	ptr += 4;
-
-	/* End Of Routine (eor) is set to 1 if the instruction is RTI or RTS */
-	if((inst == 64) || (inst == 96)) eor = 1;
-
-	/* Data */
-	if(pce_opcode[inst].size > 1)
-	{
-		fread(data, 1, pce_opcode[inst].size-1, iProcessor->in);
-	}
-
-	iProcessor->orgOffset   = nextOrgOffset;
-	iProcessor->fileOffset += pce_opcode[inst].size;
+    logical     = iProcessor->logicalAddr + iProcessor->offset;
+    nextLogical = logical + pce_opcode[inst].size;
     
-	/* Swap LSB and MSB for words */
-	if(pce_opcode[inst].size > 2)
-	{
-		uint8_t swap;
-		/* Special case : TST, BBR*, BBS*. The first byte is zp var */
-		i = ((pce_opcode[inst].type ==  3) ||
-		     (pce_opcode[inst].type ==  4) ||
-		     (pce_opcode[inst].type ==  5) ||
-		     (pce_opcode[inst].type ==  6) ||
-		     (pce_opcode[inst].type == 13) ||
-		     (pce_opcode[inst].type == 20)) ? 1 : 0;
+    /* Is there a label ? */
+    if( (iProcessor->labelIndex < iProcessor->labelRepository.last) &&
+        (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset >= logical) &&
+        (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset < nextLogical) )
+    {
+        /* Print label*/
+        sprintf(line, "l%04x_%02x: ", iProcessor->labelRepository.labels[iProcessor->labelIndex].offset,  iProcessor->processed->id);
 
-		for(; i<(pce_opcode[inst].size-2); i+=2)
-		{
-			swap      = data[i];
-			data[i]   = data[i+1];
-			data[i+1] = swap;
-		}
-	}
+        /* Add displacement */
+        if(iProcessor->labelRepository.labels[iProcessor->labelIndex].offset != logical)
+        {
+            iProcessor->labelRepository.labels[iProcessor->labelIndex].displacement = iProcessor->labelRepository.labels[iProcessor->labelIndex].offset - logical;
+        }
+    }
+    else
+    {
+        memset(line, ' ', 10 * sizeof(char));
+    }
 
-	/* Handle special cases (jumps, tam/tma and unsupported opcodes ) */
-	isJump = 0;
-	if(isLocalJump(inst)) {
-		isJump = 1;
+    ptr += 10;
 
-		i = (((inst) & 0x0F) == 0x0F) ? 1 : 0;
+    /* Print opcode sting */
+    memcpy(ptr, pce_opcode[inst].name, 4 * sizeof(char));
+    ptr += 4;
 
-		/* Detect negative number */
-		if(data[i] & 128)
-			delta = - ((data[i] - 1) ^ 0xff);
-		else
-			delta = data[i];
+    /* Add spacing */  
+    memset(ptr, ' ', 4 * sizeof(char));
+    ptr += 4;
 
-		offset = iProcessor->orgOffset + delta;
-		data[i  ] = offset >> 8;
-		data[i+1] = offset & 0xff;
-		
-		page = iProcessor->page;
-	}
-	else 
-	{
-		if(isFarJump(inst))
-		{
-			isJump = 1;
-			/* Extract page */
-			page  = (data[1] >> 5) & 0xff;
-			/* Build offset */
-			offset = (data[1] << 8) | data[0];
-			
-		}
-		else 
-		{
-			page   = 0;
-			offset = 0;
-			
-			/* Unknown instructions are output as raw data 
-			 * (ie) .db XX
-			 */
-			if(pce_opcode[inst].type == 22)
-			{
-				data[0] = inst;
-			}
-		}
-	}
+    /* End Of Routine (eor) is set to 1 if the instruction is RTI or RTS */
+    if((inst == 64) || (inst == 96)) eor = 1;
 
-	if(pce_opcode[inst].type == 1) {
-		*(ptr++) = 'A';
-	}
-	else {
-		if((inst == 0x43) || (inst == 0x53))
-		{
-			/* tam and tma */
-			/* Compute log base 2 of data */
-			for(i=0; (i<8) && ((data[0] & 1) == 0); ++i, data[0] >>= 1);
-			data[0] = i;		
-		}
+    /* Data */
+    if(pce_opcode[inst].size > 1)
+    {
+        for(i=0; i<(pce_opcode[inst].size-1); i++)
+        {
+            data[i] = readROM(iProcessor->rom, iProcessor->physicalAddr + iProcessor->offset + i);
+        }
+    }
 
-		/* Add section to jump label */
-		if(pce_opcode[inst].type == 20)
-		{
-			data[3] = iProcessor->processed->id & 0xff;
-		}
-		else if(pce_opcode[inst].type == 19)
-		{
-			data[2] = iProcessor->processed->id & 0xff;
-		}
+    iProcessor->offset += pce_opcode[inst].size;
+    logical = nextLogical;
 
-		/* Print data */
-		if(pce_opcode[inst].type)
-		{
-			for(i=0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i)
-			{
-				sprintf(ptr, pce_opstring[pce_opcode[inst].type][i], data[i]);
-				ptr += strlen(ptr);
-			}
-		}
-	}
+    /* Swap LSB and MSB for words */
+    if(pce_opcode[inst].size > 2)
+    {
+        uint8_t swap;
+        /* Special case : TST, BBR*, BBS*. The first byte is zp var */
+        i = ((pce_opcode[inst].type ==  3) ||
+             (pce_opcode[inst].type ==  4) ||
+             (pce_opcode[inst].type ==  5) ||
+             (pce_opcode[inst].type ==  6) ||
+             (pce_opcode[inst].type == 13) ||
+             (pce_opcode[inst].type == 20)) ? 1 : 0;
 
-	/* Add displacement to jump offset ? */
-	if(isJump)
-	{
-		/* Search in label database ( todo : dicotomic search ) */
-		for(i=0; i < iProcessor->labelRepository.last; ++i)
-		{
-			if(iProcessor->labelRepository.labels[i].offset == offset)
-			{
-				/* Displacement may not exceed 7 (maximum opcode data size) */
-				if(iProcessor->labelRepository.labels[i].displacement != 0)
-				{
-					ptr[0] = '+';
-					ptr[1] = '0' + iProcessor->labelRepository.labels[i].displacement;
-					ptr += 2;
-				}
-				break;
-			}
-		}
-	}
+        for(; i<(pce_opcode[inst].size-2); i+=2)
+        {
+            swap      = data[i];
+            data[i]   = data[i+1];
+            data[i+1] = swap;
+        }
+    }
 
-	*(ptr++) = '\n';
-	*ptr = '\0';
+    /* Handle special cases (jumps, tam/tma and unsupported opcodes ) */
+    isJump = 0;
+    if(isLocalJump(inst)) {
+        isJump = 1;
 
-	/* Output line */
-	fwrite(line, sizeof(char), ptr-line, iProcessor->out);
+        i = (((inst) & 0x0F) == 0x0F) ? 1 : 0;
 
-    /* Avoid annoying warning. */
-    (void)page;
+        /* Detect negative number */
+        if(data[i] & 128)
+            delta = - ((data[i] - 1) ^ 0xff);
+        else
+            delta = data[i];
+
+        offset = logical + delta;
+        data[i  ] = offset >> 8;
+        data[i+1] = offset & 0xff;
+    }
+    else 
+    {
+        if(isFarJump(inst))
+        {
+            isJump = 1;
+            /* Build offset */
+            offset = (data[1] << 8) | data[0];
+        }
+        else 
+        {
+            offset = 0;
+            
+            /* Unknown instructions are output as raw data 
+             * (ie) .db XX
+             */
+            if(pce_opcode[inst].type == 22)
+            {
+                data[0] = inst;
+            }
+        }
+    }
+
+    if(pce_opcode[inst].type == 1) {
+        *(ptr++) = 'A';
+    }
+    else {
+        if((inst == 0x43) || (inst == 0x53))
+        {
+            /* tam and tma */
+            /* Compute log base 2 of data */
+            for(i=0; (i<8) && ((data[0] & 1) == 0); ++i, data[0] >>= 1);
+            data[0] = i;        
+        }
+
+        /* Add section to jump label */
+        if(pce_opcode[inst].type == 20)
+        {
+            data[3] = iProcessor->processed->id & 0xff;
+        }
+        else if(pce_opcode[inst].type == 19)
+        {
+            data[2] = iProcessor->processed->id & 0xff;
+        }
+
+        /* Print data */
+        if(pce_opcode[inst].type)
+        {
+            for(i=0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i)
+            {
+                sprintf(ptr, pce_opstring[pce_opcode[inst].type][i], data[i]);
+                ptr += strlen(ptr);
+            }
+        }
+    }
+
+    /* Add displacement to jump offset ? */
+    if(isJump)
+    {
+        /* Search in label database ( todo : dicotomic search ) */
+        for(i=0; i < iProcessor->labelRepository.last; ++i)
+        {
+            if(iProcessor->labelRepository.labels[i].offset == offset)
+            {
+                /* Displacement may not exceed 7 (maximum opcode data size) */
+                if(iProcessor->labelRepository.labels[i].displacement != 0)
+                {
+                    ptr[0] = '+';
+                    ptr[1] = '0' + iProcessor->labelRepository.labels[i].displacement;
+                    ptr += 2;
+                }
+                break;
+            }
+        }
+    }
+
+    *(ptr++) = '\n';
+    *ptr = '\0';
+
+    /* Output line */
+    fwrite(line, sizeof(char), ptr-line, iProcessor->out);
     
-	return eor;
+    return eor;
 }
