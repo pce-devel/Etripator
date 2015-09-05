@@ -31,10 +31,10 @@ struct SectionProcessor_
     ROM      *rom;          /* Input ROM */
     FILE     *out;          /* Output */
 
-    off_t    physicalAddr; /* Physical address. */
+    size_t   physicalAddr; /* Physical address. */
     uint16_t logicalAddr;  /* Logical address. */
 
-    off_t   offset;         /* Current section offset */
+    size_t   offset;         /* Current section offset */
 
     uint16_t        labelIndex;      /* current label */
     LabelRepository labelRepository; /* label repository for this section */

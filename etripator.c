@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 
                 if(!cmdOptions.extractIRQ)
                 {
-                    if((size_t)(processor.offset - processor.processed->start) >= processor.processed->size)
+                    if(processor.offset >= processor.processed->size)
                         eor = 1;
                     else
                         eor = 0;

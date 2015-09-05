@@ -396,6 +396,5 @@ char processOpcode(SectionProcessor* iProcessor) {
 
     /* Output line */
     fwrite(line, sizeof(char), ptr-line, iProcessor->out);
-    
     return eor;
 }
