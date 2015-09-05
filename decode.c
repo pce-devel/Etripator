@@ -49,7 +49,7 @@ void resetSectionProcessor(ROM* iRom, FILE* iOut, Section* iProcessed, SectionPr
     iProcessor->physicalAddr = (iProcessed->bank << 13) | (iProcessed->org & 0x1fff);
     iProcessor->logicalAddr  = iProcessed->org;
 
-    iProcessor-> offset = 0;
+    iProcessor->offset = 0;
 
     iProcessor->labelIndex = 0;
     resetLabelRepository(&iProcessor->labelRepository);
@@ -109,18 +109,16 @@ int getLabels(SectionProcessor* iProcessor)
     uint8_t inst;
     uint8_t data[6];
     
-    off_t    addr;
-    off_t    end;
-    uint16_t logical, offset;
-    
+    size_t offset;
+    uint16_t logical;
+
     LabelRepository *repository = &(iProcessor->labelRepository);
     Section *section = iProcessor->processed;
 
     if(CODE != section->type)
         return 1;
 
-    addr = iProcessor->physicalAddr;
-    end  = addr + section->size;
+    offset  = 0;
     logical = iProcessor->logicalAddr;
 
     printf("\n%s:\n", section->name);
@@ -134,11 +132,12 @@ int getLabels(SectionProcessor* iProcessor)
     while(!eor)
     {
         /* Read instruction */
-        inst = readROM(iProcessor->rom, addr++);
+        inst = readROM(iProcessor->rom, iProcessor->physicalAddr+offset);
+        offset++;
         /* Read data (if any) */
-        for(i=0; i<(pce_opcode[inst].size-1); i++)
+        for(i=0; i<(pce_opcode[inst].size-1); i++, offset++)
         {
-            data[i] = readROM(iProcessor->rom, addr++);
+            data[i] = readROM(iProcessor->rom, iProcessor->physicalAddr+offset);
         }
 
         if(isLocalJump(inst))
@@ -151,24 +150,24 @@ int getLabels(SectionProcessor* iProcessor)
                 delta = - ((data[i] - 1) ^ 0xff);
             else
                 delta = data[i];
+            delta += pce_opcode[inst].size;
 
-            offset = logical + delta;
             /* Insert offset to repository */
-            if(pushLabel(repository, logical) == 0)
+            if(pushLabel(repository, logical+delta) == 0)
                 return 0;
 
-            printf("%04x short jump to %04x\n", logical, logical);
+            printf("%04x short jump to %04x\n", logical, logical+delta);
         }
         else 
         {
             if(isFarJump(inst))
             {
-                offset = data[0] | (data[1] << 8);
+                uint16_t jump = data[0] | (data[1] << 8);
                 /* Insert offset to repository */
-                if(pushLabel(repository, offset) == 0)
+                if(pushLabel(repository, jump) == 0)
                     return 0;
 
-                printf("%04x long jump to %04x\n", logical, offset);
+                printf("%04x long jump to %04x\n", logical, jump);
             }
         }
 
@@ -179,11 +178,11 @@ int getLabels(SectionProcessor* iProcessor)
         {
             if((inst == 0x40) || (inst == 0x60))
             {
-                section->size = addr - iProcessor->physicalAddr;
+                section->size = offset;
                 eor = 1;
             }
         }
-        else if(addr >= end)
+        else if(offset >= section->size)
         {
             eor = 1;
         }       
@@ -202,7 +201,7 @@ void getLabelIndex(SectionProcessor* iProcessor)
     /* Room for huge improvments */
     for(i=iProcessor->labelIndex; i<iProcessor->labelRepository.last; ++i)
     {
-        if(iProcessor->labelRepository.labels[i].offset >= iProcessor->logicalAddr)
+        if(iProcessor->labelRepository.labels[i].offset >= (iProcessor->logicalAddr + iProcessor->offset))
         {
             break;
         }
@@ -273,7 +272,7 @@ char processOpcode(SectionProcessor* iProcessor) {
     {
         for(i=0; i<(pce_opcode[inst].size-1); i++)
         {
-            data[i] = readROM(iProcessor->rom, iProcessor->physicalAddr + iProcessor->offset + i);
+            data[i] = readROM(iProcessor->rom, iProcessor->physicalAddr + iProcessor->offset + i + 1);
         }
     }
 
