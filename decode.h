@@ -20,21 +20,21 @@
 
 #include "config.h"
 #include "section.h"
-#include "rom.h"
+#include "memorymap.h"
 
 /*
  *
  */
 struct SectionProcessor_
 {
-    Section  *processed;    /* Section being processed */
-    ROM      *rom;          /* Input ROM */
-    FILE     *out;          /* Output */
+    Section   *processed; /* Section being processed */
+    MemoryMap *memmap;    /* Memory map */
+    FILE      *out;       /* Output */
 
     size_t   physicalAddr; /* Physical address. */
     uint16_t logicalAddr;  /* Logical address. */
 
-    size_t   offset;         /* Current section offset */
+    size_t   offset; /* Current section offset */
 
     uint16_t        labelIndex;      /* current label */
     LabelRepository labelRepository; /* label repository for this section */
@@ -52,7 +52,7 @@ int initializeSectionProcessor(SectionProcessor*);
 /*
  * Reset section processor
  */
-void resetSectionProcessor(ROM*, FILE*, Section*, SectionProcessor*);
+void resetSectionProcessor(MemoryMap*, FILE*, Section*, SectionProcessor*);
   
 /*
  * Delete section processor

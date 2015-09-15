@@ -24,7 +24,7 @@
 int initializeSectionProcessor(SectionProcessor* iProcessor)
 {
     iProcessor->processed = NULL;
-    iProcessor->rom       = NULL;
+    iProcessor->memmap    = NULL;
     iProcessor->out       = NULL;
 
     iProcessor->physicalAddr = 0;
@@ -40,10 +40,10 @@ int initializeSectionProcessor(SectionProcessor* iProcessor)
 /*
  * Reset section processor
  */
-void resetSectionProcessor(ROM* iRom, FILE* iOut, Section* iProcessed, SectionProcessor* iProcessor)
+void resetSectionProcessor(MemoryMap* iMemmap, FILE* iOut, Section* iProcessed, SectionProcessor* iProcessor)
 {
     iProcessor->processed = iProcessed;
-    iProcessor->rom       = iRom;
+    iProcessor->memmap    = iMemmap;
     iProcessor->out       = iOut;
 
     iProcessor->physicalAddr = (iProcessed->bank << 13) | (iProcessed->org & 0x1fff);
@@ -86,7 +86,7 @@ int processDataSection(SectionProcessor* iProcessor)
 
             for(j=0; (i>0) && (j<8); j++, i--)
             {
-                data = readROM(iProcessor->rom, addr++);
+                data = readByte(iProcessor->memmap, addr++);
                 fprintf(iProcessor->out, "$%02x%c", data, (i>1) ? ',' : '\n');
             }
         }
@@ -95,14 +95,16 @@ int processDataSection(SectionProcessor* iProcessor)
     {
         for(i=iProcessor->processed->size, addr=iProcessor->physicalAddr; i>0; i--)
         {
-            data = readROM(iProcessor->rom, addr++);
+            data = readByte(iProcessor->memmap, addr++);
             fwrite(&data, 1, 1, iProcessor->out);
         }
     }
     return 1;
 }
 
-/* Parse section to identify potential labels */
+/**
+ * Parse section to identify potential labels
+ */
 int getLabels(SectionProcessor* iProcessor)
 {
     int eor, i;
@@ -132,12 +134,12 @@ int getLabels(SectionProcessor* iProcessor)
     while(!eor)
     {
         /* Read instruction */
-        inst = readROM(iProcessor->rom, iProcessor->physicalAddr+offset);
+        inst = readByte(iProcessor->memmap, iProcessor->physicalAddr+offset);
         offset++;
         /* Read data (if any) */
         for(i=0; i<(pce_opcode[inst].size-1); i++, offset++)
         {
-            data[i] = readROM(iProcessor->rom, iProcessor->physicalAddr+offset);
+            data[i] = readByte(iProcessor->memmap, iProcessor->physicalAddr+offset);
         }
 
         if(isLocalJump(inst))
@@ -193,6 +195,7 @@ int getLabels(SectionProcessor* iProcessor)
     return 1;
 }
 
+//--------------------------------------------------------------------------------- [todo]
 /* Initialize label index so that it points to the label close to current org offset */
 void getLabelIndex(SectionProcessor* iProcessor)
 {
@@ -227,7 +230,7 @@ char processOpcode(SectionProcessor* iProcessor) {
     ptr = line;
 
     /* Opcode */
-    inst = readROM(iProcessor->rom, iProcessor->physicalAddr + iProcessor->offset);
+    inst = readByte(iProcessor->memmap, iProcessor->physicalAddr + iProcessor->offset);
 
     /* Get label index */
     getLabelIndex(iProcessor);
@@ -272,7 +275,7 @@ char processOpcode(SectionProcessor* iProcessor) {
     {
         for(i=0; i<(pce_opcode[inst].size-1); i++)
         {
-            data[i] = readROM(iProcessor->rom, iProcessor->physicalAddr + iProcessor->offset + i + 1);
+            data[i] = readByte(iProcessor->memmap, iProcessor->physicalAddr + iProcessor->offset + i + 1);
         }
     }
 

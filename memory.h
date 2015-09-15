@@ -15,19 +15,31 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef IRQ_H
-#define IRQ_H
+#ifndef MEMORY_H
+#define MEMORY_H
 
 #include "config.h"
-#include "section.h"
-#include "memorymap.h"
 
 /**
- * Get irq code offsets from rom.
- * \param [in]  memmcp  Memory map.
- * \param [out] section IRQ vector sections.
- * \return 0 on error, 1 otherwise.
+ * Byte array.
  */
-int getIRQSections(MemoryMap* memmap, Section *section);
+struct Memory_
+{
+    size_t   len;
+    uint8_t *data;
+};
+typedef struct Memory_ Memory;
 
-#endif /* IRQ_H */
+/**
+ * Create memory unit.
+ * \param [out] mem Memory unit.
+ * \param [in]  len Memory size (in bytes).
+ */
+int createMemory(Memory *mem, size_t len);
+/**
+ * Destroy memory.
+ * \param [in] mem Memory unit.
+ */
+void destroyMemory(Memory *mem);
+
+#endif // MEMORY_H

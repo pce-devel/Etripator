@@ -19,6 +19,7 @@
 #include "message.h"
 #include "cfg.h"
 
+#include "memorymap.h"
 #include "section.h"
 #include "decode.h"
 #include "opcodes.h"
@@ -51,9 +52,11 @@ int main(int argc, char** argv)
 
     SectionProcessor processor;
 
-    ROM rom;
+    MemoryMap memmap;
 
     atexit(exit_callback);
+
+    // [todo] initializeMemorMap(&memmap);
 
     PrintMsgOpenFile(NULL);
 
@@ -94,27 +97,48 @@ int main(int argc, char** argv)
         }
     }
 
-    /* Read rom */
-    err = loadROM(cmdOptions.romFileName, cmdOptions.cdrom, &rom);
+    /* Initialize memory map. */
+    err = initializeMemoryMap(&memmap);
     if(err)
     {
         goto error_1;
     }
 
-    /* Get irq offsets */
-    if(cmdOptions.extractIRQ)
+    /* Read ROM */
+    if(0 == cmdOptions.cdrom)
     {
-        if(getIRQSections(&rom, section) == 0)
+        err = loadROM(cmdOptions.romFileName, &memmap);
+        if(err)
         {
-            ERROR_MSG("An error occured while reading irq vector offsets");
-            goto error_1;
+            goto error_2;
         }
+
+        /* Get irq offsets */
+        if(cmdOptions.extractIRQ)
+        {
+            if(getIRQSections(&memmap, section) == 0)
+            {
+                ERROR_MSG("An error occured while reading irq vector offsets");
+                goto error_2;
+            }
+        }
+    }
+    else
+    {
+        err = addCDRAMMemoryMap(&memmap);
+        if(err)
+        {
+            goto error_2;
+        }
+/*  ------------------------------------------------------------------------------------------------  */
+/*  [todo]  */
+/*  Data loading will be performed when disassembling section */
+/*  ------------------------------------------------------------------------------------------------  */
     }
 
     /* Initialize section processor */
-    initializeSectionProcessor(&processor);
+// [todo]    initializeSectionProcessor(&processor);
 
-//------------------------------------------------------------------ [todo]------------------------
     /* Disassemble and output */
     for(i=0; i<sectionCount; ++i)
     {
@@ -136,7 +160,7 @@ int main(int argc, char** argv)
         }
 
         /* Reset section processor */
-        resetSectionProcessor(&rom, out, &section[i], &processor);
+// [todo]        resetSectionProcessor(&mem, out, &section[i], &processor);
         if(CODE == section[i].type)
         {
             char eor;
@@ -210,7 +234,8 @@ int main(int argc, char** argv)
 
 error_4:
     deleteSectionProcessor(&processor);
-
+error_2:
+    destroyMemoryMap(&memmap);
 error_1:
     i = cmdOptions.extractIRQ ? 5 : 0;
     for(; i<sectionCount; ++i)
