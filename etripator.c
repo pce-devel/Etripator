@@ -56,8 +56,6 @@ int main(int argc, char** argv)
 
     atexit(exit_callback);
 
-    // [todo] initializeMemorMap(&memmap);
-
     PrintMsgOpenFile(NULL);
 
     /* Extract command line options */
@@ -137,7 +135,7 @@ int main(int argc, char** argv)
     }
 
     /* Initialize section processor */
-// [todo]    initializeSectionProcessor(&processor);
+    initializeSectionProcessor(&processor);
 
     /* Disassemble and output */
     for(i=0; i<sectionCount; ++i)
@@ -160,7 +158,8 @@ int main(int argc, char** argv)
         }
 
         /* Reset section processor */
-// [todo]        resetSectionProcessor(&mem, out, &section[i], &processor);
+        resetSectionProcessor(&memmap, out, &section[i], &processor);
+        
         if(CODE == section[i].type)
         {
             char eor;
