@@ -81,4 +81,13 @@ int pushLabel(LabelRepository*, uint16_t);
 /* Finalize label repository */
 void finalizeLabelRepositoty(LabelRepository*);
 
+/**
+ * Load labels from a cfg file.
+ * \param [in]  filename Cfg file.
+ * \param [out] reposity Label repository.
+ * \return 1 if the labels contained in the file was succesfully added to the repository.
+ *         0 if an error occured.
+ */
+int loadLabels(const char* filename, LabelRepository* repository);
+
 #endif // LABELS_H
