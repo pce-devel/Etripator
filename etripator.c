@@ -145,6 +145,17 @@ int main(int argc, char** argv)
             goto error_4;
         }
 
+        if(0 != cmdOptions.cdrom)
+        {
+            /* Copy CDROM data */
+            err = loadCD(cmdOptions.romFileName, section[i].start, section[i].size, section[i].bank, section[i].org, &memmap);
+            if(0 == err)
+            {
+                ERROR_MSG("Failed to load CD data (section %d)", i);
+                goto error_4;
+            }
+        }
+
         if(section[i].type != BIN_DATA)
         {
             /* Print header */
@@ -157,17 +168,7 @@ int main(int argc, char** argv)
 
         /* Reset section processor */
         resetSectionProcessor(&memmap, out, &section[i], &processor);
-        if(0 != cmdOptions.cdrom)
-        {
-            /* Copy CDROM data */
-            err = loadCD(cmdOptions.romFileName, section[i].start, section[i].size, section[i].bank, section[i].org, &memmap);
-            if(0 == err)
-            {
-                ERROR_MSG("Failed to load CD data (section %d)", i);
-                goto error_4;
-            }
-        }
-        
+
         if(CODE == section[i].type)
         {
             char eor;

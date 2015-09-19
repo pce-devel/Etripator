@@ -5,6 +5,8 @@ platform/windows/getopt_win.h
 platform/windows/inttypes.h
 platform/windows/library.c
 platform/windows/stdint.h
+cd.c
+cd.h
 cfg.c
 cfg.h
 config.h

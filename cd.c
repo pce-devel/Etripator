@@ -51,7 +51,7 @@ int loadCD(const char* filename, size_t start, size_t len, uint8_t page, size_t 
         return 0;
     }
 
-    addr = (page << 13) | (offset & 0x1ffff); 
+    addr = (page << 13) | (offset & 0x1fff);
     nRead = fread(memmap->page[page] + addr, 1, len, in);    
     if(nRead != len)
     {
