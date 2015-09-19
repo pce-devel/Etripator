@@ -25,6 +25,7 @@
 #include "opcodes.h"
 #include "irq.h"
 #include "rom.h"
+#include "cd.h"
 #include "options.h"
 
 /*
@@ -128,10 +129,7 @@ int main(int argc, char** argv)
         {
             goto error_2;
         }
-/*  ------------------------------------------------------------------------------------------------  */
-/*  [todo]  */
-/*  Data loading will be performed when disassembling section */
-/*  ------------------------------------------------------------------------------------------------  */
+        /*  Data will be loaded during section disassembly */
     }
 
     /* Initialize section processor */
@@ -159,6 +157,16 @@ int main(int argc, char** argv)
 
         /* Reset section processor */
         resetSectionProcessor(&memmap, out, &section[i], &processor);
+        if(0 != cmdOptions.cdrom)
+        {
+            /* Copy CDROM data */
+            err = loadCD(cmdOptions.romFileName, section[i].start, section[i].size, section[i].bank, section[i].org, &memmap);
+            if(0 == err)
+            {
+                ERROR_MSG("Failed to load CD data (section %d)", i);
+                goto error_4;
+            }
+        }
         
         if(CODE == section[i].type)
         {

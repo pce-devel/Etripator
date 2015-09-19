@@ -195,7 +195,6 @@ int getLabels(SectionProcessor* iProcessor)
     return 1;
 }
 
-//--------------------------------------------------------------------------------- [todo]
 /* Initialize label index so that it points to the label close to current org offset */
 void getLabelIndex(SectionProcessor* iProcessor)
 {
