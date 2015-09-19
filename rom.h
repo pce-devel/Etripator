@@ -19,38 +19,14 @@
 #define ROM_H
 
 #include <stdint.h>
-
-/**
- * @todo
- */
-struct ROM_t
-{
-    size_t   len;
-    uint8_t *data;
-    uint8_t *page[0x100];
-};
-
-typedef struct ROM_t ROM;
+#include "memorymap.h"
 
 /**
  * Load ROM from file.
  * \param [in]  filename ROM filename.
- * \param [in]  cd       Is it a CD-ROM binary?
- * \param [out] rom      ROM object.
+ * \param [out] memmap   Memory map.
  * \return 1 if an error occured. 0 on success.
  */
-int loadROM(const char* filename, int cd, ROM* rom);
-/**
- * Destroy ROM object.
- * \param [in] rom ROM object.
- */
-void destroyROM(ROM* rom);
-/**
- * Read a single byte from ROM.
- * \param [in] rom     ROM object.
- * \param [in] address Physical ROM address.
- * \return byte read.
- */
-uint8_t readROM(ROM* rom, off_t address);
+int loadROM(const char* filename, MemoryMap* memmap);
 
 #endif // ROM_H

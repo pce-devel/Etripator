@@ -25,44 +25,35 @@ static char* IRQNames[5] = {
     "irq_reset.asm"
 };
 
-/* Get irq code offsets from rom */
-int getIRQSections(FILE* iRomFile, Section* iSectionArray)
+/**
+ * Get irq code offsets from rom.
+ * \param [in]  memmcp  Memory map.
+ * \param [out] section IRQ vector sections.
+ * \return 0 on error, 1 otherwise.
+ */
+int getIRQSections(MemoryMap* memmap, Section *section)
 {
-    int err, i;
-    size_t nRead, size;
-    uint8_t offset[2];
-    unsigned int headerJump = 0;
+    int i;
+    uint8_t addr[2];
+    off_t   offset = 0x1ff6;
     
-    /* Header ? */
-    fseek(iRomFile, 0, SEEK_END);
-    size  = ftell(iRomFile);
-    fseek(iRomFile, 0, SEEK_SET);
-    size -= ftell(iRomFile);
-    
-    headerJump = size & 0x1fff;
-    
-    /* Jump to irq offsets */
-    err = fseek(iRomFile, headerJump + 0x1ff6, SEEK_SET);
-    if(err < 0)
-        return 0;
-
-    for(i=0; i<5; ++i) {
+    for(i=0; i<5; ++i)
+    {
         /* Read offset */
-        nRead = fread(offset, 1, 2, iRomFile);
-        if(nRead != 2)
-            return 0;
-
+        addr[0] = readByte(memmap, offset++);
+        addr[1] = readByte(memmap, offset++);
+        
         /* Initialize section */
-        iSectionArray[i].name  = IRQNames[i];
-        iSectionArray[i].type  = CODE;
-        iSectionArray[i].bank  = 0;
-        iSectionArray[i].org   = (offset[1] << 8) | offset[0];
-        iSectionArray[i].type  = CODE;
-        iSectionArray[i].start = ((offset[1] & 0x1f) << 8) | offset[0];
-        iSectionArray[i].size  = 0;
-        iSectionArray[i].id    = i;
+        section[i].name  = IRQNames[i];
+        section[i].type  = CODE;
+        section[i].bank  = 0;
+        section[i].org   = (addr[1] << 8) | addr[0];
+        section[i].type  = CODE;
+        section[i].start = ((addr[1] & 0x1f) << 8) | addr[0];
+        section[i].size  = 0;
+        section[i].id    = i;
 
-        printf("%s found at %04x (%lx)\n", iSectionArray[i].name, iSectionArray[i].org, iSectionArray[i].start);
+        printf("%s found at %04x (%lx)\n", section[i].name, section[i].org, section[i].start);
     }
     
     return 1;

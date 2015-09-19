@@ -15,19 +15,22 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef IRQ_H
-#define IRQ_H
+#ifndef CD_H
+#define CD_H
 
 #include "config.h"
-#include "section.h"
 #include "memorymap.h"
 
 /**
- * Get irq code offsets from rom.
- * \param [in]  memmcp  Memory map.
- * \param [out] section IRQ vector sections.
- * \return 0 on error, 1 otherwise.
+ * Load CDROM data from file.
+ * \param [in]  filename CDROM data filename.
+ * \param [in]  start    CDROM data offset.
+ * \param [in]  len      CDROM data length (in bytes).
+ * \param [in]  page     Memory page.
+ * \param [in]  offset   memory page offset.
+ * \param [out] memmap   Memory map.
+ * \return 1 if an error occured. 0 on success.
  */
-int getIRQSections(MemoryMap* memmap, Section *section);
+int loadCD(const char* filename, size_t start, size_t len, uint8_t page, size_t offset, MemoryMap* memmap);
 
-#endif /* IRQ_H */
+#endif // CD_H

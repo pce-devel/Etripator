@@ -19,10 +19,13 @@
 #include "message.h"
 #include "cfg.h"
 
+#include "memorymap.h"
 #include "section.h"
 #include "decode.h"
 #include "opcodes.h"
 #include "irq.h"
+#include "rom.h"
+#include "cd.h"
 #include "options.h"
 
 /*
@@ -37,10 +40,8 @@ void exit_callback(void)
 int main(int argc, char** argv)
 {
     FILE* out;
-    FILE* in;
     FILE* mainFile;
 
-    unsigned int size;
     unsigned int i;
     int err, failure;
     SECTION_ERR sectErr;
@@ -51,6 +52,8 @@ int main(int argc, char** argv)
     size_t sectionCount;
 
     SectionProcessor processor;
+
+    MemoryMap memmap;
 
     atexit(exit_callback);
 
@@ -93,41 +96,40 @@ int main(int argc, char** argv)
         }
     }
 
-    /* Open rom */
-    in = fopen(cmdOptions.romFileName, "rb");
-    if(in == NULL)
+    /* Initialize memory map. */
+    err = initializeMemoryMap(&memmap);
+    if(err)
     {
-        ERROR_MSG("Unable to open %s : %s", cmdOptions.romFileName, strerror(errno));
         goto error_1;
-    }  
-
-    fseek(in, 0, SEEK_END);
-
-    /* Get file size */
-    size  = ftell(in);
-    fseek(in, 0, SEEK_SET);
-    size -= ftell(in);
-
-    /* Get irq offsets */
-    if(cmdOptions.extractIRQ)
-    {
-        if(getIRQSections(in, section) == 0)
-        {
-            ERROR_MSG("An error occured while reading irq vector offsets");
-            goto error_2;
-        }
     }
 
-    if(!cmdOptions.cdrom)
+    /* Read ROM */
+    if(0 == cmdOptions.cdrom)
     {
-        /* Adjust file start to jump header (on hucard only) */
-        off_t headerJump = size & 0x1fff;
-        size &= ~0x1fff;
-
-        for(i=0; i<sectionCount; ++i)
+        err = loadROM(cmdOptions.romFileName, &memmap);
+        if(err)
         {
-            section[i].start += headerJump;
+            goto error_2;
         }
+
+        /* Get irq offsets */
+        if(cmdOptions.extractIRQ)
+        {
+            if(getIRQSections(&memmap, section) == 0)
+            {
+                ERROR_MSG("An error occured while reading irq vector offsets");
+                goto error_2;
+            }
+        }
+    }
+    else
+    {
+        err = addCDRAMMemoryMap(&memmap);
+        if(err)
+        {
+            goto error_2;
+        }
+        /*  Data will be loaded during section disassembly */
     }
 
     /* Initialize section processor */
@@ -143,6 +145,17 @@ int main(int argc, char** argv)
             goto error_4;
         }
 
+        if(0 != cmdOptions.cdrom)
+        {
+            /* Copy CDROM data */
+            err = loadCD(cmdOptions.romFileName, section[i].start, section[i].size, section[i].bank, section[i].org, &memmap);
+            if(0 == err)
+            {
+                ERROR_MSG("Failed to load CD data (section %d)", i);
+                goto error_4;
+            }
+        }
+
         if(section[i].type != BIN_DATA)
         {
             /* Print header */
@@ -153,12 +166,10 @@ int main(int argc, char** argv)
                           section[i].org);
         }
 
-        fseek(in, section[i].start, SEEK_SET);
-        
         /* Reset section processor */
-        resetSectionProcessor(in, out, section+i, &processor);
+        resetSectionProcessor(&memmap, out, &section[i], &processor);
 
-        if(section[i].type == CODE)
+        if(CODE == section[i].type)
         {
             char eor;
             
@@ -168,8 +179,6 @@ int main(int argc, char** argv)
                 goto error_4;
             }
 
-            fseek(in, section[i].start, SEEK_SET);
-
             /* Process opcodes */
             do 
             {
@@ -177,7 +186,7 @@ int main(int argc, char** argv)
 
                 if(!cmdOptions.extractIRQ)
                 {
-                    if((size_t)(processor.fileOffset - processor.processed->start) >= processor.processed->size)
+                    if(processor.offset >= processor.processed->size)
                         eor = 1;
                     else
                         eor = 0;
@@ -193,9 +202,6 @@ int main(int argc, char** argv)
         out = NULL;
     }
 
-    fclose(in);
-    in = NULL;
-  
     /* Open main asm file */
     mainFile = fopen(cmdOptions.mainFileName, "w");
     if(mainFile == NULL)
@@ -236,11 +242,8 @@ int main(int argc, char** argv)
 
 error_4:
     deleteSectionProcessor(&processor);
-
 error_2:
-    if(in != NULL)
-        fclose(in);
-
+    destroyMemoryMap(&memmap);
 error_1:
     i = cmdOptions.extractIRQ ? 5 : 0;
     for(; i<sectionCount; ++i)
