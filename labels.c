@@ -30,8 +30,10 @@ int initializeLabelRepository(LabelRepository* iRepository)
 	{
 		return 0;
 	}
-	
 	iRepository->last = 0;
+
+    iRepository->nameBuffer    = NULL;
+    iRepository->nameBufferLen = 0;
 	return 1;
 }
 
@@ -50,11 +52,38 @@ void deleteLabelRepository(LabelRepository* iRepository)
 		iRepository->labels = NULL;
 	}
 	iRepository->size = iRepository->last = 0;
+
+    if(iRepository->nameBuffer != NULL)
+    {
+        free(iRepository->nameBuffer);
+        iRepository->nameBuffer = NULL;
+    }
+    iRepository->nameBufferLen = 0;
 }
 
+/* Set name and add it to label name buffer */
+static int addLabelName(LabelRepository* iRepository, Label *label, const char* name)
+{
+    char *tmp;
+    size_t nameLen = strlen(name) + 1;
+    size_t len     = iRepository->nameBufferLen + nameLen;
+    tmp = (char*)realloc(iRepository->nameBuffer, len);
+    if(NULL == tmp)
+    {
+        return 0;
+    }
+
+    label->name = tmp + iRepository->nameBufferLen;
+    memcpy(label->name, name, nameLen+1);
+
+    iRepository->nameBuffer = tmp;
+    iRepository->nameBufferLen = len;
+
+    return 1;
+}
 
 /* Push label to repository */
-int pushLabel(LabelRepository* iRepository, uint16_t iOffset)
+int pushLabel(LabelRepository* iRepository, uint16_t iOffset, const char* name)
 {
 	if(iRepository->last >= iRepository->size)
 	{
@@ -70,11 +99,16 @@ int pushLabel(LabelRepository* iRepository, uint16_t iOffset)
 		
 		iRepository->labels = ptr;
 	}
-	
 	/* Push offset */
 	iRepository->labels[iRepository->last].offset	    = iOffset;
 	iRepository->labels[iRepository->last].displacement = 0;
-		
+
+    if(0 == addLabelName(iRepository, &iRepository->labels[iRepository->last], name))
+    {
+        deleteLabelRepository(iRepository);
+        return 0;
+    }
+
 	++iRepository->last;
 	return 1;
 }
@@ -123,8 +157,14 @@ int labelKeyValueCallback(void *data, const char* key, const char* value)
     }
     else
     {
-        uint16_t addr = (uint16_t)(strtoul(value, NULL, 16) & 0xffff);
-        return pushLabel(repository, addr);
+        char *end = NULL;
+        uint16_t addr = (uint16_t)(strtoul(value, &end, 16) & 0xffff);
+        if((NULL != end) && ('\0' != *end))
+        {
+            ERROR_MSG("Invalid offset %s : %s", value, strerror(errno));
+            return 0;
+        }
+        return pushLabel(repository, addr, key);
     }
 }
 

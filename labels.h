@@ -48,9 +48,9 @@
 /* Label */
 struct Label_
 {
-	uint16_t	offset;	      /* Label offset */
-	uint8_t		displacement; /* Displacement to label offset if it's 
-				       * centered on an instruciton */
+    uint16_t offset;       /* Label offset */
+    uint8_t	 displacement; /* Displacement to label offset if it's centered on an instruction */
+    char     *name;        /* Label name */
 };
 typedef struct Label_ Label;
 
@@ -60,9 +60,11 @@ typedef struct Label_ Label;
  */
 struct LabelRepository_
 {
-	uint16_t	size;	      /* Size of label repository */
-	uint16_t	last;	      /* Last element in the repository */
-	Label		*labels;      /* Sorted labels */
+    uint16_t	size;          /* Size of label repository */
+    uint16_t	last;          /* Last element in the repository */
+    Label		*labels;       /* Sorted labels */
+    char        *nameBuffer;   /* Label name buffer */
+    size_t      nameBufferLen; /* Label name buffer length */
 };
 typedef struct LabelRepository_ LabelRepository;
 
@@ -76,7 +78,7 @@ void resetLabelRepository(LabelRepository*);
 void deleteLabelRepository(LabelRepository*);
 
 /* Push label to repository */
-int pushLabel(LabelRepository*, uint16_t);
+int pushLabel(LabelRepository*, uint16_t, const char *name);
 
 /* Finalize label repository */
 void finalizeLabelRepositoty(LabelRepository*);

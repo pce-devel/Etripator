@@ -121,32 +121,51 @@ static int validateSize(const char* value, Section *currentSection)
  */
 static int validateId(const char* value, Section *currentSection)
 {
-	unsigned long id;
-	
-	id = strtoul(value, NULL, 16);
-	if(id  == ULONG_MAX)
-	{
-		return 0;
-	}
+    unsigned long id;
 
-	if(id > 0xff)
-	{
-		return 0;
-	}
-	
-	currentSection->id  = (uint8_t)id;
-	
+    id = strtoul(value, NULL, 16);
+    if(id  == ULONG_MAX)
+    {
+        return 0;
+    }
+
+    if(id > 0xff)
+    {
+        return 0;
+    }
+
+    currentSection->id  = (uint8_t)id;
+
+    return 1;
+}
+
+/*
+ * Validate section filename
+ */
+static int validateFilename(const char* value, Section *currentSection)
+{	
+    currentSection->filename = strdup(value);
+    if(NULL == currentSection->filename)
+    {
+        return 0;
+    }
+    /* Check file */
+    if(-1 != access(currentSection->filename, F_OK))
+    {
+        WARNING_MSG("File %s exists. It will be overwritten.", currentSection->filename);
+    }
 	return 1;
 }
 
-#define KEY_COUNT 6
+#define KEY_COUNT 7
 
-#define TYPE_MASK   1
-#define BANK_MASK   (1<<1)
-#define ORG_MASK    (1<<2)
-#define OFFSET_MASK (1<<3)
-#define SIZE_MASK   (1<<4)
-#define ID_MASK     (1<<5)
+#define TYPE_MASK     (1   )
+#define BANK_MASK     (1<<1)
+#define ORG_MASK      (1<<2)
+#define OFFSET_MASK   (1<<3)
+#define SIZE_MASK     (1<<4)
+#define ID_MASK       (1<<5)
+#define FILENAME_MASK (1<<6)
 
 /**
  * \brief CFG key parsing helper
@@ -223,13 +242,14 @@ static int beginCFGSection(void *data, const char* sectionName)
 		}
 	}
 
-	validator->current        = validator->section + validator->sectionCount;
-	validator->current->bank  = 0;
-	validator->current->org   = 0;
-	validator->current->start = 0;
-	validator->current->size  = 0;
-	validator->current->id    = validator->sectionCount;
-	validator->current->name  = strdup(sectionName);
+    validator->current           = validator->section + validator->sectionCount;
+    validator->current->bank     = 0;
+    validator->current->org      = 0;
+    validator->current->start    = 0;
+    validator->current->size     = 0;
+    validator->current->id       = validator->sectionCount;
+    validator->current->filename = NULL;
+    validator->current->name     = strdup(sectionName);
 
 	validator->flag  = 0;
 
@@ -329,12 +349,13 @@ SECTION_ERR readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSe
 
 	static KeyValidator keyCheckers[KEY_COUNT] =
 	{
-		{ "type",   validateType},
-		{ "bank",   validateBank},
-		{ "org",    validateOrg},
-		{ "offset", validateOffset},
-		{ "size",   validateSize},
-		{ "id",     validateId}
+        { "type",     validateType     },
+        { "bank",     validateBank     },
+        { "org",      validateOrg      },
+        { "offset",   validateOffset   },
+        { "size",     validateSize     },
+        { "id",       validateId       },
+        { "filename", validateFilename }
 	};
 
 	validator.capacity     = *iSectionCount;

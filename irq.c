@@ -18,11 +18,11 @@
 #include "irq.h"
 
 static char* IRQNames[5] = {
-    "irq_2.asm",
-    "irq_1.asm",
-    "irq_timer.asm",
-    "irq_nmi.asm",
-    "irq_reset.asm"
+    "irq_2",
+    "irq_1",
+    "irq_timer",
+    "irq_nmi",
+    "irq_reset"
 };
 
 /**
@@ -36,7 +36,7 @@ int getIRQSections(MemoryMap* memmap, Section *section)
     int i;
     uint8_t addr[2];
     off_t   offset = 0x1ff6;
-    
+    size_t  filenameLen;
     for(i=0; i<5; ++i)
     {
         /* Read offset */
@@ -44,14 +44,17 @@ int getIRQSections(MemoryMap* memmap, Section *section)
         addr[1] = readByte(memmap, offset++);
         
         /* Initialize section */
-        section[i].name  = IRQNames[i];
-        section[i].type  = CODE;
-        section[i].bank  = 0;
-        section[i].org   = (addr[1] << 8) | addr[0];
-        section[i].type  = CODE;
-        section[i].start = ((addr[1] & 0x1f) << 8) | addr[0];
-        section[i].size  = 0;
-        section[i].id    = i;
+        section[i].name     = strdup(IRQNames[i]);
+        section[i].type     = CODE;
+        section[i].bank     = 0;
+        section[i].org      = (addr[1] << 8) | addr[0];
+        section[i].type     = CODE;
+        section[i].start    = ((addr[1] & 0x1f) << 8) | addr[0];
+        section[i].size     = 0;
+        section[i].id       = i;
+        filenameLen = strlen(IRQNames[i]) + 5;
+        section[i].filename = (char*)malloc(filenameLen);
+        snprintf(section[i].filename, filenameLen, "%s.asm", IRQNames[i]);
 
         printf("%s found at %04x (%lx)\n", section[i].name, section[i].org, section[i].start);
     }

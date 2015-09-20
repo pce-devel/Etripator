@@ -110,7 +110,8 @@ int getLabels(SectionProcessor* iProcessor)
     int eor, i;
     uint8_t inst;
     uint8_t data[6];
-    
+    char buffer[32];
+
     size_t offset;
     uint16_t logical;
 
@@ -126,7 +127,7 @@ int getLabels(SectionProcessor* iProcessor)
     printf("\n%s:\n", section->name);
 
     /* Push the section org */
-    if(pushLabel(repository, logical) == 0)
+    if(pushLabel(repository, logical, section->name) == 0)
         return 0;
 
     /* Walk along section */
@@ -154,8 +155,11 @@ int getLabels(SectionProcessor* iProcessor)
                 delta = data[i];
             delta += pce_opcode[inst].size;
 
+            /* Create label name */
+            snprintf(buffer, 32, "l%04x_%02d", logical+delta, iProcessor->processed->id);
+
             /* Insert offset to repository */
-            if(pushLabel(repository, logical+delta) == 0)
+            if(pushLabel(repository, logical+delta, buffer) == 0)
                 return 0;
 
             printf("%04x short jump to %04x\n", logical, logical+delta);
@@ -165,8 +169,12 @@ int getLabels(SectionProcessor* iProcessor)
             if(isFarJump(inst))
             {
                 uint16_t jump = data[0] | (data[1] << 8);
+
+                /* Create label name */
+                snprintf(buffer, 32, "l%04x_%02d", jump, iProcessor->processed->id);
+
                 /* Insert offset to repository */
-                if(pushLabel(repository, jump) == 0)
+                if(pushLabel(repository, jump, buffer) == 0)
                     return 0;
 
                 printf("%04x long jump to %04x\n", logical, jump);
@@ -243,7 +251,8 @@ char processOpcode(SectionProcessor* iProcessor) {
         (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset < nextLogical) )
     {
         /* Print label*/
-        sprintf(line, "l%04x_%02x: ", iProcessor->labelRepository.labels[iProcessor->labelIndex].offset,  iProcessor->processed->id);
+        sprintf(line, "%s:\n          ", iProcessor->labelRepository.labels[iProcessor->labelIndex].name);
+        ptr += strlen(line);
 
         /* Add displacement */
         if(iProcessor->labelRepository.labels[iProcessor->labelIndex].offset != logical)
@@ -254,9 +263,8 @@ char processOpcode(SectionProcessor* iProcessor) {
     else
     {
         memset(line, ' ', 10 * sizeof(char));
+        ptr += 10;
     }
-
-    ptr += 10;
 
     /* Print opcode sting */
     memcpy(ptr, pce_opcode[inst].name, 4 * sizeof(char));
@@ -343,39 +351,21 @@ char processOpcode(SectionProcessor* iProcessor) {
     if(pce_opcode[inst].type == 1) {
         *(ptr++) = 'A';
     }
-    else {
-        if((inst == 0x43) || (inst == 0x53))
-        {
-            /* tam and tma */
-            /* Compute log base 2 of data */
-            for(i=0; (i<8) && ((data[0] & 1) == 0); ++i, data[0] >>= 1);
-            data[0] = i;        
-        }
+    else if(isJump) {
+        size_t jump = (data[0]<<8) + data[1];
 
-        /* Add section to jump label */
-        if(pce_opcode[inst].type == 20)
+        /* Add label name */
+        for(i=0; i < iProcessor->labelRepository.last; ++i)
         {
-            data[3] = iProcessor->processed->id & 0xff;
-        }
-        else if(pce_opcode[inst].type == 19)
-        {
-            data[2] = iProcessor->processed->id & 0xff;
-        }
-
-        /* Print data */
-        if(pce_opcode[inst].type)
-        {
-            for(i=0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i)
+            if(iProcessor->labelRepository.labels[i].offset == jump)
             {
-                sprintf(ptr, pce_opstring[pce_opcode[inst].type][i], data[i]);
+                strcpy(ptr, iProcessor->labelRepository.labels[i].name);
                 ptr += strlen(ptr);
+                break;
             }
         }
-    }
 
-    /* Add displacement to jump offset ? */
-    if(isJump)
-    {
+        /* Add displacement */
         /* Search in label database ( todo : dicotomic search ) */
         for(i=0; i < iProcessor->labelRepository.last; ++i)
         {
@@ -391,6 +381,26 @@ char processOpcode(SectionProcessor* iProcessor) {
                 break;
             }
         }
+    }
+    else
+    {
+        if((inst == 0x43) || (inst == 0x53))
+        {
+            /* tam and tma */
+            /* Compute log base 2 of data */
+            for(i=0; (i<8) && ((data[0] & 1) == 0); ++i, data[0] >>= 1);
+            data[0] = i;        
+        }
+
+        /* Print data */
+        if(pce_opcode[inst].type)
+        {
+            for(i=0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i)
+            {
+                sprintf(ptr, pce_opstring[pce_opcode[inst].type][i], data[i]);
+                ptr += strlen(ptr);
+            }
+        }        
     }
 
     *(ptr++) = '\n';

@@ -85,7 +85,7 @@ int main(int argc, char** argv)
         sectionCount = 0;
         section      = NULL;
     }
-    
+
     if(cmdOptions.cfgFileName)
     {
         sectErr = readSectionsFromCFG(cmdOptions.cfgFileName, &section, &sectionCount);
@@ -135,10 +135,25 @@ int main(int argc, char** argv)
     /* Initialize section processor */
     initializeSectionProcessor(&processor);
 
+    // [todo] load labels
+    // [todo] avoid blasting loaded labels in resetSectionProcessor
+
+    /* For each section reset every existing files */
+    for(i=0; i<sectionCount; ++i)
+    {
+        out = fopen(section[i].filename, "wb");
+        if(out == NULL)
+        {
+            ERROR_MSG("Can't open %s : %s", section[i].name, strerror(errno));
+            goto error_4;
+        }
+        fclose(out);
+    }
+
     /* Disassemble and output */
     for(i=0; i<sectionCount; ++i)
     {
-        out = fopen(section[i].name, "wb");
+        out = fopen(section[i].filename, "ab");
         if(out == NULL)
         {
             ERROR_MSG("Can't open %s : %s", section[i].name, strerror(errno));
@@ -210,24 +225,6 @@ int main(int argc, char** argv)
         goto error_4;
     }
   
-    for(i=0; i<sectionCount; ++i)
-    {
-        switch(section[i].type)
-        {
-            case CODE:
-            case INC_DATA:
-                fprintf(mainFile, "\n\t.include \"%s\"\n", section[i].name);
-                break;
-
-            case BIN_DATA:
-                fprintf(mainFile, "\n\t.data\n\t.bank %x\n\t.org $%04x\n\t.incbin \"%s\"\n",
-                section[i].bank,
-                section[i].org,
-                section[i].name);
-                break;
-        };
-    }
-    
     if(cmdOptions.extractIRQ)
     {
         fprintf(mainFile, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
@@ -245,10 +242,10 @@ error_4:
 error_2:
     destroyMemoryMap(&memmap);
 error_1:
-    i = cmdOptions.extractIRQ ? 5 : 0;
-    for(; i<sectionCount; ++i)
+    for(i=0; i<sectionCount; ++i)
     {
         free(section[i].name);
+        free(section[i].filename);
         section[i].name = NULL;
     }
     free(section);
