@@ -24,41 +24,54 @@
 /* Initialize label repository */
 int initializeLabelRepository(LabelRepository* iRepository)
 {
-	iRepository->size = LABEL_ARRAY_INC;
-	iRepository->labels = (Label*)malloc(iRepository->size * sizeof(Label));
-	if(iRepository->labels == NULL)
-	{
-		return 0;
-	}
-	iRepository->last = 0;
+    iRepository->size = LABEL_ARRAY_INC;
+    iRepository->labels = (Label*)malloc(iRepository->size * sizeof(Label));
+    if(iRepository->labels == NULL)
+    {
+        return 0;
+    }
+    iRepository->first = 0;
+    iRepository->last  = 0;
 
     iRepository->nameBuffer    = NULL;
     iRepository->nameBufferLen = 0;
-	return 1;
+    
+    iRepository->sorted = NULL;
+
+    return 1;
 }
 
 /* Reset label repsitory */
 void resetLabelRepository(LabelRepository* iRepository)
 {
-	iRepository->last = 0;
+    iRepository->last = iRepository->first;
 }
 
 /* Delete label repository */
 void deleteLabelRepository(LabelRepository* iRepository)
 {
-	if(iRepository->labels != NULL)
-	{
-		free(iRepository->labels);
-		iRepository->labels = NULL;
-	}
-	iRepository->size = iRepository->last = 0;
+    iRepository->first = 0;
+    iRepository->size  = 0;
+    iRepository->last  = 0;
 
-    if(iRepository->nameBuffer != NULL)
+    if(NULL != iRepository->labels)
+    {
+        free(iRepository->labels);
+        iRepository->labels = NULL;
+    }
+
+    if(NULL != iRepository->nameBuffer)
     {
         free(iRepository->nameBuffer);
         iRepository->nameBuffer = NULL;
     }
     iRepository->nameBufferLen = 0;
+
+    if(NULL != iRepository->sorted)
+    {
+        free(iRepository->sorted);
+        iRepository->sorted = NULL;
+    }
 }
 
 /* Set name and add it to label name buffer */
@@ -76,7 +89,7 @@ static int addLabelName(LabelRepository* iRepository, Label *label, const char* 
     label->name = tmp + iRepository->nameBufferLen;
     memcpy(label->name, name, nameLen+1);
 
-    iRepository->nameBuffer = tmp;
+    iRepository->nameBuffer    = tmp;
     iRepository->nameBufferLen = len;
 
     return 1;
@@ -85,23 +98,25 @@ static int addLabelName(LabelRepository* iRepository, Label *label, const char* 
 /* Push label to repository */
 int pushLabel(LabelRepository* iRepository, uint16_t iOffset, const char* name)
 {
-	if(iRepository->last >= iRepository->size)
-	{
-		Label *ptr;
-		/* Expand array */
-		iRepository->size += LABEL_ARRAY_INC;
-		ptr = (Label*)realloc(iRepository->labels, iRepository->size * sizeof(Label));
-		if(ptr == NULL)
-		{
-			deleteLabelRepository(iRepository);
-			return 0;
-		}
-		
-		iRepository->labels = ptr;
-	}
-	/* Push offset */
-	iRepository->labels[iRepository->last].offset	    = iOffset;
-	iRepository->labels[iRepository->last].displacement = 0;
+    if(iRepository->last >= iRepository->size)
+    {
+        Label  *ptr;
+        /* Expand arrays */
+        iRepository->size += LABEL_ARRAY_INC;
+        ptr = (Label*)realloc(iRepository->labels, iRepository->size * sizeof(Label));
+        if(NULL == ptr)
+        {
+            deleteLabelRepository(iRepository);
+            return 0;
+        }	
+        iRepository->labels = ptr;
+
+            return 0;
+        }
+    }
+    /* Push offset */
+    iRepository->labels[iRepository->last].offset       = iOffset;
+    iRepository->labels[iRepository->last].displacement = 0;
 
     if(0 == addLabelName(iRepository, &iRepository->labels[iRepository->last], name))
     {
@@ -109,8 +124,8 @@ int pushLabel(LabelRepository* iRepository, uint16_t iOffset, const char* name)
         return 0;
     }
 
-	++iRepository->last;
-	return 1;
+    ++iRepository->last;
+    return 1;
 }
 
 /* Compare two labels */
@@ -118,18 +133,34 @@ static int compareLabels(const void* iL0, const void* iL1)
 {
 	const Label *l0 = (const Label*)iL0;
 	const Label *l1 = (const Label*)iL1;
-	
+	// [todo]
 	return (l0->offset - l1->offset);
 }
 
 /* Finalize label repository */
 void finalizeLabelRepositoty(LabelRepository* iRepository)
 {
-	if((iRepository->labels == NULL) || (iRepository->last < 2))
-		return;
+    size_t i;
+    size_t *tmp;
 
-	/* Sort offsets */
-	qsort(iRepository->labels, iRepository->last, sizeof(Label), compareLabels);
+    if((iRepository->labels == NULL) || (iRepository->last < 2))
+        return;
+        
+    tmp = (size_t*)realloc(iRepository->sorted, iRepository->size * size(size_t));
+    if(NULL == tmp)
+    {
+        deleteLabelRepository(iRepository);
+        // [todo] return 0;
+    }   
+    iRepository->sorted = tmp;
+    for(i=0; i<iRepository->size; i++)
+    {
+        iRepository->sorted[i] = i;
+    }
+
+    /* Sort offsets */
+    // [todo]
+    qsort(iRepository->sorted, iRepository->last, sizeof(size_t), compareLabels);
 }
 
 
@@ -191,5 +222,7 @@ int loadLabels(const char* filename, LabelRepository* repository)
         ERROR_MSG("Failed to load labels from %s : %s", filename, GetCFGErrorMsg(err));
         return 0;
     }
+    repository->first = repository->last;
+// [todo]
     return 1;
 }

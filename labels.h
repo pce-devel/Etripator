@@ -49,22 +49,21 @@
 struct Label_
 {
     uint16_t offset;       /* Label offset */
-    uint8_t	 displacement; /* Displacement to label offset if it's centered on an instruction */
+    uint8_t  displacement; /* Displacement to label offset if it's centered on an instruction */
     char     *name;        /* Label name */
 };
 typedef struct Label_ Label;
 
-/* Label repository structure 
- * 		1 per bank
- * 		There's at max 8k labels per bank
- */
+/* Label repository structure */
 struct LabelRepository_
 {
-    uint16_t	size;          /* Size of label repository */
-    uint16_t	last;          /* Last element in the repository */
-    Label		*labels;       /* Sorted labels */
-    char        *nameBuffer;   /* Label name buffer */
-    size_t      nameBufferLen; /* Label name buffer length */
+    size_t size;          /* Size of label repository */
+    size_t first;         /* First added (non loaded) label */
+    size_t last;          /* Last element in the repository */
+    Label  *labels;       /* Sorted labels */
+    char   *nameBuffer;   /* Label name buffer */
+    size_t nameBufferLen; /* Label name buffer length */
+    size_t *sorted;       /* Index of sorted labels */
 };
 typedef struct LabelRepository_ LabelRepository;
 
