@@ -19,68 +19,59 @@
 #define LABELS_H
 
 #include "config.h"
-#include "opcodes.h"
-#include "rbtree.h"
 
-/* Is the instruction a local jump ? */
-#define isLocalJump(i) \
-( \
-	(((i) & 0x0F) == 0x0F) || /* BBR* and BBS* */ \
-	((i)          == 0x90) || /* BCC           */ \
-	((i)          == 0xB0) || /* BCS           */ \
-	((i)          == 0x80) || /* BRA           */ \
-	((i)          == 0xF0) || /* BEQ           */ \
-	((i)          == 0x30) || /* BMI           */ \
-	((i)          == 0xD0) || /* BNE           */ \
-	((i)          == 0x10) || /* BPL           */ \
-	((i)          == 0x44) || /* BSR           */ \
-	((i)          == 0x50) || /* BVC           */ \
-	((i)          == 0x70)    /* BVS           */ \
-)
-
-/* Is the instruction a "far" jump ? */
-#define isFarJump(i) \
-( \
-	((i) == 0x4C) || /* JMP */ \
-	((i) == 0x20)    /* JSR */ \
-)
-
-/* Label */
-struct Label_
+/**
+ * Label.
+ */
+typedef struct
 {
-    uint16_t offset;       /* Label offset */
-    uint8_t  displacement; /* Displacement to label offset if it's centered on an instruction */
-    char     *name;        /* Label name */
-};
-typedef struct Label_ Label;
+    size_t   name;         /**< Label name offset */
+    uint16_t offset;       /**< Label offset */
+    uint8_t  displacement; /**< Displacement to label offset if it's centered on an instruction */
+} Label;
 
-/* Label repository structure */
-struct LabelRepository_
+/**
+ * Label repository.
+ */
+typedef struct
 {
-    size_t size;          /* Size of label repository */
-    size_t first;         /* First added (non loaded) label */
-    size_t last;          /* Last element in the repository */
-    Label  *labels;       /* Sorted labels */
-    char   *nameBuffer;   /* Label name buffer */
-    size_t nameBufferLen; /* Label name buffer length */
-    size_t *sorted;       /* Index of sorted labels */
-};
-typedef struct LabelRepository_ LabelRepository;
+    size_t size;          /**< Size of label repository */
+    size_t first;         /**< First added (non loaded) label */
+    size_t last;          /**< Last element in the repository */
+    Label  *labels;       /**< Labels */
+    char   *nameBuffer;   /**< Label name buffer */
+    size_t nameBufferLen; /**< Label name buffer length */
+    size_t *sorted;       /**< Index of sorted labels */
+} LabelRepository;
 
-/* Initialize label repository */
-int initializeLabelRepository(LabelRepository*);
+/**
+ * Initialize label repository.
+ * \param [in,out] repository Label repository.
+ * \return 1 if initialization succedded, 0 if an error occured.
+ */
+int initializeLabelRepository(LabelRepository* repository);
 
 /* Reset label repsitory */
-void resetLabelRepository(LabelRepository*);
+void resetLabelRepository(LabelRepository* repository);
 
 /* Delete label repository */
-void deleteLabelRepository(LabelRepository*);
+void deleteLabelRepository(LabelRepository* repository);
 
 /* Push label to repository */
-int pushLabel(LabelRepository*, uint16_t, const char *name);
+int pushLabel(LabelRepository* repository, uint16_t logical, const char *name);
 
 /* Finalize label repository */
-void finalizeLabelRepositoty(LabelRepository*);
+void finalizeLabelRepositoty(LabelRepository* repository);
+
+/**
+ * Check if there's a label at the specified logical address.
+ * \param [in]  repository  Label repository.
+ * \param [in]  logical     Logical address.
+ * \param [in]  nextLogical Next instruction logical address.
+ * \param [out] name        Label name (if found).
+ * \return 1 if a label was found, 0 otherwise.
+ */
+int findLabel(LabelRepository* repository, uint16_t logical, uint16_t nextLogical, char** name);
 
 /**
  * Load labels from a cfg file.

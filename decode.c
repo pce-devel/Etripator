@@ -17,6 +17,7 @@
 */
 #include "message.h"
 #include "decode.h"
+#include "opcodes.h"
 
 /*
  * Initialize section processor
@@ -32,8 +33,8 @@ int initializeSectionProcessor(SectionProcessor* iProcessor)
 
     iProcessor-> offset = 0;
 
-    iProcessor->buffer      = NULL;
-    iProcessor->labelIndex  = 0;
+    iProcessor->buffer = NULL;
+
     return initializeLabelRepository(&iProcessor->labelRepository);
 }
 
@@ -51,7 +52,6 @@ void resetSectionProcessor(MemoryMap* iMemmap, FILE* iOut, Section* iProcessed, 
 
     iProcessor->offset = 0;
 
-    iProcessor->labelIndex = 0;
     resetLabelRepository(&iProcessor->labelRepository);
 }
   
@@ -65,7 +65,6 @@ void deleteSectionProcessor(SectionProcessor* iProcessor)
         free(iProcessor->buffer);
         iProcessor->buffer = NULL;
     }
-
     deleteLabelRepository(&iProcessor->labelRepository);
 }
 
@@ -203,23 +202,6 @@ int getLabels(SectionProcessor* iProcessor)
     return 1;
 }
 
-/* Initialize label index so that it points to the label close to current org offset */
-void getLabelIndex(SectionProcessor* iProcessor)
-{
-    int i;
-    
-    /* Room for huge improvments */
-    for(i=iProcessor->labelIndex; i<iProcessor->labelRepository.last; ++i)
-    {
-        if(iProcessor->labelRepository.labels[i].offset >= (iProcessor->logicalAddr + iProcessor->offset))
-        {
-            break;
-        }
-    }
-    
-    iProcessor->labelIndex = i;
-}
-
 /* Maximum number of characters per line */
 #define MAX_CHAR_PER_LINE 80
 
@@ -230,6 +212,7 @@ char processOpcode(SectionProcessor* iProcessor) {
     int i, delta;
     uint8_t inst, data[6], isJump;
     char line[MAX_CHAR_PER_LINE], eor, *ptr;
+    char *name;
     uint16_t offset;
     uint16_t logical, nextLogical;
 
@@ -239,26 +222,15 @@ char processOpcode(SectionProcessor* iProcessor) {
     /* Opcode */
     inst = readByte(iProcessor->memmap, iProcessor->physicalAddr + iProcessor->offset);
 
-    /* Get label index */
-    getLabelIndex(iProcessor);
-
     logical     = iProcessor->logicalAddr + iProcessor->offset;
     nextLogical = logical + pce_opcode[inst].size;
     
     /* Is there a label ? */
-    if( (iProcessor->labelIndex < iProcessor->labelRepository.last) &&
-        (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset >= logical) &&
-        (iProcessor->labelRepository.labels[iProcessor->labelIndex].offset < nextLogical) )
+    if( findLabel(&iProcessor->labelRepository, logical, nextLogical, &name) )
     {
         /* Print label*/
-        sprintf(line, "%s:\n          ", iProcessor->labelRepository.labels[iProcessor->labelIndex].name);
+        sprintf(line, "%s:\n          ", name);
         ptr += strlen(line);
-
-        /* Add displacement */
-        if(iProcessor->labelRepository.labels[iProcessor->labelIndex].offset != logical)
-        {
-            iProcessor->labelRepository.labels[iProcessor->labelIndex].displacement = iProcessor->labelRepository.labels[iProcessor->labelIndex].offset - logical;
-        }
     }
     else
     {
@@ -348,39 +320,20 @@ char processOpcode(SectionProcessor* iProcessor) {
         }
     }
 
-    if(pce_opcode[inst].type == 1) {
+    if(pce_opcode[inst].type == 1)
+    {
         *(ptr++) = 'A';
     }
-    else if(isJump) {
+    else if(isJump)
+    {
         size_t jump = (data[0]<<8) + data[1];
-
-        /* Add label name */
-        for(i=0; i < iProcessor->labelRepository.last; ++i)
+        // Add label name.
+        if(findLabel(&iProcessor->labelRepository, jump, jump+1, &name))
         {
-            if(iProcessor->labelRepository.labels[i].offset == jump)
-            {
-                strcpy(ptr, iProcessor->labelRepository.labels[i].name);
-                ptr += strlen(ptr);
-                break;
-            }
+            strcpy(ptr, name);
+            ptr += strlen(ptr);
         }
-
-        /* Add displacement */
-        /* Search in label database ( todo : dicotomic search ) */
-        for(i=0; i < iProcessor->labelRepository.last; ++i)
-        {
-            if(iProcessor->labelRepository.labels[i].offset == offset)
-            {
-                /* Displacement may not exceed 7 (maximum opcode data size) */
-                if(iProcessor->labelRepository.labels[i].displacement != 0)
-                {
-                    ptr[0] = '+';
-                    ptr[1] = '0' + iProcessor->labelRepository.labels[i].displacement;
-                    ptr += 2;
-                }
-                break;
-            }
-        }
+        // [todo] restore displacement
     }
     else
     {
