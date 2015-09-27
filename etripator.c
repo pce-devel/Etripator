@@ -27,6 +27,7 @@
 #include "rom.h"
 #include "cd.h"
 #include "options.h"
+#include "labelsloader.h"
 
 /*
   exit callback
@@ -135,8 +136,16 @@ int main(int argc, char** argv)
     /* Initialize section processor */
     initializeSectionProcessor(&processor);
 
-    // [todo] load labels
-    // [todo] avoid blasting loaded labels in resetSectionProcessor
+    /* Load labels */
+    if(NULL != cmdOptions.labelsFileName)
+    {
+        err = loadLabels(cmdOptions.labelsFileName, processor.labelRepository);
+        if(err == 0)
+        {
+            ERROR_MSG("An error occured while loading labels from %s : %s", cmdOptions.labelsFileName, strerror(errno));
+            goto error_4;
+        }
+    }
 
     /* For each section reset every existing files */
     for(i=0; i<sectionCount; ++i)

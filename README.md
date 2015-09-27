@@ -10,6 +10,7 @@ The options are :
 * **--cd** or **-c** : cdrom image disassembly. Irq detection and rom header jump are not performed.
 * **--help** or **-h** : displays help.
 * **--out** or **-o <file>** : main asm file containing includes for all sections as long the irq vector table if the irq-detect  option is enabled.
+* **--labels** or **-l <file>** : labels definition filename.
 * **cfg** :  configuration file. It is optional if irq detection is enabled. 
 * **in** : binary to be disassembled (ROM or CDROM track).
 
@@ -17,8 +18,7 @@ The options are :
 
 The configuration file is a standard **CFG**/**INI** file.
 
-Each section starts with the name of the output file between square
-brackets. The supported fields are :
+The supported fields are :
  * **filename** *(mandatory)* : name of the output file. If multiple sections have the same output filename, their output will be appended to that file. On the other hand, note that the output file will be overwritten at each session.
  
  * **type** *(mandatory)* : values are **code**, **bin_data** or **inc_data**.
@@ -41,3 +41,14 @@ brackets. The supported fields are :
  * **id** : section id. If this option is set, all the label will be postfixed with this value. Otherwise the section index will be used.
 
 There must be only one occurence of each field per section.
+
+## Labels definition file format
+
+The labels definition file is a standard **CFG**/**INI** file.
+
+Each section starts with the name of the label between square brackets.
+
+The supported fields are :
+ * **logical** : Logical address of the label in hexadecimal.
+ 
+ * **physical** : physical address of the label in hexadecimal.

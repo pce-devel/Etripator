@@ -16,7 +16,6 @@
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "labels.h"
-#include "cfg.h"
 #include "message.h"
 
 #define LABEL_ARRAY_INC 16
@@ -212,71 +211,4 @@ int findLabelByLogicalAddress(LabelRepository* repository, uint16_t logical, cha
     }
     *name = "";
     return 0;
-}
-
-// [todo] Move to a new file!
-// [todo] New CFG format
-// [name]
-// logical=e812
-// physical=a6812
-//
-/* Label CFG section start */
-static int labelBeginSectionCallback(void *data, const char *sectionName)
-{
-    (void)data;
-    (void)sectionName;
-    return 1;
-}
-/* Label CFG section end */
-static int labelEndSectionCallback(void *data)
-{
-    (void)data;
-    return 1;
-}
-/* Add name/label to repository */
-int labelKeyValueCallback(void *data, const char* key, const char* value)
-{
-    LabelRepository *repository = (LabelRepository*)data;
-    (void)key;
-    if(NULL == repository)
-    {
-        return 0;
-    }
-    else
-    {
-        char *end = NULL;
-        uint16_t addr = (uint16_t)(strtoul(value, &end, 16) & 0xffff);
-        if((NULL != end) && ('\0' != *end))
-        {
-            ERROR_MSG("Invalid offset %s : %s", value, strerror(errno));
-            return 0;
-        }
-        return addLabel(repository, key, addr, 0xcafe); // [todo] Do this in section end callback
-    }
-}
-
-/**
- * Load labels from a cfg file.
- * \param [in]  filename Cfg file.
- * \param [out] reposity Label repository.
- * \return 1 if the labels contained in the file was succesfully added to the repository.
- *         0 if an error occured.
- */
-int loadLabels(const char* filename, LabelRepository* repository)
-{
-    CFG_ERR err;
-    struct CFGPayload payload;
-
-    payload.data = repository;
-    payload.beginSectionCallback = labelBeginSectionCallback;
-    payload.endSectionCallback   = labelEndSectionCallback;
-    payload.keyValueCallback     = labelKeyValueCallback;
-
-    err = ParseCFG(filename, &payload);
-    if(CFG_OK != err)
-    {
-        ERROR_MSG("Failed to load labels from %s : %s", filename, GetCFGErrorMsg(err));
-        return 0;
-    }
-    return 1;
 }

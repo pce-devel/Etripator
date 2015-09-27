@@ -15,27 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef LABELS_LOADER_H
+#define LABELS_LOADER_H
 
-#include "config.h"
+#include "labels.h"
 
-/* Command line options */
-struct CommandLineOptions_
-{
-    uint8_t extractIRQ;
-    uint8_t cdrom;
-    char *cfgFileName;
-    char *romFileName;
-    char *mainFileName;
-    char *labelsFileName;
-};
-typedef struct CommandLineOptions_ CommandLineOptions;
+/**
+ * Load labels from file.
+ * \param [in]  filename Configuration file.
+ * \param [out] reposity Label repository.
+ * \return 1 if the labels contained in the file was succesfully added to the repository.
+ *         0 if an error occured.
+ */
+int loadLabels(const char* filename, LabelRepository* repository);
 
-/* Print usage */
-void usage();
-
-/* Extract command line options */
-int getCommandLineOptions(int, char**, CommandLineOptions*);
-
-#endif // OPTIONS_H
+#endif // LABELS_LOADER_H

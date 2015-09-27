@@ -21,36 +21,39 @@
 void usage()
 {
     fprintf(stderr, "Usage : etripator [options] <cfg> <in>\n"
-            "--irq-detect or -i : automatically detect and extract irq vectors.\n"
-            "--cd or -c         : cdrom image disassembly. Irq detection and rom\n"
-            "                     header jump are not performed.\n"
-            "--help or -h       : displays this message.\n"
-            "--out or -o <file> : main asm file containing includes for all sections \n"
-            "                     as long the irq vector table if the irq-detect\n"
-            "                     option is enabled.\n"
-            "<cfg>              : configuration file (optional with -i option).\n"
-            "<in>               : binary.\n");
+            "--irq-detect or -i    : automatically detect and extract irq vectors.\n"
+            "--cd or -c            : cdrom image disassembly. Irq detection and rom\n"
+            "                        header jump are not performed.\n"
+            "--help or -h          : displays this message.\n"
+            "--out or -o <file>    : main asm file containing includes for all sections \n"
+            "                        as long the irq vector table if the irq-detect\n"
+            "                        option is enabled.\n"
+            "--labels or -l <file> : labels definition filename.\n"
+            "<cfg>                 : configuration file (optional with -i option).\n"
+            "<in>                  : binary.\n");
 }
 
 /* Extract command line options */
 int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
 {
-    char *shortOptions = "icho:";
+    char *shortOptions = "icho:l:";
     struct option longOptions[] = {
         {"irq-detect", 0, 0, 'i'},
         {"cd",         0, 0, 'c'},
         {"help",       0, 0, 'h'},
         {"out",        1, 0, 'o'},
+        {"labels",     1, 0, 'l'},
         { 0,           0, 0,  0 }
     };
     int idx, opt;
 
     /* Reset options */
-    iOptions->extractIRQ   = 0;
-    iOptions->cdrom        = 0;
-    iOptions->cfgFileName  = NULL;
-    iOptions->romFileName  = NULL;
-    iOptions->mainFileName = "main.asm";
+    iOptions->extractIRQ     = 0;
+    iOptions->cdrom          = 0;
+    iOptions->cfgFileName    = NULL;
+    iOptions->romFileName    = NULL;
+    iOptions->mainFileName   = "main.asm";
+    iOptions->labelsFileName = NULL;
     
     /* Note : IRQ detection is disabled with the cdrom option */
     while ((opt = getopt_long (argc, argv, shortOptions, longOptions, &idx)) > 0)
@@ -70,7 +73,11 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
             case 'o':
                 iOptions->mainFileName = optarg;
                 break;
-
+            
+            case 'l':
+                iOptions->labelsFileName = optarg;
+                break;
+            
             case 'h':
                 return 0;
 
