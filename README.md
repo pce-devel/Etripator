@@ -1,6 +1,7 @@
 # Etripator : a PC Engine disassembler
 by Vincent "MooZ" Cruz
 
+[![Travis build Status](https://travis-ci.org/BlockoS/Etripator.svg)](https://travis-ci.org/BlockoS/Etripator)
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/6483/badge.svg)](https://scan.coverity.com/projects/blockos-etripator)
 
 ## Usage
