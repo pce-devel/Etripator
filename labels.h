@@ -20,58 +20,49 @@
 
 #include "config.h"
 
-/**
- * Label.
- */
-typedef struct
-{
-    size_t   name;         /**< Label name offset */
-    uint16_t offset;       /**< Label offset */
-    uint8_t  displacement; /**< Displacement to label offset if it's centered on an instruction */
-} Label;
+#define INVALID_PHYSICAL_ADDRESS 0xffffffff
+
+typedef struct LabelRepositoryImpl LabelRepository;
 
 /**
- * Label repository.
+ * Create label repository.
+ * \return A pointer to a label repository or NULL if an error occured.
  */
-typedef struct
-{
-    size_t size;          /**< Size of label repository */
-    size_t first;         /**< First added (non loaded) label */
-    size_t last;          /**< Last element in the repository */
-    Label  *labels;       /**< Labels */
-    char   *nameBuffer;   /**< Label name buffer */
-    size_t nameBufferLen; /**< Label name buffer length */
-    size_t *sorted;       /**< Index of sorted labels */
-} LabelRepository;
+LabelRepository* createLabelRepository();
 
 /**
- * Initialize label repository.
+ * Release label repository resources.
  * \param [in,out] repository Label repository.
- * \return 1 if initialization succedded, 0 if an error occured.
  */
-int initializeLabelRepository(LabelRepository* repository);
-
-/* Reset label repsitory */
-void resetLabelRepository(LabelRepository* repository);
-
-/* Delete label repository */
 void deleteLabelRepository(LabelRepository* repository);
 
-/* Push label to repository */
-int pushLabel(LabelRepository* repository, uint16_t logical, const char *name);
-
-/* Finalize label repository */
-void finalizeLabelRepositoty(LabelRepository* repository);
+/**
+ * Add label to repository.
+ * \param [in,out] repository Label repository.
+ * \param [in]     name       Name.
+ * \param [in]     logical    Logical address.
+ * \param [in]     physical   Physical address.
+ */
+int addLabel(LabelRepository* repository, const char* name, uint16_t logical, uint32_t physical);
 
 /**
- * Check if there's a label at the specified logical address.
+ * Find if a label is associated to the specified physical address.
  * \param [in]  repository  Label repository.
- * \param [in]  logical     Logical address.
- * \param [in]  nextLogical Next instruction logical address.
+ * \param [in]  physical    Physical address.
  * \param [out] name        Label name (if found).
  * \return 1 if a label was found, 0 otherwise.
  */
-int findLabel(LabelRepository* repository, uint16_t logical, uint16_t nextLogical, char** name);
+int findLabelByPhysicalAddress(LabelRepository* repository, uint16_t physical, char** name);
+
+/**
+ * Find if a label is associated to the specified logical address.
+ * \param [in]  repository  Label repository.
+ * \param [in]  logical     Logical address.
+ * \param [out] name        Label name (if found).
+ * \return 1 if a label was found, 0 otherwise.
+ * \todo How to handle multiple results ?
+ */
+int findLabelByLogicalAddress(LabelRepository* repository, uint16_t logical, char** name);
 
 /**
  * Load labels from a cfg file.

@@ -19,6 +19,8 @@ The configuration file is a standard **CFG**/**INI** file.
 
 Each section starts with the name of the output file between square
 brackets. The supported fields are :
+ * **filename** *(mandatory)* : name of the output file. If multiple sections have the same output filename, their output will be appended to that file. On the other hand, note that the output file will be overwritten at each session.
+ 
  * **type** *(mandatory)* : values are **code**, **bin_data** or **inc_data**.
 	* **code** indicates that the section will be disassembled and output as asm code.
     * **inc_data** means that the section is pure data. but it will be output as code directives (.db).

@@ -22,41 +22,70 @@
 #define LABEL_ARRAY_INC 16
 
 /**
- * Initialize label repository.
- * \param [in,out] repository Label repository.
- * \return 1 if initialization succedded, 0 if an error occured.
+ * Label.
  */
-int initializeLabelRepository(LabelRepository* repository)
+typedef struct
 {
-    repository->size = LABEL_ARRAY_INC;
-    repository->labels = (Label*)malloc(repository->size * sizeof(Label));
-    if(repository->labels == NULL)
+    size_t   name;     /**< Offset in the repository name buffer */
+    uint16_t logical;  /**< Logical address */
+    uint32_t physical; /**< Physical address */
+} Label;
+
+/**
+ * Label repository.
+ */
+struct LabelRepositoryImpl
+{
+    size_t size;          /**< Size of label repository */
+    size_t last;          /**< Last element in the repository */
+    Label  *labels;       /**< Labels */
+    size_t *sorted;       /**< Index of sorted labels */
+    size_t nameBufferLen; /**< Label name buffer length */
+    char   *nameBuffer;   /**< Label name buffer */
+};
+
+/**
+ * Create label repository.
+ * \return A pointer to a label repository or NULL if an error occured.
+ */
+LabelRepository* createLabelRepository()
+{
+    LabelRepository *repository;
+    repository = (LabelRepository*)malloc(sizeof(LabelRepository));
+    if(NULL == repository)
     {
-        return 0;
+        return NULL;
     }
-    repository->first = 0;
+    
     repository->last  = 0;
 
     repository->nameBuffer    = NULL;
     repository->nameBufferLen = 0;
+
+    repository->labels = NULL;
+
+    repository->size = LABEL_ARRAY_INC;
+    repository->labels = (Label*)malloc(repository->size * sizeof(Label));
+    if(NULL == repository->labels)
+    {
+        deleteLabelRepository(repository);
+        free(repository);
+        return NULL;
+    }
     
-    repository->sorted = NULL;
-
-    return 1;
+    return repository;
 }
 
-/* Reset label repsitory */
-void resetLabelRepository(LabelRepository* repository)
-{
-    repository->last = repository->first;
-}
-
-/* Delete label repository */
+/**
+ * Delete label repository.
+ * \param [in,out] repository Label repository.
+ */
 void deleteLabelRepository(LabelRepository* repository)
 {
-    repository->first = 0;
     repository->size  = 0;
     repository->last  = 0;
+
+    repository->nameBufferLen = 0;
 
     if(NULL != repository->labels)
     {
@@ -68,13 +97,6 @@ void deleteLabelRepository(LabelRepository* repository)
     {
         free(repository->nameBuffer);
         repository->nameBuffer = NULL;
-    }
-    repository->nameBufferLen = 0;
-
-    if(NULL != repository->sorted)
-    {
-        free(repository->sorted);
-        repository->sorted = NULL;
     }
 }
 
@@ -95,18 +117,34 @@ static int setLabelName(LabelRepository* repository, Label *label, const char* n
 
     repository->nameBuffer    = tmp;
     repository->nameBufferLen = len;
-
     return 1;
 }
 
-/* Push label to repository */
-int pushLabel(LabelRepository* repository, uint16_t iOffset, const char* name)
+/**
+ * Add label to repository.
+ * \param [in,out] repository Label repository.
+ * \param [in]     name       Name.
+ * \param [in]     logical    Logical address.
+ * \param [in]     physical   Physical address.
+ */
+int addLabel(LabelRepository* repository, const char* name, uint16_t logical, uint32_t physical)
 {
+    // Check if there's an entry for the given physical address
+    if(INVALID_PHYSICAL_ADDRESS != physical)
+    {
+        char *dummy;
+        if(findLabelByPhysicalAddress(repository, physical, &dummy))
+        {
+            return -1;
+        }
+    }
+
+    /* Expand arrays if necessary */
     if(repository->last >= repository->size)
     {
-        Label  *ptr;
-        /* Expand arrays */
+        Label *ptr;
         repository->size += LABEL_ARRAY_INC;
+        
         ptr = (Label*)realloc(repository->labels, repository->size * sizeof(Label));
         if(NULL == ptr)
         {
@@ -115,176 +153,73 @@ int pushLabel(LabelRepository* repository, uint16_t iOffset, const char* name)
         }
         repository->labels = ptr;
     }
-    /* Push offset */
-    repository->labels[repository->last].offset       = iOffset;
-    repository->labels[repository->last].displacement = 0;
+    
+    /* Push addresses */
+    repository->labels[repository->last].logical  = logical;
+    repository->labels[repository->last].physical = physical;
+    
+    /* Push name */
     if(0 == setLabelName(repository, &repository->labels[repository->last], name))
     {
         deleteLabelRepository(repository);
         return 0;
     }
+
     ++repository->last;
     return 1;
 }
 
-#define CSWAP(i,j) \
-{ \
-    size_t x = repository->sorted[i]; \
-    size_t a = repository->labels[x].offset; \
-    size_t y = repository->sorted[j]; \
-    size_t b = repository->labels[y].offset; \
-    repository->sorted[i]  = (b < a) ? x : y; \
-    repository->sorted[j] ^= repository->sorted[i] ^ x; \
-}
-
-/* 3-way partition */
-static void partition(LabelRepository* repository, size_t lo, size_t hi, size_t *lt, size_t *gt)
-{
-    size_t i, tmp;
-
-    if(repository->labels[repository->sorted[hi]].offset < repository->labels[repository->sorted[lo]].offset)
-    {
-        tmp = repository->sorted[hi];
-        repository->sorted[hi] = repository->sorted[lo];
-        repository->sorted[lo] = tmp;
-    }
-
-    *lt = lo+1;
-    *gt = hi-1;
-    i = *lt;
-    
-    while(i <= *gt)
-    {
-        if(repository->labels[repository->sorted[i]].offset < repository->labels[repository->sorted[lo]].offset)
-        {
-           tmp = repository->sorted[*lt];
-           repository->sorted[*lt] = repository->sorted[i]; 
-           repository->sorted[i]   = tmp;
-            ++*lt;
-        }
-        else if(repository->labels[repository->sorted[hi]].offset <  repository->labels[repository->sorted[i]].offset)
-        {
-            while((repository->labels[repository->sorted[*gt]].offset > repository->labels[repository->sorted[hi]].offset) && (i < *gt))
-            {
-                --*gt;
-            }
-           tmp = repository->sorted[*gt];
-           repository->sorted[*gt] = repository->sorted[i]; 
-           repository->sorted[i]   = tmp;
-            --*gt;
-            if(repository->labels[repository->sorted[i]].offset <  repository->labels[repository->sorted[lo]].offset)
-            {
-               tmp = repository->sorted[*lt]; 
-               repository->sorted[*lt] = repository->sorted[i]; 
-               repository->sorted[i]   = tmp;
-                ++*lt;
-            }
-        }
-        ++i;
-    }
-
-    --*lt;
-    ++*gt;
-
-    tmp = repository->sorted[*lt];
-    repository->sorted[*lt] = repository->sorted[lo]; 
-    repository->sorted[ lo]   = tmp;
-
-    tmp = repository->sorted[*gt]; 
-    repository->sorted[*gt] = repository->sorted[hi]; 
-    repository->sorted[ hi]   = tmp;
-}
-
-/* Sort label repository */
-static void sortLabelRepository(LabelRepository* repository, size_t lo, size_t hi)
-{
-    size_t len = hi - lo + 1;
-    if(len < 17)
-    {
-        size_t i;
-        /* Insertion sort */
-        for(i=lo+1; i<=hi; i++)
-        {
-            size_t j;
-            size_t k = repository->sorted[i];
-            size_t o = repository->labels[k].offset;
-            for(j=i; (j>lo) && (repository->labels[repository->sorted[j-1]].offset > o); j--)
-            {
-                repository->sorted[j] = repository->sorted[j-1];
-            }
-            repository->sorted[j] = k;
-        }
-    }
-    else
-    {
-        size_t lt, gt;
-        /* Quicksort */
-        partition(repository, lo, hi, &lt, &gt);
-        if(repository->labels[repository->sorted[lt]].offset < repository->labels[repository->sorted[gt]].offset)
-        {
-            if(lo < lt) sortLabelRepository(repository,   lo, lt-1);
-            if(lt < gt) sortLabelRepository(repository, lt+1, gt-1);
-            if(gt < hi) sortLabelRepository(repository, gt+1, hi  );
-        }
-        else
-        {
-            if(lo < lt) sortLabelRepository(repository, lo  , lt-1);
-            if(gt < hi) sortLabelRepository(repository, gt+1, hi  );
-        }
-    }
-}
-
-/* Finalize label repository */
-void finalizeLabelRepositoty(LabelRepository* repository)
-{
-    size_t i;
-    size_t *tmp;
-
-    if((repository->labels == NULL) || (repository->last < 2))
-        return;
-        
-    tmp = (size_t*)realloc(repository->sorted, repository->size * sizeof(size_t));
-    if(NULL == tmp)
-    {
-        deleteLabelRepository(repository);
-        // [todo] return 0;
-    }   
-    repository->sorted = tmp;
-    for(i=0; i<repository->size; i++)
-    {
-        repository->sorted[i] = i;
-    }
-
-    /* Sort offsets */
-    sortLabelRepository(repository, 0, repository->last-1);
-}
-
 /**
- * Check if there's a label at the specified logical address.
+ * Find if a label is associated to the specified physical address.
  * \param [in]  repository  Label repository.
- * \param [in]  logical     Logical address.
- * \param [in]  nextLogical Next instruction logical address.
+ * \param [in]  physical    Physical address.
  * \param [out] name        Label name (if found).
  * \return 1 if a label was found, 0 otherwise.
  */
-int findLabel(LabelRepository* repository, uint16_t logical, uint16_t nextLogical, char** name)
+int findLabelByPhysicalAddress(LabelRepository* repository, uint16_t physical, char** name)
 {
-    size_t i = 0;
+    size_t i;
     for(i=0; i<repository->last; i++)
     {
-        size_t j = repository->sorted[i];
-        if((repository->labels[j].offset >= logical) &&
-           (repository->labels[j].offset < nextLogical))
+        if(repository->labels[i].physical == physical)
         {
-            *name = repository->nameBuffer + repository->labels[j].name;
-            repository->labels[j].displacement = repository->labels[j].offset - logical;
+            *name = repository->nameBuffer + repository->labels[i].name;
             return 1;
         }
     }
-    *name = "_";
+    *name = "";
     return 0;
 }
 
+/**
+ * Find if a label is associated to the specified logical address.
+ * \param [in]  repository  Label repository.
+ * \param [in]  logical     Logical address.
+ * \param [out] name        Label name (if found).
+ * \return 1 if a label was found, 0 otherwise.
+ * \todo How to handle multiple results ?
+ */
+int findLabelByLogicalAddress(LabelRepository* repository, uint16_t logical, char** name)
+{
+    size_t i;
+    for(i=0; i<repository->last; i++)
+    {
+        if(repository->labels[i].logical == logical)
+        {
+            *name = repository->nameBuffer + repository->labels[i].name;
+            return 1;
+        }
+    }
+    *name = "";
+    return 0;
+}
+
+// [todo] Move to a new file!
+// [todo] New CFG format
+// [name]
+// logical=e812
+// physical=a6812
+//
 /* Label CFG section start */
 static int labelBeginSectionCallback(void *data, const char *sectionName)
 {
@@ -316,7 +251,7 @@ int labelKeyValueCallback(void *data, const char* key, const char* value)
             ERROR_MSG("Invalid offset %s : %s", value, strerror(errno));
             return 0;
         }
-        return pushLabel(repository, addr, key);
+        return addLabel(repository, key, addr, 0xcafe); // [todo] Do this in section end callback
     }
 }
 
@@ -343,7 +278,5 @@ int loadLabels(const char* filename, LabelRepository* repository)
         ERROR_MSG("Failed to load labels from %s : %s", filename, GetCFGErrorMsg(err));
         return 0;
     }
-    repository->first = repository->last;
-// [todo]
     return 1;
 }

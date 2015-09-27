@@ -144,7 +144,7 @@ int main(int argc, char** argv)
         out = fopen(section[i].filename, "wb");
         if(out == NULL)
         {
-            ERROR_MSG("Can't open %s : %s", section[i].name, strerror(errno));
+            ERROR_MSG("Can't open %s : %s", section[i].filename, strerror(errno));
             goto error_4;
         }
         fclose(out);
@@ -156,7 +156,7 @@ int main(int argc, char** argv)
         out = fopen(section[i].filename, "ab");
         if(out == NULL)
         {
-            ERROR_MSG("Can't open %s : %s", section[i].name, strerror(errno));
+            ERROR_MSG("Can't open %s : %s", section[i].filename, strerror(errno));
             goto error_4;
         }
 
@@ -188,8 +188,8 @@ int main(int argc, char** argv)
         {
             char eor;
             
-            /* Fetch labels */
-            if(!getLabels(&processor))
+            /* Extract labels */
+            if(!extractLabels(&processor))
             {
                 goto error_4;
             }

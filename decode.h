@@ -19,11 +19,12 @@
 #define DECODE_H
 
 #include "config.h"
+#include "labels.h"
 #include "section.h"
 #include "memorymap.h"
 
-/*
- *
+/**
+ * \todo Rename
  */
 struct SectionProcessor_
 {
@@ -36,8 +37,7 @@ struct SectionProcessor_
 
     size_t   offset; /* Current section offset */
 
-    uint16_t        labelIndex;      /* current label */
-    LabelRepository labelRepository; /* label repository for this section */
+    LabelRepository* labelRepository; /* label repository for this section */
 
     /* Used for raw binary data output */
     uint8_t *buffer;       /* Data buffer */
@@ -46,8 +46,9 @@ typedef struct SectionProcessor_ SectionProcessor;
 
 /*
  * Initialize section processor
+ * \return 1 upon success, 0 otherwise.
  */
-int initializeSectionProcessor(SectionProcessor*);
+int initializeSectionProcessor(SectionProcessor* processor);
 
 /*
  * Reset section processor
@@ -67,16 +68,11 @@ int processDataSection(SectionProcessor* iProcessor);
 /* 
  * Parse section to identify potential labels 
  */
-int getLabels(SectionProcessor* iProcessor);
-
-/* 
- * Initialize label index so that it points to the label close to current org offset
- */
-void getLabelIndex(SectionProcessor*);
+int extractLabels(SectionProcessor* processor);
 
 /*
  * Process opcode
  */
-char processOpcode(SectionProcessor*);
+char processOpcode(SectionProcessor* processor);
 
 #endif // DECODE_H
