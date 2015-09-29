@@ -228,8 +228,7 @@ int extractLabels(SectionProcessor* processor)
     return 1;
 }
 
-/* Maximum number of characters per line */
-#define MAX_CHAR_PER_LINE 80
+static const char* spacing = "          ";
 
 /*
  * Process opcode
@@ -238,14 +237,12 @@ char processOpcode(SectionProcessor* processor)
 {
     int i, delta;
     uint8_t inst, data[6], isJump;
-    char line[MAX_CHAR_PER_LINE], eor, *ptr;
-    char *name;
+    char eor, *name;
     uint16_t offset;
     uint16_t logical, nextLogical;
     size_t physical;
     
     eor = 0;
-    ptr = line;
 
     physical    = processor->physicalAddr + processor->offset;
     logical     = processor->logicalAddr  + processor->offset;
@@ -259,25 +256,20 @@ char processOpcode(SectionProcessor* processor)
     if(findLabelByPhysicalAddress(processor->labelRepository, physical, &name))
     {
         /* Print label*/
-        sprintf(line, "%s:\n          ", name);
-        ptr += strlen(line);
+        fprintf(processor->out, "%s:", name);
     }
-    else
-    {
-        memset(line, ' ', 10 * sizeof(char));
-        ptr += 10;
-    }
+
+    /* Front spacing */
+    fwrite(spacing, 1, 10, processor->out);
 
     /* Print opcode sting */
-    memcpy(ptr, pce_opcode[inst].name, 4 * sizeof(char));
-    ptr += 4;
-
+    fwrite(pce_opcode[inst].name, 1, 4, processor->out);
+    
     /* Add spacing */  
-    memset(ptr, ' ', 4 * sizeof(char));
-    ptr += 4;
+    fwrite(spacing, 1, 4, processor->out);
 
     /* End Of Routine (eor) is set to 1 if the instruction is RTI or RTS */
-    if((inst == 64) || (inst == 96)) eor = 1;
+    eor = ((inst == 64) || (inst == 96));
 
     /* Data */
     if(pce_opcode[inst].size > 1)
@@ -349,7 +341,7 @@ char processOpcode(SectionProcessor* processor)
 
     if(pce_opcode[inst].type == 1)
     {
-        *(ptr++) = 'A';
+        fputc('A', processor->out);
     }
     else if(isJump)
     {
@@ -366,11 +358,9 @@ char processOpcode(SectionProcessor* processor)
         /* BBR* and BBS* */
      	if((inst & 0x0F) == 0x0F)
         {
-            sprintf(ptr, pce_opstring[pce_opcode[inst].type][0], data[0]);
-            ptr += strlen(ptr);
+            fprintf(processor->out, pce_opstring[pce_opcode[inst].type][0], data[0]);
         }
-        strcpy(ptr, name);
-        ptr += strlen(ptr);
+        fwrite(name, 1, strlen(name), processor->out);
     }
     else
     {
@@ -378,7 +368,8 @@ char processOpcode(SectionProcessor* processor)
         {
             /* tam and tma */
             /* Compute log base 2 of data */
-            for(i=0; (i<8) && ((data[0] & 1) == 0); ++i, data[0] >>= 1);
+            for(i=0; (i<8) && ((data[0] & 1) == 0); ++i, data[0] >>= 1)
+            {}
             data[0] = i;        
         }
 
@@ -387,16 +378,10 @@ char processOpcode(SectionProcessor* processor)
         {
             for(i=0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i)
             {
-                sprintf(ptr, pce_opstring[pce_opcode[inst].type][i], data[i]);
-                ptr += strlen(ptr);
+                fprintf(processor->out, pce_opstring[pce_opcode[inst].type][i], data[i]);
             }
         }        
     }
-
-    *(ptr++) = '\n';
-    *ptr = '\0';
-
-    /* Output line */
-    fwrite(line, sizeof(char), ptr-line, processor->out);
+    fputc('\n', processor->out);
     return eor;
 }
