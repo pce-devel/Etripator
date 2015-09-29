@@ -46,6 +46,14 @@ int loadROM(const char* filename, MemoryMap* memmap)
     fseek(in, 0, SEEK_SET);
     size -= ftell(in);
 
+    /* Check size */
+    if(size < 8192)
+    {
+        ERROR_MSG("Invalid rom size for %s (%zd)", filename, size);
+        fclose(in);
+        return 1;
+    }
+
     /* Check for possible header */
     if(size & 0x200)
     {
