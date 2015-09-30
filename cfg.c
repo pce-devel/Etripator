@@ -197,7 +197,7 @@ static CFG_ERR ReadLine(struct CFGParser* parser)
 		--ptr;
 	} while( (ptr != parser->lineBuffer) && ((*ptr == ' ') || (*ptr == '\t')) );
 
-	parser->lineStringLength = ptr - parser->lineBuffer;
+	parser->lineStringLength = ptr + 1 - parser->lineBuffer;
 	ptr[1] = '\0';
 
 	return feof(parser->input) ? CFG_FILE_EOF : CFG_OK;
@@ -278,7 +278,7 @@ static CFG_ERR ValidateSection(struct CFGParser* parser)
 		 ++ptr, ++end )
 	{}
 	
-	if(end == 0)
+	if(end == parser->lineStringLength)
 	{
 		return CFG_SECTION_MISSING_DELIMITER;
 	}

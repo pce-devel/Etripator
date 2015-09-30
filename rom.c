@@ -47,9 +47,9 @@ int loadROM(const char* filename, MemoryMap* memmap)
     size -= ftell(in);
 
     /* Check size */
-    if(size < 8192)
+    if(0 == size)
     {
-        ERROR_MSG("Invalid rom size for %s (%zd)", filename, size);
+        ERROR_MSG("Empty file: %s", filename);
         fclose(in);
         return 1;
     }
