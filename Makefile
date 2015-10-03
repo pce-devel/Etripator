@@ -7,7 +7,7 @@ TAR     := tar
 BUILD_DIR := build/GNU
 
 OUTDIR := $(BUILD_DIR)
-CFLAGS  := -W -Wall
+CFLAGS  := -Wall -Wextra -std=c99
 DEBUG   ?= 0
 ifeq ($(DEBUG), 1)
 	OUTDIR := $(OUTDIR)/Debug

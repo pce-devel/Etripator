@@ -245,6 +245,8 @@ char processOpcode(SectionProcessor* processor)
     
     eor = 0;
 
+    memset(data, 0, 6);
+
     physical    = processor->physicalAddr + processor->offset;
     logical     = processor->logicalAddr  + processor->offset;
 
