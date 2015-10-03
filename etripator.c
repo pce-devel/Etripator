@@ -44,7 +44,7 @@ int main(int argc, char** argv)
     FILE* mainFile;
 
     unsigned int i;
-    int err, failure;
+    int ret, failure;
     SECTION_ERR sectErr;
 
     CommandLineOptions cmdOptions;
@@ -61,11 +61,11 @@ int main(int argc, char** argv)
     PrintMsgOpenFile(NULL);
 
     /* Extract command line options */
-    err = getCommandLineOptions(argc, argv, &cmdOptions);
-    if(err <= 0)
+    ret = getCommandLineOptions(argc, argv, &cmdOptions);
+    if(ret <= 0)
     {
         usage();
-        return (err < 0);
+        return (ret < 0);
     }
 
     failure = 1;
@@ -75,7 +75,7 @@ int main(int argc, char** argv)
     {
         sectionCount = 5;
         section = (Section*)malloc(sectionCount * sizeof(Section));
-        if(section == NULL)
+        if(NULL == section)
         {
             ERROR_MSG("Failed to allocate memory: %s", strerror(errno));
             goto error_1;
@@ -90,7 +90,7 @@ int main(int argc, char** argv)
     if(cmdOptions.cfgFileName)
     {
         sectErr = readSectionsFromCFG(cmdOptions.cfgFileName, &section, &sectionCount);
-        if(sectErr != SECTION_OK)
+        if(SECTION_OK != sectErr)
         {
             ERROR_MSG("Unable to read %s", cmdOptions.cfgFileName);
             goto error_1;
@@ -98,8 +98,8 @@ int main(int argc, char** argv)
     }
 
     /* Initialize memory map. */
-    err = initializeMemoryMap(&memmap);
-    if(err)
+    ret = initializeMemoryMap(&memmap);
+    if(ret)
     {
         goto error_1;
     }
@@ -107,8 +107,8 @@ int main(int argc, char** argv)
     /* Read ROM */
     if(0 == cmdOptions.cdrom)
     {
-        err = loadROM(cmdOptions.romFileName, &memmap);
-        if(err)
+        ret = loadROM(cmdOptions.romFileName, &memmap);
+        if(ret)
         {
             goto error_2;
         }
@@ -116,7 +116,8 @@ int main(int argc, char** argv)
         /* Get irq offsets */
         if(cmdOptions.extractIRQ)
         {
-            if(getIRQSections(&memmap, section) == 0)
+            ret = getIRQSections(&memmap, section);
+            if(0 == ret)
             {
                 ERROR_MSG("An error occured while reading irq vector offsets");
                 goto error_2;
@@ -125,8 +126,8 @@ int main(int argc, char** argv)
     }
     else
     {
-        err = addCDRAMMemoryMap(&memmap);
-        if(err)
+        ret = addCDRAMMemoryMap(&memmap);
+        if(ret)
         {
             goto error_2;
         }
@@ -139,8 +140,8 @@ int main(int argc, char** argv)
     /* Load labels */
     if(NULL != cmdOptions.labelsFileName)
     {
-        err = loadLabels(cmdOptions.labelsFileName, processor.labelRepository);
-        if(err == 0)
+        ret = loadLabels(cmdOptions.labelsFileName, processor.labelRepository);
+        if(0 == ret)
         {
             ERROR_MSG("An error occured while loading labels from %s : %s", cmdOptions.labelsFileName, strerror(errno));
             goto error_4;
@@ -151,7 +152,7 @@ int main(int argc, char** argv)
     for(i=0; i<sectionCount; ++i)
     {
         out = fopen(section[i].filename, "wb");
-        if(out == NULL)
+        if(NULL == out)
         {
             ERROR_MSG("Can't open %s : %s", section[i].filename, strerror(errno));
             goto error_4;
@@ -163,7 +164,7 @@ int main(int argc, char** argv)
     for(i=0; i<sectionCount; ++i)
     {
         out = fopen(section[i].filename, "ab");
-        if(out == NULL)
+        if(NULL == out)
         {
             ERROR_MSG("Can't open %s : %s", section[i].filename, strerror(errno));
             goto error_4;
@@ -172,8 +173,8 @@ int main(int argc, char** argv)
         if(0 != cmdOptions.cdrom)
         {
             /* Copy CDROM data */
-            err = loadCD(cmdOptions.romFileName, section[i].start, section[i].size, section[i].bank, section[i].org, &memmap);
-            if(0 == err)
+            ret = loadCD(cmdOptions.romFileName, section[i].start, section[i].size, section[i].bank, section[i].org, &memmap);
+            if(0 == ret)
             {
                 ERROR_MSG("Failed to load CD data (section %d)", i);
                 goto error_4;
@@ -198,7 +199,8 @@ int main(int argc, char** argv)
             char eor;
             
             /* Extract labels */
-            if(!extractLabels(&processor))
+            ret = extractLabels(&processor);
+            if(0 == ret)
             {
                 goto error_4;
             }
@@ -207,7 +209,6 @@ int main(int argc, char** argv)
             do 
             {
                 eor = processOpcode(&processor);
-
                 if(!cmdOptions.extractIRQ)
                 {
                     if(processor.offset >= processor.processed->size)
@@ -219,7 +220,11 @@ int main(int argc, char** argv)
         }
         else
         {
-            err = processDataSection(&processor);
+            ret = processDataSection(&processor);
+            if(0 == ret)
+            {
+                
+            }
         }
         fputc('\n', processor.out);
 
@@ -229,7 +234,7 @@ int main(int argc, char** argv)
 
     /* Open main asm file */
     mainFile = fopen(cmdOptions.mainFileName, "w");
-    if(mainFile == NULL)
+    if(NULL == mainFile)
     {
         ERROR_MSG("Unable to open %s : %s", cmdOptions.mainFileName, strerror(errno));
         goto error_4;
