@@ -221,6 +221,7 @@ int main(int argc, char** argv)
         {
             err = processDataSection(&processor);
         }
+        fputc('\n', processor.out);
 
         fclose(out);
         out = NULL;

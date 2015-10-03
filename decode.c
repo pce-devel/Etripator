@@ -95,7 +95,7 @@ int processDataSection(SectionProcessor* iProcessor)
             for(j=0; (i>0) && (j<8); j++, i--)
             {
                 data = readByte(iProcessor->memmap, addr++);
-                fprintf(iProcessor->out, "$%02x%c", data, (i>1) ? ',' : '\n');
+                fprintf(iProcessor->out, "$%02x%c", data, ((j<7) && (i>1)) ? ',' : '\n');
             }
         }
     }
@@ -256,7 +256,7 @@ char processOpcode(SectionProcessor* processor)
     if(findLabelByPhysicalAddress(processor->labelRepository, physical, &name))
     {
         /* Print label*/
-        fprintf(processor->out, "%s:", name);
+        fprintf(processor->out, "%s:\n", name);
     }
 
     /* Front spacing */
