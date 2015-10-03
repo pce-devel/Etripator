@@ -80,31 +80,32 @@ void deleteSectionProcessor(SectionProcessor* processor)
 /*
  * Process data section
  */
-int processDataSection(SectionProcessor* iProcessor)
+int processDataSection(SectionProcessor* processor)
 {
     uint8_t data;
     int     i;
     off_t   addr;
-    if(iProcessor->processed->type == INC_DATA)
+    if(processor->processed->type == INC_DATA)
     {
         int j;
-        for(i=iProcessor->processed->size, addr=iProcessor->physicalAddr; i>0; )
+        fprintf(processor->out, "%s:\n", processor->processed->name);
+        for(i=processor->processed->size, addr=processor->physicalAddr; i>0; )
         {
-            fprintf(iProcessor->out, "  .db ");
+            fprintf(processor->out, "    .db ");
 
             for(j=0; (i>0) && (j<8); j++, i--)
             {
-                data = readByte(iProcessor->memmap, addr++);
-                fprintf(iProcessor->out, "$%02x%c", data, ((j<7) && (i>1)) ? ',' : '\n');
+                data = readByte(processor->memmap, addr++);
+                fprintf(processor->out, "$%02x%c", data, ((j<7) && (i>1)) ? ',' : '\n');
             }
         }
     }
     else
     {
-        for(i=iProcessor->processed->size, addr=iProcessor->physicalAddr; i>0; i--)
+        for(i=processor->processed->size, addr=processor->physicalAddr; i>0; i--)
         {
-            data = readByte(iProcessor->memmap, addr++);
-            fwrite(&data, 1, 1, iProcessor->out);
+            data = readByte(processor->memmap, addr++);
+            fwrite(&data, 1, 1, processor->out);
         }
     }
     return 1;

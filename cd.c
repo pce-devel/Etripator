@@ -26,7 +26,7 @@
  * \param [in]  page     Memory page.
  * \param [in]  offset   memory page offset.
  * \param [out] memmap   Memory map.
- * \return 1 if an error occured. 0 on success.
+ * \return 1 upon success, 0 if an error occured.
  */
 int loadCD(const char* filename, size_t start, size_t len, uint8_t page, size_t offset, MemoryMap* memmap)
 {

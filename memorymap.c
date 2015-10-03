@@ -21,7 +21,7 @@
 /**
  * Initialize memory map.
  * \param memmap Memory map.
- * \return 0 on success, 1 if an error occured.
+ * \return 1 upon success, 0 if an error occured.
  */
 int initializeMemoryMap(MemoryMap* memmap)
 {
@@ -30,7 +30,7 @@ int initializeMemoryMap(MemoryMap* memmap)
 
     /* Allocate main (or work) RAM */
     err = createMemory(&memmap->ram.main, 8192);
-    if(err)
+    if(0 == err)
     {
         ERROR_MSG("Failed to allocate main memory!\n");
         return err;
@@ -48,7 +48,7 @@ int initializeMemoryMap(MemoryMap* memmap)
 /**
  * Add CD RAM to memory map.
  * \param memmap Memory map.
- * \return 0 on success, 1 if an error occured.
+ * \return 1 upon success, 0 if an error occured.
  */
 int addCDRAMMemoryMap(MemoryMap* memmap)
 {
@@ -56,7 +56,7 @@ int addCDRAMMemoryMap(MemoryMap* memmap)
 
     /* Allocate CD RAM */
     err = createMemory(&memmap->ram.cd, 8 * 8192);
-    if(err)
+    if(0 == err)
     {
         ERROR_MSG("Failed to allocate cd memory!\n");
         destroyMemoryMap(memmap);
@@ -70,7 +70,7 @@ int addCDRAMMemoryMap(MemoryMap* memmap)
 
     /* Allocate System Card RAM */
     err = createMemory(&memmap->ram.syscard, 24 * 8192);
-    if(err)
+    if(0 == err)
     {
         ERROR_MSG("Failed to allocate system card memory!\n");
         destroyMemoryMap(memmap);

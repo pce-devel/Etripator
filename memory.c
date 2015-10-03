@@ -22,6 +22,7 @@
  * Create memory unit.
  * \param [out] mem Memory unit.
  * \param [in]  len Memory size (in bytes).
+ * \return 1 upon success, 0 if an error occured.
  */
 int createMemory(Memory *mem, size_t len)
 {
@@ -30,10 +31,10 @@ int createMemory(Memory *mem, size_t len)
     {
         ERROR_MSG("Unable to allocate memory : %s.\n", strerror(errno));
         mem->len = 0;
-        return 1;
+        return 0;
     }
     mem->len = len;
-    return 0;
+    return 1;
 }
 
 /**

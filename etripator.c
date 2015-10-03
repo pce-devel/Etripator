@@ -99,7 +99,7 @@ int main(int argc, char** argv)
 
     /* Initialize memory map. */
     ret = initializeMemoryMap(&memmap);
-    if(ret)
+    if(0 == ret)
     {
         goto error_1;
     }
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
     if(0 == cmdOptions.cdrom)
     {
         ret = loadROM(cmdOptions.romFileName, &memmap);
-        if(ret)
+        if(0 == ret)
         {
             goto error_2;
         }
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
     else
     {
         ret = addCDRAMMemoryMap(&memmap);
-        if(ret)
+        if(0 == ret)
         {
             goto error_2;
         }
@@ -158,6 +158,17 @@ int main(int argc, char** argv)
             goto error_4;
         }
         fclose(out);
+    }
+
+    /* Add section name to label repository. */
+    for(i=0; i<sectionCount; ++i)
+    {
+        ret = addLabel(processor.labelRepository, section[i].name, section[i].org, (section[i].bank << 13) | (section[i].org & 0x1fff));
+        if(0 == ret)
+        {
+            ERROR_MSG("Failed to add section name (%s) to labels", section[i].name);
+            goto error_4;
+        }
     }
 
     /* Disassemble and output */

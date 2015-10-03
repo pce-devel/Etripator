@@ -39,14 +39,14 @@ typedef struct MemoryMap_ MemoryMap;
 /**
  * Initialize memory map.
  * \param memmap Memory map.
- * \return 0 on success, 1 if an error occured.
+ * \return 1 upon success, 0 if an error occured.
  */
 int initializeMemoryMap(MemoryMap* memmap);
 
 /**
  * Add CD RAM to memory map.
  * \param memmap Memory map.
- * \return 0 on success, 1 if an error occured.
+ * \return 1 upon success, 0 if an error occured.
  */
 int addCDRAMMemoryMap(MemoryMap* memmap);
 

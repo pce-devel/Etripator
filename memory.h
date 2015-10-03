@@ -34,6 +34,7 @@ typedef struct Memory_ Memory;
  * Create memory unit.
  * \param [out] mem Memory unit.
  * \param [in]  len Memory size (in bytes).
+ * \return 1 upon success, 0 if an error occured.
  */
 int createMemory(Memory *mem, size_t len);
 /**

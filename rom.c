@@ -24,7 +24,7 @@
  * Load ROM from file.
  * \param [in]  filename ROM filename.
  * \param [out] memmap   Memory map.
- * \return 1 if an error occured. 0 on success.
+ * \return 1 upon success, 0 if an error occured.
  */
 int loadROM(const char* filename, MemoryMap* memmap)
 {
@@ -37,7 +37,7 @@ int loadROM(const char* filename, MemoryMap* memmap)
     if(NULL == in)
     {
         ERROR_MSG("Unable to open %s : %s", filename, strerror(errno));
-        return 1;
+        return 0;
     }
 
     /* Compute file size. */
@@ -50,8 +50,7 @@ int loadROM(const char* filename, MemoryMap* memmap)
     if(0 == size)
     {
         ERROR_MSG("Empty file: %s", filename);
-        fclose(in);
-        return 1;
+        goto err_0;
     }
 
     /* Check for possible header */
@@ -59,11 +58,15 @@ int loadROM(const char* filename, MemoryMap* memmap)
     {
         /* Jump header */
         size &= ~0x200;
-        fseek(in, 0x200, SEEK_SET);
+        if(fseek(in, 0x200, SEEK_SET))
+        {
+            ERROR_MSG("Failed to jump rom header in %s: %s", filename, strerror(errno));
+            goto err_0;
+        }
     }
 
     /* Allocate rom storage */
-    if(createMemory(&memmap->rom, (size + 0x1fff) & ~0x1fff))
+    if(0 == createMemory(&memmap->rom, (size + 0x1fff) & ~0x1fff))
     {
         ERROR_MSG("Failed to allocate ROM storage : %s", strerror(errno));
         goto err_0;
@@ -119,11 +122,11 @@ int loadROM(const char* filename, MemoryMap* memmap)
         }
     }
 
-    return 0;
+    return 1;
 
 err_1:
     destroyMemory(&memmap->rom);
 err_0:
     fclose(in);
-    return 1;
+    return 0;
 }

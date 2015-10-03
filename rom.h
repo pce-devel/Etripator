@@ -25,7 +25,7 @@
  * Load ROM from file.
  * \param [in]  filename ROM filename.
  * \param [out] memmap   Memory map.
- * \return 1 if an error occured. 0 on success.
+ * \return 1 upon success, 0 if an error occured.
  */
 int loadROM(const char* filename, MemoryMap* memmap);
 
