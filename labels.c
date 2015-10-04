@@ -175,7 +175,7 @@ int addLabel(LabelRepository* repository, const char* name, uint16_t logical, ui
  * \param [out] name        Label name (if found).
  * \return 1 if a label was found, 0 otherwise.
  */
-int findLabelByPhysicalAddress(LabelRepository* repository, uint16_t physical, char** name)
+int findLabelByPhysicalAddress(LabelRepository* repository, uint32_t physical, char** name)
 {
     size_t i;
     for(i=0; i<repository->last; i++)
