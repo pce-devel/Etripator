@@ -99,28 +99,38 @@
     </BuildLog>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\cfg.c" />
-    <ClCompile Include="..\..\decode.c" />
-    <ClCompile Include="..\..\etripator.c" />
-    <ClCompile Include="..\..\irq.c" />
-    <ClCompile Include="..\..\labels.c" />
     <ClCompile Include="..\..\message.c" />
-    <ClCompile Include="..\..\opcodes.c" />
-    <ClCompile Include="..\..\options.c" />
+    <ClCompile Include="..\..\decode.c" />
+    <ClCompile Include="..\..\cfg.c" />
     <ClCompile Include="..\..\section.c" />
+    <ClCompile Include="..\..\opcodes.c" />
+    <ClCompile Include="..\..\labels.c" />
+    <ClCompile Include="..\..\labelsloader.c" />
+    <ClCompile Include="..\..\irq.c" />
+    <ClCompile Include="..\..\memory.c" />
+    <ClCompile Include="..\..\memorymap.c" />
+    <ClCompile Include="..\..\rom.c" />
+    <ClCompile Include="..\..\cd.c" />
+    <ClCompile Include="..\..\options.c" />
+    <ClCompile Include="..\..\etripator.c" />
     <ClCompile Include="getopt.c" />
     <ClCompile Include="getopt1.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\cfg.h" />
     <ClInclude Include="..\..\config.h" />
-    <ClInclude Include="..\..\decode.h" />
-    <ClInclude Include="..\..\irq.h" />
-    <ClInclude Include="..\..\labels.h" />
-    <ClInclude Include="..\..\message.h" />
-    <ClInclude Include="..\..\opcodes.h" />
-    <ClInclude Include="..\..\options.h" />
-    <ClInclude Include="..\..\section.h" />
+    <ClCompile Include="..\..\message.h" />
+    <ClCompile Include="..\..\decode.h" />
+    <ClCompile Include="..\..\cfg.h" />
+    <ClCompile Include="..\..\section.h" />
+    <ClCompile Include="..\..\opcodes.h" />
+    <ClCompile Include="..\..\labels.h" />
+    <ClCompile Include="..\..\labelsloader.h" />
+    <ClCompile Include="..\..\irq.h" />
+    <ClCompile Include="..\..\memory.h" />
+    <ClCompile Include="..\..\memorymap.h" />
+    <ClCompile Include="..\..\rom.h" />
+    <ClCompile Include="..\..\cd.h" />
+    <ClCompile Include="..\..\options.h" />
     <ClInclude Include="config_win.h" />
     <ClInclude Include="getopt_win.h" />
     <ClInclude Include="inttypes.h" />
