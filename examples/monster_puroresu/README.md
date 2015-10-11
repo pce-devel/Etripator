@@ -1,5 +1,5 @@
 # Etripator Walkthrough
-## Disassembling Monster Puroresu
+## Disassembling Monster Puroresu/Monster Pro Wrestling
 ### Initial setup
 We will start with nothing but a good old terminal, the **etripator** binary and the ROM (I don't want to know how you got it) of **Monster Puroresu**. So basically your working directory may look like this:
 ```
