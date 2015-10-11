@@ -405,3 +405,139 @@ clear_zp_sp:
 ```
 
 ### irq_1
+The current disassembly of irq_1 is :
+```
+        .code
+        .bank 0
+        .org $e058
+irq_1:
+          LDA     $0000
+          STA     <$10
+          AND     #$20
+          BNE     le068_01
+          LDA     <$10
+          AND     #$04
+          BNE     le07d_01
+          RTI 
+```
+The automatic disassembly stops at the RTI instruction. Nevertheless, there are 2 conditional branches.
+One to $e068 and another one to $e07d.
+Let's extend irq_1 section to #$30.
+
+```ini
+[irq_1]
+filename=startup.asm
+type=code
+bank=0
+org=e058
+size=30
+```
+Unfortunately that is too low.
+```
+irq_1:                                                                                                                                                                    
+          LDA     $0000                                                                                                                                                   
+          STA     <$10                                                                                                                                                    
+          AND     #$20                                                                                                                                                    
+          BNE     le068_01                                                                                                                                                
+          LDA     <$10                                                                                                                                                    
+          AND     #$04                                                                                                                                                    
+          BNE     le07d_01                                                                                                                                                
+          RTI                                                                                                                                                             
+le068_01:                                                                                                                                                                 
+          JSR     unknown2                                                                                                                                                
+          JSR     le0ad_01                                                                                                                                                
+          JSR     la0b6_01                                                                                                                                                
+          JSR     unkown1                                                                                                                                                 
+          JSR     le4ca_01                                                                                                                                                
+          JSR     lfbc2_01                                                                                                                                                
+          INC     <$08                                                                                                                                                    
+          RTI                                                                                                                                                             
+le07d_01:                                                                                                                                                                 
+          PHA                                                                                                                                                             
+          LDA     #$07                                                                                                                                                    
+          STA     $0000                                                                                                                                                   
+          LDA     #$00                                                                                                                                                    
+          STA     $0002
+```
+
+Expand it to #$60.  We see that 
+
+```
+le07d_01:
+          PHA     
+          LDA     #$07
+          STA     $0000
+          LDA     #$00
+          STA     $0002
+          LDA     #$01
+          STA     $0003
+          LDA     #$08
+          STA     $0000
+          LDA     #$80
+          STA     $0002
+          LDA     #$01
+          STA     $0003
+          LDA     #$05
+          STA     $0000
+          LDA     #$8c
+          STA     $0002
+          LDA     <$41
+          STA     $0003
+          PLA     
+          RTI     
+le0ad_01:
+          LDA     #$07
+          STA     $0000
+          LDA     <$04
+          STA     $0002
+          LDA     <$05
+```
+An RTI is caught but the size of the section is a little too big.
+Hopefully, the $e0ad subroutine starts just after.
+The section size is then #$e0ad-#$e058 which is equals to #$55.
+```
+irq_1:
+          LDA     $0000
+          STA     <$10
+          AND     #$20
+          BNE     le068_01
+          LDA     <$10
+          AND     #$04
+          BNE     le07d_01
+          RTI     
+le068_01:
+          JSR     unknown2
+          JSR     le0ad_01
+          JSR     la0b6_01
+          JSR     unkown1
+          JSR     le4ca_01
+          JSR     lfbc2_01
+          INC     <$08
+          RTI     
+le07d_01:
+          PHA     
+          LDA     #$07
+          STA     $0000
+          LDA     #$00
+          STA     $0002
+          LDA     #$01
+          STA     $0003
+          LDA     #$08
+          STA     $0000
+          LDA     #$80
+          STA     $0002
+          LDA     #$01
+          STA     $0003
+          LDA     #$05
+          STA     $0000
+          LDA     #$8c
+          STA     $0002
+          LDA     <$41
+          STA     $0003
+          PLA     
+          RTI
+```
+irq_1 starts by comparing if the 6th bit of the VDC status register. This bit is set when a vertical blank interrupt occurs. le068_01 can be renamed .vblank. Next, the 3th bit is tested which is set when the raster compare (of horizontal blank) interrupt occurs. Hence le07d_01 can be renamed .hblank. 
+
+.vblank successively jumpts to 6 subroutines. 2 of them were already encountered (they are names unknown1 and unknown2 for the moment). 3 subroutines are located in the first bank (le0ad_01, le4ca_01 and lfbc2_01). In order to indentify the ROM bank where la0b6_b1 is, the value of the MPR #5 (#$a0b6 >> 13 = 5). The ROM bank #0 subroutines will be examined first in order to see if the mpr #5 is explicitely mapped. If that is not the case, the value set in the irq_reset will be used (#$02). 
+
