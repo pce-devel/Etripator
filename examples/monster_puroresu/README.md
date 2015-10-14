@@ -294,7 +294,7 @@ type=code
 bank=0
 org=e138
 
-[unkown1]
+[unknown1]
 filename=startup.asm
 type=code
 bank=0
@@ -342,7 +342,7 @@ unknown0:
 e142 short jump to e146 (00000146)
 e159 short jump to e15d (0000015d)
  
-unkown1:
+unknown1:
  
 unknown2:
  
@@ -395,7 +395,7 @@ clear_zp_sp:
           LDX     #$c4
           LDY     #$be
           JSR     unknown0
-          JSR     unkown1
+          JSR     unknown1
           LDA     #$05
           STA     $1402
           JSR     unknown2
@@ -434,29 +434,29 @@ size=30
 ```
 Unfortunately that is too low.
 ```
-irq_1:                                                                                                                                                                    
-          LDA     $0000                                                                                                                                                   
-          STA     <$10                                                                                                                                                    
-          AND     #$20                                                                                                                                                    
-          BNE     le068_01                                                                                                                                                
-          LDA     <$10                                                                                                                                                    
-          AND     #$04                                                                                                                                                    
-          BNE     le07d_01                                                                                                                                                
-          RTI                                                                                                                                                             
-le068_01:                                                                                                                                                                 
-          JSR     unknown2                                                                                                                                                
-          JSR     le0ad_01                                                                                                                                                
-          JSR     la0b6_01                                                                                                                                                
-          JSR     unkown1                                                                                                                                                 
-          JSR     le4ca_01                                                                                                                                                
-          JSR     lfbc2_01                                                                                                                                                
-          INC     <$08                                                                                                                                                    
-          RTI                                                                                                                                                             
-le07d_01:                                                                                                                                                                 
-          PHA                                                                                                                                                             
-          LDA     #$07                                                                                                                                                    
-          STA     $0000                                                                                                                                                   
-          LDA     #$00                                                                                                                                                    
+irq_1:    
+          LDA     $0000
+          STA     <$10
+          AND     #$20
+          BNE     le068_01
+          LDA     <$10
+          AND     #$04
+          BNE     le07d_01
+          RTI                                                                          
+le068_01:
+          JSR     unknown2
+          JSR     le0ad_01
+          JSR     la0b6_01
+          JSR     unknown1
+          JSR     le4ca_01
+          JSR     lfbc2_01
+          INC     <$08
+          RTI                                                                          
+le07d_01:
+          PHA
+          LDA     #$07
+          STA     $0000
+          LDA     #$00
           STA     $0002
 ```
 
@@ -509,7 +509,7 @@ le068_01:
           JSR     unknown2
           JSR     le0ad_01
           JSR     la0b6_01
-          JSR     unkown1
+          JSR     unknown1
           JSR     le4ca_01
           JSR     lfbc2_01
           INC     <$08
@@ -539,5 +539,106 @@ le07d_01:
 ```
 irq_1 starts by comparing if the 6th bit of the VDC status register. This bit is set when a vertical blank interrupt occurs. le068_01 can be renamed .vblank. Next, the 3th bit is tested which is set when the raster compare (of horizontal blank) interrupt occurs. Hence le07d_01 can be renamed .hblank. 
 
-.vblank successively jumpts to 6 subroutines. 2 of them were already encountered (they are names unknown1 and unknown2 for the moment). 3 subroutines are located in the first bank (le0ad_01, le4ca_01 and lfbc2_01). In order to indentify the ROM bank where la0b6_b1 is, the value of the MPR #5 (#$a0b6 >> 13 = 5). The ROM bank #0 subroutines will be examined first in order to see if the mpr #5 is explicitely mapped. If that is not the case, the value set in the irq_reset will be used (#$02). 
+.vblank successively jumps to 6 subroutines. 2 of them were already encountered (they are named unknown1 and unknown2 for the moment). 3 subroutines are located in the first bank (le0ad_01, le4ca_01 and lfbc2_01). In order to indentify the ROM bank where la0b6_b1 is, the value of the MPR #5 (#$a0b6 >> 13 = 5). The ROM bank #0 subroutines will be examined first in order to see if the mpr #5 is explicitely mapped. If that is not the case, the value set in the irq_reset will be used (#$02). 
 
+We will look at those subroutines in order.
+
+### $e4b5 (unknown2)
+```
+unknown2:
+          LDA     #$05
+          STA     $0
+          LDA     <$40
+          STA     $0002
+          LDA     <$41
+          STA     $0003
+          RTS     
+```
+This routine simply the VDC Control register using the values stored at $2040 and $2041. It can safely be named set_vdc_ctrl.
+
+### $e0ad
+```
+le0ad_01:
+          LDA     #$07
+          STA     $0000
+          LDA     <$04
+          STA     $0002
+          LDA     <$05
+          STA     $0003
+          LDA     #$08
+          STA     $0000
+          LDA     <$06
+          STA     $0002
+          LDA     <$07
+          STA     $0003
+          RTS     
+```
+$e0ad sets VDC scroll registers using $2004, $2005 for X, and $2006, $2007 for Y.
+
+## $a0b6
+In order to find where this routine, we must find the value of the mpr #5. From the irq_reset code, we have:
+```
+          LDA     #$02
+          TAM     #$05
+```
+In order not to bloat startup.asm, the routine from bank #2 will be disassembled in a separate file (bank2.asm).
+```ini
+[unknown8]
+filename=bank2.asm
+type=code
+bank=2
+org=a0b6
+```
+Automatic extraction does not work very well here as the routine jumps to a location stored in a table. In fact there are 2 tables. One starting at $a0dd and the other at $a1dd. 
+
+```
+	.code
+	.bank 2
+	.org $a0b6
+unknown8:
+          LDA     <$09
+          CMP     #$80
+          BCS     la0cb_10
+          ASL     A
+          TAX     
+          LDA     $a0dd, X
+          STA     <$28
+          LDA     $a0de, X
+          STA     <$29
+          JMP     [$2028]
+la0cb_10:
+          SEC     
+          SBC     #$80
+          ASL     A
+          TAX     
+          LDA     $a1dd, X
+          STA     <$28
+          LDA     $a1de, X
+          STA     <$29
+          JMP     [$2028]
+```
+We will keep it as is for the moment.
+
+### $e0cc (unknown1)
+```
+	.code
+	.bank 0
+	.org $e0cc
+unkown1:
+          LDA     #$00
+          STA     $0000
+          LDA     #$00
+          STA     $0002
+          LDA     #$7f
+          STA     $0003
+          LDA     #$02
+          STA     $0000
+          TIA     $2200, $0002, $0200
+          LDA     #$13
+          STA     $0000
+          LDA     #$00
+          STA     $0002
+          LDA     #$7f
+          STA     $0003
+          RTS     
+```
