@@ -574,8 +574,9 @@ le0ad_01:
           RTS     
 ```
 $e0ad sets VDC scroll registers using $2004, $2005 for X, and $2006, $2007 for Y.
+It's safe to name it update_scroll.
 
-## $a0b6
+### $a0b6
 In order to find where this routine, we must find the value of the mpr #5. From the irq_reset code, we have:
 ```
           LDA     #$02
@@ -588,7 +589,7 @@ filename=bank2.asm
 type=code
 bank=2
 org=a0b6
-```
+ ```
 Automatic extraction does not work very well here as the routine jumps to a location stored in a table. In fact there are 2 tables. One starting at $a0dd and the other at $a1dd. 
 
 ```
@@ -624,7 +625,7 @@ We will keep it as is for the moment.
 	.code
 	.bank 0
 	.org $e0cc
-unkown1:
+unknown1:
           LDA     #$00
           STA     $0000
           LDA     #$00
@@ -635,10 +636,129 @@ unkown1:
           STA     $0000
           TIA     $2200, $0002, $0200
           LDA     #$13
-          STA     $0000
+          STA     $10
           LDA     #$00
           STA     $0002
           LDA     #$7f
           STA     $0003
           RTS     
 ```
+512 bytes from RAM at $2200 are copied to the VDC RAM at $7f00. Then the VRAM-SATB DMA is started. It's safe to rename unknown1 update_satb.
+
+### $e4ca
+The almighty joypad read routine, with multi-tap support and the run+select reboot combo.
+```
+	.code
+	.bank 0
+	.org $e4ca
+read_joy:
+          CLY     
+          LDA     #$01
+          STA     $1000
+          LDA     #$03
+          STA     $1000
+.next_joypad:
+          LDA     #$01
+          STA     $1000
+          PHA     
+          PLA     
+          NOP     
+          LDA     $2030, Y
+          STA     $2035, Y
+          LDA     $1000
+          ASL     A
+          ASL     A
+          ASL     A
+          ASL     A
+          STA     $2030, Y
+          STZ     $1000
+          PHA     
+          PLA     
+          NOP     
+          LDA     $1000
+          AND     #$0f
+          ORA     $2030, Y
+          EOR     #$ff
+          STA     $2030, Y
+          EOR     $2035, Y
+          AND     $2030, Y
+          STA     $203a, Y
+          INY     
+          CPY     #$05
+          BCC     .next_joypad
+          LDA     <$3a
+          CMP     #$04
+          BNE     .read_joy_end
+          LDA     <$30
+          CMP     #$0c
+          BNE     .read_joy_end
+          JMP     soft_reset
+.read_joy_end:
+          RTS 
+```
+
+### $fbc2
+This routine can be split in 4 parts. First, mpr 2, 3 and 4 are mapped to hucard pages $07, $08 and $09. Then the same routine $fcac is called repeatedly with different values of X ($00, $02, $04, $06, $08, $0a). The same is done with $fd36 ($00, $10). Finally, the mpr 4 is set to hucard page 01.
+```
+	.code
+	.bank 0
+	.org $fbc2
+unknown5:
+          LDA     #$07
+          TAM     #$02
+          LDA     #$08
+          TAM     #$03
+          LDA     #$09
+          TAM     #$04
+          LDX     #$00
+          JSR     $fcac
+          LDX     #$02
+          JSR     $fcac
+          LDX     #$04
+          JSR     $fcac
+          LDX     #$06
+          JSR     $fcac
+          LDX     #$08
+          JSR     $fcac
+          LDX     #$0a
+          JSR     $fcac
+          LDX     #$00
+          JSR     $fd36
+          LDX     #$10
+          JSR     $fd36
+          LDA     #$01
+          TAM     #$04
+          RTS     
+```
+A quick look at $fcac shows that $fbc2 is in fact the sound fx/music routine and $fcac the PSG channel update.
+Let's switch back to irq_reset. We will get back to it afterwards. The only remaining unknown routine there is $e138.
+
+## $e138 (unknown0)
+```
+	.code
+	.bank 0
+	.org $e138
+unknown0:
+          STX     <$20
+          STY     <$21
+          LDY     #$00
+          LDA     [$20], Y
+          INC     <$20
+          BNE     le146_02
+          INC     <$21
+le146_02:
+          ASL     A
+          TAX     
+          LDA     $e170, X
+          STA     <$22
+          LDA     $e171, X
+          STA     <$23
+          JMP     [$2022]
+          LDA     [$20], Y
+          INC     <$20
+          BNE     le15d_02
+          INC     <$21
+le15d_02:
+          RTS  
+```
+Once again the automatic routine extraction went too far. The code right after JMP [$2022] is never reached.
