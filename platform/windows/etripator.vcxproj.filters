@@ -32,19 +32,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\config.h" />
-    <ClCompile Include="..\..\message.h" />
-    <ClCompile Include="..\..\decode.h" />
-    <ClCompile Include="..\..\cfg.h" />
-    <ClCompile Include="..\..\section.h" />
-    <ClCompile Include="..\..\opcodes.h" />
-    <ClCompile Include="..\..\labels.h" />
-    <ClCompile Include="..\..\labelsloader.h" />
-    <ClCompile Include="..\..\irq.h" />
-    <ClCompile Include="..\..\memory.h" />
-    <ClCompile Include="..\..\memorymap.h" />
-    <ClCompile Include="..\..\rom.h" />
-    <ClCompile Include="..\..\cd.h" />
-    <ClCompile Include="..\..\options.h" />
     <ClInclude Include="getopt_win.h">
       <Filter>platform\windows</Filter>
     </ClInclude>
@@ -57,5 +44,18 @@
     <ClInclude Include="config_win.h">
       <Filter>platform\windows</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\cfg.h" />
+    <ClInclude Include="..\..\cd.h" />
+    <ClInclude Include="..\..\decode.h" />
+    <ClInclude Include="..\..\irq.h" />
+    <ClInclude Include="..\..\labels.h" />
+    <ClInclude Include="..\..\labelsloader.h" />
+    <ClInclude Include="..\..\memory.h" />
+    <ClInclude Include="..\..\memorymap.h" />
+    <ClInclude Include="..\..\message.h" />
+    <ClInclude Include="..\..\opcodes.h" />
+    <ClInclude Include="..\..\options.h" />
+    <ClInclude Include="..\..\rom.h" />
+    <ClInclude Include="..\..\section.h" />
   </ItemGroup>
 </Project>

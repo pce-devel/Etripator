@@ -20,10 +20,12 @@
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -39,7 +41,7 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)\obj\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\build\$(Platform)\$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)\obj\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
@@ -51,13 +53,13 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <MinimalRebuild>false</MinimalRebuild>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
       <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
@@ -66,6 +68,7 @@
       <SubSystem>Console</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <ImageHasSafeExceptionHandlers>true</ImageHasSafeExceptionHandlers>
     </Link>
     <BuildLog>
       <Path>$(OutDir)\$(MSBuildProjectName).log</Path>
@@ -118,19 +121,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\config.h" />
-    <ClCompile Include="..\..\message.h" />
-    <ClCompile Include="..\..\decode.h" />
-    <ClCompile Include="..\..\cfg.h" />
-    <ClCompile Include="..\..\section.h" />
-    <ClCompile Include="..\..\opcodes.h" />
-    <ClCompile Include="..\..\labels.h" />
-    <ClCompile Include="..\..\labelsloader.h" />
-    <ClCompile Include="..\..\irq.h" />
-    <ClCompile Include="..\..\memory.h" />
-    <ClCompile Include="..\..\memorymap.h" />
-    <ClCompile Include="..\..\rom.h" />
-    <ClCompile Include="..\..\cd.h" />
-    <ClCompile Include="..\..\options.h" />
+    <ClInclude Include="..\..\message.h" />
+    <ClInclude Include="..\..\decode.h" />
+    <ClInclude Include="..\..\cfg.h" />
+    <ClInclude Include="..\..\section.h" />
+    <ClInclude Include="..\..\opcodes.h" />
+    <ClInclude Include="..\..\labels.h" />
+    <ClInclude Include="..\..\labelsloader.h" />
+    <ClInclude Include="..\..\irq.h" />
+    <ClInclude Include="..\..\memory.h" />
+    <ClInclude Include="..\..\memorymap.h" />
+    <ClInclude Include="..\..\rom.h" />
+    <ClInclude Include="..\..\cd.h" />
+    <ClInclude Include="..\..\options.h" />
     <ClInclude Include="config_win.h" />
     <ClInclude Include="getopt_win.h" />
     <ClInclude Include="inttypes.h" />

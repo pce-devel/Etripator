@@ -23,6 +23,7 @@
 #pragma warning(disable : 4996)
 
 #include <Windows.h>
+#include <io.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -31,6 +32,19 @@
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 #define snprintf _snprintf
+#define access _access
+
+// access mode names.
+#ifndef R_OK
+#define R_OK 0x02
+#endif
+#ifndef W_OK
+#define W_OK 0x04
+#endif
+// X_OK does not exist on msvc
+#ifndef F_OK
+#define F_OK 0x00
+#endif
 
 #include "getopt_win.h"
 #include "stdint.h"
