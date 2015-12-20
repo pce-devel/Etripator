@@ -367,6 +367,7 @@ char processOpcode(SectionProcessor* processor)
     }
     else
     {
+		int hasLabel = 0;
         if((inst == 0x43) || (inst == 0x53))
         {
             /* tam and tma */
@@ -379,10 +380,140 @@ char processOpcode(SectionProcessor* processor)
         /* Print data */
         if(pce_opcode[inst].type)
         {
-            for(i=0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i)
-            {
-                fprintf(processor->out, pce_opstring[pce_opcode[inst].type][i], data[i]);
-            }
+			/* [todo] this is ugly... */
+			const char *none = "";
+			const char *extra = none;
+			switch(pce_opcode[inst].type)
+			{
+				case 4: /* #$aa, <$zp, X */
+					extra = ", X";
+				case 3: /* #$aa, <$zp */
+					offset = 0x2000 + data[1];
+					hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
+					if(hasLabel)
+					{
+						fprintf(processor->out, "#$%02x, <%s%s", data[0], name, extra);
+					}
+					break;
+				case 6: /* #$aa, $hhll, X */
+					extra = ", X";
+				case 5: /* #$aa, $hhll */
+					offset = (data[0]<<8) + data[1];
+					hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
+					if(hasLabel)
+					{
+						fprintf(processor->out, "#$%02x, %s%s", data[0], name, extra);
+					}
+					break;
+
+				case  9: /* <zp, Y */
+					extra = ", Y";
+				case  8: /* <zp, X */
+					if(none == extra) { extra = ", X"; }
+				case  7: /* <zp    */
+					offset = 0x2000 + data[0];
+					hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
+					if(hasLabel)
+					{
+						fprintf(processor->out, "<%s%s", name, extra);
+					}
+					break;
+										
+				case 12: /* [zp], Y */				
+					extra = "], Y";
+				case 11: /* [zp, X] */
+					if(none == extra) { extra = ", X]"; }
+				case 10: /* [zp] */
+					if(none == extra) { extra = "]"; }
+					offset = 0x2000 + data[0];
+					hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
+					if(hasLabel)
+					{
+						fprintf(processor->out, "[%s%s", name, extra);
+					}
+					break;
+
+				case 21: /* [hhll, X] */
+					extra = ", X]";
+				case 15: /* [hhll] */
+					if(none == extra) { extra = "]"; }
+					offset = (data[0] << 8) | data[1];
+					hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
+					if(hasLabel)
+					{
+						fprintf(processor->out, "[%s%s", name, extra);
+					}
+					break;
+
+				case 16: /* hhll, X */				
+					extra = ", X";
+				case 17: /* hhll, Y */
+					if(none == extra) { extra = ", Y"; }
+				case 14: /* hhll */
+					offset = (data[0] << 8) | data[1];
+					hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
+					if(hasLabel)
+					{
+						fprintf(processor->out, "%s%s", name, extra);
+					}
+					break;
+				
+				case 13: /* <zp, $hhll */
+					offset = 0x2000 + data[0];
+					hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
+					if(hasLabel)
+					{
+						fprintf(processor->out, "<%s, ", name);
+					}
+					else
+					{
+						fprintf(processor->out, "<%02x, ", data[0]);
+					}
+					offset   = (data[1] << 8) | data[2];
+					hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
+					if(hasLabel)
+					{
+						fprintf(processor->out, "%s", name);
+					}
+					else
+					{
+						fprintf(processor->out, "$%04x", offset);
+					}
+					hasLabel = 1;
+					break;
+
+				case 18: /* shsl, dhdl, sz */
+					/* Source and destination */
+					for(i=0; i<4; i+=2)
+					{
+						offset   = (data[i] << 8) | data[i+1];
+						hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
+						if(hasLabel)
+						{
+							fprintf(processor->out, "%s,", name);
+						}
+						else
+						{
+							fprintf(processor->out, "$%04x,", offset);
+						}
+					}
+					/* Size */
+					fprintf(processor->out, "$%02x%02x", data[4], data[5]);
+					hasLabel = 1;
+					break;
+					
+				default:
+					hasLabel = 0;
+					break;
+			}
+
+			if(!hasLabel)
+			{
+				for(i=0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i)
+				{
+					fprintf(processor->out, pce_opstring[pce_opcode[inst].type][i], data[i]);
+				}
+			}
         }        
     }
     fputc('\n', processor->out);
