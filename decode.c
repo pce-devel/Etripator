@@ -348,6 +348,18 @@ char processOpcode(SectionProcessor* processor)
     }
     else if(isJump)
     {
+        /* BBR* and BBS* */
+     	if((inst & 0x0F) == 0x0F)
+        {
+			if(findLabelByLogicalAddress(processor->labelRepository, 0x2000 + data[0], &name))
+			{
+				fprintf(processor->out, "<%s, ", name);
+			}
+			else
+			{
+				fprintf(processor->out, "<%02x, ", data[0]);
+			}
+        }
         // [todo] This may change if we keep track of the MPR registers
         if((offset & 0xffffe000) == (logical & 0xffffe000))
         {
@@ -356,13 +368,7 @@ char processOpcode(SectionProcessor* processor)
         else
         {
             findLabelByLogicalAddress(processor->labelRepository, offset, &name);
-        }
-     
-        /* BBR* and BBS* */
-     	if((inst & 0x0F) == 0x0F)
-        {
-            fprintf(processor->out, pce_opstring[pce_opcode[inst].type][0], data[0]);
-        }
+        }     
         fwrite(name, 1, strlen(name), processor->out);
     }
     else
@@ -490,11 +496,11 @@ char processOpcode(SectionProcessor* processor)
 						hasLabel = findLabelByLogicalAddress(processor->labelRepository, offset, &name);
 						if(hasLabel)
 						{
-							fprintf(processor->out, "%s,", name);
+							fprintf(processor->out, "%s, ", name);
 						}
 						else
 						{
-							fprintf(processor->out, "$%04x,", offset);
+							fprintf(processor->out, "$%04x, ", offset);
 						}
 					}
 					/* Size */
