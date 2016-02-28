@@ -357,7 +357,7 @@ char processOpcode(SectionProcessor* processor)
 			}
 			else
 			{
-				fprintf(processor->out, "<%02x, ", data[0]);
+				fprintf(processor->out, "<$%02x, ", data[0]);
 			}
         }
         // [todo] This may change if we keep track of the MPR registers
