@@ -28,6 +28,7 @@
 #include "cd.h"
 #include "options.h"
 #include "labelsloader.h"
+#include "labelswriter.h"
 
 /*
   exit callback

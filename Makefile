@@ -7,7 +7,7 @@ TAR     := tar
 BUILD_DIR := build/GNU
 
 OUTDIR := $(BUILD_DIR)
-CFLAGS  := -Wall -Wextra -std=c99
+CFLAGS  := -Wall -Wextra -Wshadow -std=c99
 DEBUG   ?= 0
 ifeq ($(DEBUG), 1)
 	OUTDIR := $(OUTDIR)/Debug
@@ -20,7 +20,7 @@ OBJDIR := $(OUTDIR)/obj
 
 LIBS   :=  -lm
 
-EXE_SRC := message.c decode.c cfg.c section.c opcodes.c labels.c labelsloader.c irq.c memory.c memorymap.c rom.c cd.c options.c etripator.c
+EXE_SRC := message.c decode.c cfg.c section.c opcodes.c labels.c labelsloader.c labelswriter.c irq.c memory.c memorymap.c rom.c cd.c options.c etripator.c
 OBJS    := $(EXE_SRC:.c=.o)
 EXE_OBJ := $(addprefix $(OBJDIR)/, $(OBJS))
 EXE     := $(OUTDIR)/etripator

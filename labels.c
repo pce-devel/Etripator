@@ -212,3 +212,56 @@ int findLabelByLogicalAddress(LabelRepository* repository, uint16_t logical, cha
     *name = "";
     return 0;
 }
+
+/**
+ * Get the number of labels stored in the repository.
+ * \param [in] repository Label repository.
+ * \return Label count.
+ */
+int getLabelCount(LabelRepository* repository)
+{
+    if(NULL == repository)
+    {
+        return 0;
+    }
+    return repository->last;
+}
+
+/**
+ * Retrieve the label at the specified label.
+ * \param [in] repository Label repository.
+ * \param [in] index      Label index.
+ * \param [out] physical  Physical address.
+ * \param [out] logical   Logical address.
+ * \param [out] name      Label name.
+ * \return 1 if a label exists for the specified index, 0 otherwise.
+ */
+int getLabel(LabelRepository* repository, int index, uint32_t* physical, uint16_t* logical, char** name)
+{
+	*physical = INVALID_PHYSICAL_ADDRESS;
+    *logical  = 0;
+    *name = NULL;
+
+    if(NULL == repository)
+    {
+        return 0;
+    }
+    else
+    {
+        int end = (int)repository->last;
+        if((index < 0) || (index >= end))
+        {
+            return 0;
+        }
+	    if(repository->labels[index].name >= repository->nameBufferLen)
+	    {
+		    return 0;
+	    }
+        *physical = repository->labels[index].physical;
+        *logical  = repository->labels[index].logical;
+        *name = repository->nameBuffer + repository->labels[index].name;
+        return 1;
+    }
+}
+
+
