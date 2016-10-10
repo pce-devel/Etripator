@@ -38,6 +38,37 @@ void exit_callback(void)
     PrintMsgClose();
 }
 
+/*
+  output labels
+*/
+int outputLabels(CommandLineOptions *options, LabelRepository* repository)
+{
+    char buffer[256];
+    char *labelOut;
+    
+    if(NULL == options->labelsFileName)
+    {
+        char *tmp = basename(options->romFileName);
+        size_t len = strlen(tmp);
+        if(len >= (256-5))
+        {   len = 256-5;
+        }
+        labelOut = &buffer[0];
+        memcpy(labelOut, tmp, len);
+        memcpy(labelOut+len, ".lbl", 5);
+    }
+	else
+    {
+        labelOut = options->labelsFileName;
+    }
+    if(!writeLabels(labelOut, repository))
+    {
+        ERROR_MSG("Failed to write/update label file: %s", labelOut);
+        return 0;
+    }
+    return 1;
+}
+
 /* Main */
 int main(int argc, char** argv)
 {
@@ -262,6 +293,12 @@ int main(int argc, char** argv)
     }
 
     fclose(mainFile);
+
+    /* Output labels  */
+	if(!outputLabels(&cmdOptions, processor.labelRepository))
+    {
+        goto error_4;
+    }
     failure = 0;
 
 error_4:
