@@ -17,6 +17,7 @@
 */
 #include "config.h"
 #include "message.h"
+#include "message/file.h"
 #include "cfg.h"
 
 #include "memorymap.h"
@@ -35,7 +36,11 @@
  */
 void exit_callback(void)
 {
-    PrintMsgClose();
+    g_MsgPrinter.close(g_MsgPrinter.userData);
+    if(g_MsgPrinter.userData)
+    {
+        free(g_MsgPrinter.userData);
+    }
 }
 
 /*
@@ -90,7 +95,14 @@ int main(int argc, char** argv)
 
     atexit(exit_callback);
 
-    PrintMsgOpenFile(NULL);
+    if(FileMsgPrinter(&g_MsgPrinter))
+    {
+        return EXIT_FAILURE;
+    }
+    if(g_MsgPrinter.open(g_MsgPrinter.userData))
+    {
+        return EXIT_FAILURE;
+    }
 
     /* Extract command line options */
     ret = getCommandLineOptions(argc, argv, &cmdOptions);

@@ -15,7 +15,17 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "message.h"
+#ifndef MESSAGE_FILE_H
+#define MESSAGE_FILE_H
 
-MsgPrinter g_MsgPrinter;
+#include "../message.h"
+
+/**
+ * \brief Setups file message writer.
+ * \param [in] printer Message printer.
+ * \return 0 upon success.
+ */
+int FileMsgPrinter(MsgPrinter *printer);
+
+#endif // MESSAGE_FILE_H
 
