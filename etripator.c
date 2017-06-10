@@ -18,6 +18,7 @@
 #include "config.h"
 #include "message.h"
 #include "message/file.h"
+#include "message/console.h"
 #include "cfg.h"
 
 #include "memorymap.h"
@@ -95,7 +96,8 @@ int main(int argc, char** argv)
 
     atexit(exit_callback);
 
-    if(FileMsgPrinter(&g_MsgPrinter))
+    //if(FileMsgPrinter(&g_MsgPrinter))
+    if(ConsoleMsgPrinter(&g_MsgPrinter))
     {
         return EXIT_FAILURE;
     }
