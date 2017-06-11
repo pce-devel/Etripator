@@ -19,25 +19,22 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "console.h"
 
-typedef struct
-{
-    int useEscapeCode; 
-} ConsoleMsgPrinterImpl;
-
 /**
  * \brief Tests if the console has support for colors and other things.
- * \param [in] userData  User data.
+ * \param [in] impl Console message printer.
  * \return 0 upon success.
  */
-static int ConsoleMsgPrinterOpen(void* userData)
+static int ConsoleMsgPrinterOpen(void* impl)
 {
-    ConsoleMsgPrinterImpl *out = (ConsoleMsgPrinterImpl*)userData;
+    ConsoleMsgPrinter* printer = (ConsoleMsgPrinter*)impl;
     
-    out->useEscapeCode = isatty(fileno(stdout)) ? 1 : 0;
-    if(!out->useEscapeCode)
+    printer->useEscapeCode = isatty(fileno(stdout)) ? 1 : 0;
+    if(!printer->useEscapeCode)
     {
         fprintf(stderr, "Escape code disabled.\n");
     }
@@ -46,27 +43,28 @@ static int ConsoleMsgPrinterOpen(void* userData)
 
 /**
  * \brief Closes console msg printer.
- * \param [in] userData  User data.
+ * \param [in] impl Console message printer.
  * \return 0 upon success.
  */
-static int ConsoleMsgPrinterClose(void* userData)
+static int ConsoleMsgPrinterClose(void* impl)
 {
-    (void)userData; // Unused atm.
+    (void)impl; // Unused atm.
     return 0;
 }
 
 /**
  * \brief Prints message to console.
  * \param userData  User data.
- * \param type      Message type.
- * \param file      Name of the file where the print message command was issued.
- * \param line      Line number in the file where the print message command was issued.
- * \param function  Function where the print message command was issued.
- * \param format    Format string.
- *
+ * \param [in] impl Console message printer.
+ * \param [in] type      Message type.
+ * \param [in] file      Name of the file where the print message command was issued.
+ * \param [in] line      Line number in the file where the print message command was issued.
+ * \param [in] function  Function where the print message command was issued.
+ * \param [in] format    Format string.
+ * \param [in] args      Argument lists.
  * \return 0 upon success.
  */
-static int ConsoleMsgPrinterOutput(void* userData, MessageType type, const char* file, size_t line, const char* function, const char* format, ...)
+static int ConsoleMsgPrinterOutput(void* impl, MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args)
 {
     static const char *messageTypeName[] =
     {
@@ -81,28 +79,33 @@ static int ConsoleMsgPrinterOutput(void* userData, MessageType type, const char*
         "\x1b[1;32m"
     };
 
-    if(NULL == userData)
+    if(NULL == impl)
     {
         fprintf(stderr, "Invalid console logger.\n");
         return 1;
     }
     else 
     {
-        ConsoleMsgPrinterImpl *out = (ConsoleMsgPrinterImpl*)userData;
-        va_list argList;
-        if(out->useEscapeCode)
+        ConsoleMsgPrinter* printer = (ConsoleMsgPrinter*)impl;
+        struct timeval tv;
+        struct tm *now;
+        char dateString[128];
+        
+        gettimeofday(&tv, NULL);
+        now = localtime(&tv.tv_sec);
+        strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", now);
+
+        if(printer->useEscapeCode)
         {
-            fprintf(stderr, "%s%s\x1b[0m \x1b[0;33m%s:%zd %s \x1b[1;37m : ", messageTypePrefix[type], messageTypeName[type], file, line, function);
+            fprintf(stderr, "%s%s\x1b[0m %s.%06ld \x1b[0;33m%s:%zd %s \x1b[1;37m : ", messageTypePrefix[type], messageTypeName[type], dateString, tv.tv_usec, file, line, function);
         }
         else
         {
-            fprintf(stderr, "%s %s:%zd %s : ", messageTypeName[type], file, line, function);
+            fprintf(stderr, "%s %s.%06ld %s:%zd %s : ", messageTypeName[type], dateString, tv.tv_usec, file, line, function);
         }
-        va_start(argList, format);
-        vfprintf(stderr, format, argList);
-        va_end(argList);
+        vfprintf(stderr, format, args);
         
-        if(out->useEscapeCode)
+        if(printer->useEscapeCode)
         {
             fprintf(stderr, "\x1b[0m\n");
         }
@@ -117,20 +120,15 @@ static int ConsoleMsgPrinterOutput(void* userData, MessageType type, const char*
 
 /**
  * \brief Setups console message writer.
- * \param [in] printer Message printer.
+ * \param [in] printer Console message printer.
  * \return 0 upon success.
  */
-int ConsoleMsgPrinter(MsgPrinter *printer)
+int SetupConsoleMsgPrinter(ConsoleMsgPrinter *printer)
 {
-    printer->open   = ConsoleMsgPrinterOpen;
-    printer->close  = ConsoleMsgPrinterClose;
-    printer->output = ConsoleMsgPrinterOutput; 
-    printer->userData = malloc(sizeof(ConsoleMsgPrinterImpl));
-    if(NULL == printer->userData)
-    {
-        fprintf(stderr, "Failed to create console logger: %s", strerror(errno));
-        return 1;
-    }
+    printer->super.open   = ConsoleMsgPrinterOpen;
+    printer->super.close  = ConsoleMsgPrinterClose;
+    printer->super.output = ConsoleMsgPrinterOutput; 
+    printer->useEscapeCode = 0;
     return 0;
 }
 

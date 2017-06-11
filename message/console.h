@@ -20,12 +20,18 @@
 
 #include "../message.h"
 
+typedef struct
+{
+    MsgPrinter super;
+    int useEscapeCode; 
+} ConsoleMsgPrinter;
+
 /**
  * \brief Setups console message writer.
- * \param [in] printer Message printer.
+ * \param [in] printer Console message printer.
  * \return 0 upon success.
  */
-int ConsoleMsgPrinter(MsgPrinter *printer);
+int SetupConsoleMsgPrinter(ConsoleMsgPrinter *printer);
 
 #endif // MESSAGE_FILE_H
 

@@ -20,12 +20,18 @@
 
 #include "../message.h"
 
+typedef struct
+{
+    MsgPrinter super;
+    FILE *out;
+} FileMsgPrinter;
+
 /**
  * \brief Setups file message writer.
- * \param [in] printer Message printer.
+ * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-int FileMsgPrinter(MsgPrinter *printer);
+int SetupFileMsgPrinter(FileMsgPrinter *printer);
 
 #endif // MESSAGE_FILE_H
 

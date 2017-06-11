@@ -37,11 +37,7 @@
  */
 void exit_callback(void)
 {
-    g_MsgPrinter.close(g_MsgPrinter.userData);
-    if(g_MsgPrinter.userData)
-    {
-        free(g_MsgPrinter.userData);
-    }
+    DestroyMsgPrinters();
 }
 
 /*
@@ -96,13 +92,22 @@ int main(int argc, char** argv)
 
     atexit(exit_callback);
 
-    //if(FileMsgPrinter(&g_MsgPrinter))
-    if(ConsoleMsgPrinter(&g_MsgPrinter))
+    FileMsgPrinter filePrinter;
+    ConsoleMsgPrinter consolePrinter;
+
+    SetupMsgPrinters();
+
+    SetupFileMsgPrinter(&filePrinter);
+    SetupConsoleMsgPrinter(&consolePrinter);
+
+    if(AddMsgPrinter(&filePrinter.super))
     {
+        fprintf(stderr, "Failed to setup file printer.\n");
         return EXIT_FAILURE;
     }
-    if(g_MsgPrinter.open(g_MsgPrinter.userData))
+    if(AddMsgPrinter(&consolePrinter.super))
     {
+        fprintf(stderr, "Failed to setup console printer.\n");
         return EXIT_FAILURE;
     }
 

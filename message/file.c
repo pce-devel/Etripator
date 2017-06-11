@@ -25,19 +25,19 @@ static const char* g_logFilename = "etripator.log";
 
 /**
  * \brief Opens log file.
- * \param [in] userData  User data.
+ * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-static int FileMsgPrinterOpen(void* userData)
+static int FileMsgPrinterOpen(void* impl)
 {
-    FILE **out = (FILE**)userData; 
-    if(NULL == out)
+    FileMsgPrinter* printer = (FileMsgPrinter*)impl; 
+    if(NULL == printer)
     {
         fprintf(stderr, "Invalid file logger.\n");
         return 1;
     }
-    *out = fopen(g_logFilename, "ab");
-    if(NULL == *out)
+    printer->out = fopen(g_logFilename, "ab");
+    if(NULL == printer->out)
     {
         fprintf(stderr, "Failed to open log file %s: %s\n", g_logFilename, strerror(errno));
         return 1;
@@ -47,38 +47,38 @@ static int FileMsgPrinterOpen(void* userData)
 
 /**
  * \brief Closes log file.
- * \param [in] userData  User data.
+ * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-static int FileMsgPrinterClose(void* userData)
+static int FileMsgPrinterClose(void* impl)
 {
-    FILE **out = (FILE**)userData;
-    if((NULL == userData) || (NULL == *out))
+    FileMsgPrinter* printer = (FileMsgPrinter*)impl; 
+    if((NULL == printer) || (NULL == printer->out))
     {
         fprintf(stderr, "Invalid file logger.\n");
         return 1;
     }
-    if(fclose(*out))
+    if(fclose(printer->out))
     {
         fprintf(stderr, "Failed to close log file %s : %s\n", g_logFilename, strerror(errno));
         return 1;
     }
-    *out = NULL;
+    printer->out = NULL;
     return 0;
 }
 
 /**
  * \brief Prints message to file.
- * \param userData  User data.
- * \param type      Message type.
- * \param file      Name of the file where the print message command was issued.
- * \param line      Line number in the file where the print message command was issued.
- * \param function  Function where the print message command was issued.
- * \param format    Format string.
- *
+ * \param [in] impl Msg printer implementation.
+ * \param [in] type      Message type.
+ * \param [in] file      Name of the file where the print message command was issued.
+ * \param [in] line      Line number in the file where the print message command was issued.
+ * \param [in] function  Function where the print message command was issued.
+ * \param [in] format    Format string.
+ * \param [in] args      Argument lists.
  * \return 0 upon success.
  */
-static int FileMsgPrinterOutput(void* userData, MessageType type, const char* file, size_t line, const char* function, const char* format, ...)
+static int FileMsgPrinterOutput(void* impl, MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args)
 {
     static const char *messageTypeName[] =
     {
@@ -87,25 +87,19 @@ static int FileMsgPrinterOutput(void* userData, MessageType type, const char* fi
         "[Info]"
     };
 
-    if(NULL == userData)
+    if(NULL == impl)
     {
         fprintf(stderr, "Invalid file logger.\n");
         return 1;
     }
     else 
     {
-        FILE *out = *((FILE**)userData);
-        va_list argList;
-
-        fprintf(out, "%s %s:%zd %s : ", messageTypeName[type], file, line, function);
-
-        va_start(argList, format);
-        vfprintf(out, format, argList);
-        va_end(argList);
-        
-        fputc('\n', out);
-        fflush(out);
-        if(ferror(out))
+        FileMsgPrinter* printer = (FileMsgPrinter*)impl; 
+        fprintf(printer->out, "%s %s:%zd %s : ", messageTypeName[type], file, line, function);
+        vfprintf(printer->out, format, args);
+        fputc('\n', printer->out);
+        fflush(printer->out);
+        if(ferror(printer->out))
         {
             fprintf(stderr, "Failed to output log to %s: %s\n", g_logFilename, strerror(errno));
             return 1;
@@ -116,20 +110,15 @@ static int FileMsgPrinterOutput(void* userData, MessageType type, const char* fi
 
 /**
  * \brief Setups file message writer.
- * \param [in] printer Message printer.
+ * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-int FileMsgPrinter(MsgPrinter *printer)
+int SetupFileMsgPrinter(FileMsgPrinter *printer)
 {
-    printer->open   = FileMsgPrinterOpen;
-    printer->close  = FileMsgPrinterClose;
-    printer->output = FileMsgPrinterOutput; 
-    printer->userData = malloc(sizeof(FILE**));
-    if(NULL == printer->userData)
-    {
-        fprintf(stderr, "Failed to create file logger: %s", strerror(errno));
-        return 1;
-    }
+    printer->super.open   = FileMsgPrinterOpen;
+    printer->super.close  = FileMsgPrinterClose;
+    printer->super.output = FileMsgPrinterOutput; 
+    printer->out    = NULL;
     return 0;
 }
 

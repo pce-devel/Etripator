@@ -17,5 +17,63 @@
 */
 #include "message.h"
 
-MsgPrinter g_MsgPrinter;
+static MsgPrinter* g_MsgPrinter = NULL;
+
+/**
+ * Setup global message printer list.
+ */
+void SetupMsgPrinters()
+{
+    g_MsgPrinter = NULL;
+    // nothing much atm...
+}
+/**
+ * Releases the resources used by message printers.
+ */
+void DestroyMsgPrinters()
+{
+    MsgPrinter* printer;
+    for(printer=g_MsgPrinter; NULL != printer; printer=printer->next)
+    {
+        printer->close(printer);
+    }
+}
+/**
+ * Adds a new message printer to the global list.
+ * \param [in] printer Message printer to be added to the list.
+ * \return 0 upon success.
+ */
+int AddMsgPrinter(MsgPrinter *printer)
+{
+    if(printer->open(printer))
+    {
+        return 1;
+    }
+    printer->next = g_MsgPrinter;
+    g_MsgPrinter = printer;
+    return 0;
+}
+/**
+ * Dispatch messages to printers.
+ * \param type      Message type.
+ * \param file      Name of the file where the print message command was issued.
+ * \param line      Line number in the file where the print message command was issued.
+ * \param function  Function where the print message command was issued.
+ * \param format    Format string.
+ */
+void PrintMsg(MessageType type, const char* file, size_t line, const char* function, const char* format, ...)
+{
+    MsgPrinter* printer;
+    for(printer=g_MsgPrinter; NULL != printer; printer=printer->next)
+    {
+        if(printer->output)
+        {
+            va_list args; 
+            va_start(args, format);
+            printer->output(printer, type, file, line, function, format, args);
+            va_end(args);
+        }
+    }
+}
+
 
