@@ -74,11 +74,11 @@ static int ConsoleMsgPrinterOutput(void* userData, MessageType type, const char*
         "[Warning]",
         "[Info]"
     };
-    static const char *consolePrefix[] =
+    static const char *messageTypePrefix[] =
     {
-        "\x1b[1;37;41m",
-        "\x1b[1;37;43m",
-        "\x1b[1;37;42m"
+        "\x1b[1;31m",
+        "\x1b[1;33m",
+        "\x1b[1;32m"
     };
 
     if(NULL == userData)
@@ -90,15 +90,26 @@ static int ConsoleMsgPrinterOutput(void* userData, MessageType type, const char*
     {
         ConsoleMsgPrinterImpl *out = (ConsoleMsgPrinterImpl*)userData;
         va_list argList;
-        const char *begin = (out->useEscapeCode) ? consolePrefix[type] : "";
-        const char *end   = (out->useEscapeCode) ? "\x1b[0m" : "";
-        fprintf(stderr, "%s%s%s %s:%zd %s : ", begin, messageTypeName[type], end, file, line, function);
-
+        if(out->useEscapeCode)
+        {
+            fprintf(stderr, "%s%s\x1b[0m \x1b[0;33m%s:%zd %s \x1b[1;37m : ", messageTypePrefix[type], messageTypeName[type], file, line, function);
+        }
+        else
+        {
+            fprintf(stderr, "%s %s:%zd %s : ", messageTypeName[type], file, line, function);
+        }
         va_start(argList, format);
         vfprintf(stderr, format, argList);
         va_end(argList);
         
-        fputc('\n', stderr);
+        if(out->useEscapeCode)
+        {
+            fprintf(stderr, "\x1b[0m\n");
+        }
+        else 
+        {
+            fputc('\n', stderr);
+        }
         fflush(stderr);
         return 0;
     }
