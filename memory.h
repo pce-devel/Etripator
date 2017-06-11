@@ -23,12 +23,11 @@
 /**
  * Byte array.
  */
-struct Memory_
+typedef struct
 {
     size_t   len;
     uint8_t *data;
-};
-typedef struct Memory_ Memory;
+} Memory;
 
 /**
  * Create memory unit.

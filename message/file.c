@@ -19,6 +19,9 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include <time.h>
+#include <sys/time.h>
+
 #include "file.h"
 
 static const char* g_logFilename = "etripator.log";
@@ -94,8 +97,17 @@ static int FileMsgPrinterOutput(void* impl, MessageType type, const char* file, 
     }
     else 
     {
+        struct timeval tv;
+        struct tm *now;
+        char dateString[128];
+
         FileMsgPrinter* printer = (FileMsgPrinter*)impl; 
-        fprintf(printer->out, "%s %s:%zd %s : ", messageTypeName[type], file, line, function);
+        
+        gettimeofday(&tv, NULL);
+        now = localtime(&tv.tv_sec);
+        strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", now);
+        
+        fprintf(printer->out, "%s %s.%06ld %s:%zd %s : ", messageTypeName[type], dateString, tv.tv_usec, file, line, function);
         vfprintf(printer->out, format, args);
         fputc('\n', printer->out);
         fflush(printer->out);

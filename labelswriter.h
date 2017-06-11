@@ -16,7 +16,7 @@
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
 #ifndef LABELS_WRITER_H
-#define LABELS_WRITE_H
+#define LABELS_WRITER_H
 
 #include "labels.h"
 

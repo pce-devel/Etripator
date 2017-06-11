@@ -70,6 +70,11 @@ int outputLabels(CommandLineOptions *options, LabelRepository* repository)
     }
     return 1;
 }
+    
+
+// [todo] fix
+FileMsgPrinter filePrinter;
+ConsoleMsgPrinter consolePrinter;
 
 /* Main */
 int main(int argc, char** argv)
@@ -92,8 +97,6 @@ int main(int argc, char** argv)
 
     atexit(exit_callback);
 
-    FileMsgPrinter filePrinter;
-    ConsoleMsgPrinter consolePrinter;
 
     SetupMsgPrinters();
 
