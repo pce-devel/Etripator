@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,44 +19,42 @@
 #define _SECTION_H_
 
 #include "config.h"
-#include "labels.h"
+#include <jansson.h>
 
 /**
- * Section related errors
+ * Section type
  **/
-typedef enum
-{
-	SECTION_OK = 0,                  /*< Success. */
-	SECTION_INVALID_PARAMETERS,      /*< At least one of the parameter has an invalid value. */
-	SECTION_PARSING_ERROR,           /*< Todo . */
-	SECTION_MEMORY_ISSUE             /*< Something went wrong with the memory. */
-} SECTION_ERR;
+typedef enum {
+    UnknownSectionType = -1,
+    BinData = 0, /**< The section will be extracted from the input ROM and stored in a separate file. **/
+    IncData,     /**< The section will be output as a series of .db directives. **/
+    Code,
+    SectionTypeCount	
+} SectionType;
 
 /**
- *   Define a ROM area.
- * 	 This area can contain data or code.
+ * Define a ROM area.
+ * This area can contain data or code.
  **/
-struct Section_ {
-    char     type;     /* type (defined below) */
-    char*    name;     /* name */
-    uint8_t  bank;     /* rom bank / memory page */
-    uint16_t org;      /* org */
-    off_t    start;    /* start address (file offset in bytes) */
-    size_t   size;     /* section size */
-    uint8_t  id;       /* section id */
-    char*    filename; /* section id */
-};
-typedef struct Section_ Section;
-
-enum SectionType {
-	BIN_DATA = 0,
-	INC_DATA,
-	CODE
-};
-
+typedef struct {
+    SectionType type;     /**< type **/
+    char*       name;     /**< name **/
+    uint8_t     bank;     /**< rom bank / memory page **/
+    uint16_t    org;      /**< org **/
+    int32_t     offset;   /**< start address (file offset in bytes) **/
+    int32_t     size;     /**< section size **/
+    char*       filename; /**< output filename **/
+} Section;
 /**
- * Extract sections from a CFG file
- **/ 
-SECTION_ERR readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount);
+ * Reset a section to its default values.
+ **/
+void resetSection(Section* out);
+/**
+ * Initializes section from JSON object.
+ * @param [in] obj JSON object.
+ * @param [out] out Section.
+ * @return 1 upon success or 0 if an error occured.
+ **/
+int parseSection(const json_t* obj, Section* out);
 
 #endif // _SECTION_H_

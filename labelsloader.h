@@ -22,7 +22,7 @@
 
 /**
  * Load labels from file.
- * \param [in]  filename Configuration file.
+ * \param [in]  filename Input filename.
  * \param [out] reposity Label repository.
  * \return 1 if the labels contained in the file was succesfully added to the repository.
  *         0 if an error occured.

@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,377 +15,114 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <errno.h>
+#include <stdlib.h>
 #include "section.h"
 #include "message.h"
-#include "labels.h"
-#include "cfg.h"
+#include "jsonhelpers.h"
 
-static const char* supportedSectionTypeName[] =
-{
-	"bin_data", "inc_data", "code", NULL
+static const char* supported_types[SectionTypeCount] = {
+    "bin_data",
+    "inc_data",
+    "code"
 };
 
-/*
- * Validate section type
- */
-static int validateType(const char* value, Section *currentSection)
-{
-	int i;
-		
-	for( i=0; supportedSectionTypeName[i] != NULL; ++i )
-	{
-		if(strcasecmp(value, supportedSectionTypeName[i]) == 0)
-		{
-			currentSection->type = i;
-			return 1;
-		}
-	}
-	return 0;
+static int validateType(const char* str, SectionType* type) {
+    int i;
+    for(i=0; i<SectionTypeCount; i++) {
+        if(0 == strncmp(supported_types[i], str, strlen(supported_types[i]))) {
+            *type = i;
+            return 1;
+        }
+    }
+    *type = UnknownSectionType;
+    return 0;
 }
-
-/*
- * Validate bank 
- */
-static int validateBank(const char* value, Section *currentSection)
-{
-	unsigned long bank;
-	
-	bank = strtoul(value, NULL, 16);
-	if(bank == ULONG_MAX)
-	{
-		return 0;
-	}
-	
-	currentSection->bank = (uint8_t)bank;
-	
-	return 1;
+/**
+ * Reset a section to its default values.
+ **/
+void resetSection(Section* out) {
+    out->type = UnknownSectionType;
+    out->name = NULL;    
+    out->bank = 0;
+    out->org  = 0;
+    out->offset = 0;    
+    out->size = -1;
+    out->filename = NULL; 
 }
-
-/*
- * Validate org 
- */
-static int validateOrg(const char* value, Section *currentSection)
-{
-	unsigned long org;
-	
-	org = strtoul(value, NULL, 16);
-	if(org == ULONG_MAX)
-	{
-		return 0;
-	}
-	
-	currentSection->org = (uint16_t)org;
-	
-	return 1;
-}
-
-
-/*
- * Validate offset 
- */
-static int validateOffset(const char* value, Section *currentSection)
-{
-	unsigned long offset;
-	
-	offset = strtoul(value, NULL, 16);
-	if(offset  == ULONG_MAX)
-	{
-		return 0;
-	}
-	
-	currentSection->start  = offset ;
-	
-	return 1;
-}
-
-/*
- * Validate size
- */
-static int validateSize(const char* value, Section *currentSection)
-{
-	long size;
-	
-	size = strtol(value, NULL, 16);
-	if(size  == LONG_MAX)
-	{
-		return 0;
-	}
-	
-	currentSection->size = (int32_t)size;
-	
-	return 1;
-}
-
-/*
- * Validate section Id
- */
-static int validateId(const char* value, Section *currentSection)
-{
-    unsigned long id;
-
-    id = strtoul(value, NULL, 16);
-    if(id  == ULONG_MAX)
-    {
+/**
+ * Initializes section from JSON object.
+ * @param [in] obj JSON object.
+ * @param [out] out Section.
+ * @return 1 upon success or 0 if an error occured.
+ **/
+int parseSection(const json_t* obj, Section* out) {
+    const json_t* tmp;
+    int num;
+    resetSection(out);
+    if(!json_is_object(obj)) {
+        ERROR_MSG("Invalid json element.");
         return 0;
     }
-
-    if(id > 0xff)
-    {
+    /* type */
+    tmp = json_object_get(obj, "type");
+    if(!json_is_string(tmp)) {
+        ERROR_MSG("Invalid data for section type.");
         return 0;
     }
-
-    currentSection->id  = (uint8_t)id;
-
+    if(!json_validateType(json_string_value(tmp), &out->type)) {
+        ERROR_MSG("Invalid section type.");
+        return 0;
+    }
+    /* bank */
+    tmp = json_object_get(obj, "bank");
+    if(!json_validateInt(tmp, &num)) {
+        ERROR_MSG("Invalid or missing bank value.");
+        return 0;
+    }
+    if((num < 0) || (num > 255)) {
+        ERROR_MSG("Bank value out of range.");
+        return 0;
+    }
+    out->bank = (uint8_t)num;
+    /* org */
+    tmp = json_object_get(obj, "org");
+    if(!json_validateInt(tmp, &num)) {
+        ERROR_MSG("Invalid or missing org value.");
+        return 0;
+    }
+    if((num < 0) || (num > 0xffff)) {
+        ERROR_MSG("Org value out of range.");
+        return 0;
+    }
+    out->org = (uint16_t)num;
+    /* offset */
+    tmp = json_object_get(obj, "offset");
+    if(tmp) {
+        if(!json_validateInt(tmp, &num)) {
+            ERROR_MSG("Invalid or missing org value.");
+            return 0;
+        }
+    }
+    if(out->offset < 0) {
+        out->offset = (out->bank << 13) | (out->org & 0x1fff);
+    }
+    /* size */
+    tmp = json_object_get(obj, "size");
+    if(tmp) {
+        if(!json_validateInt(tmp, &out->size))
+        {
+            ERROR_MSG("Invalid section size.");
+            return 0;
+        }
+    }
+    /* filename */
+    tmp = json_object_get(obj, "filename");
+    if(!json_is_string(tmp)) {
+        ERROR_MSG("Missing or invalid filename.");
+        return 0;
+    }
+    out->filename = strdup(json_string_value(tmp));
     return 1;
-}
-
-/*
- * Validate section filename
- */
-static int validateFilename(const char* value, Section *currentSection)
-{	
-    currentSection->filename = strdup(value);
-    if(NULL == currentSection->filename)
-    {
-        return 0;
-    }
-    /* Check file */
-    if(-1 != access(currentSection->filename, F_OK))
-    {
-        WARNING_MSG("File %s exists. It will be overwritten.", currentSection->filename);
-    }
-	return 1;
-}
-
-#define KEY_COUNT 7
-
-#define TYPE_MASK     (1   )
-#define BANK_MASK     (1<<1)
-#define ORG_MASK      (1<<2)
-#define OFFSET_MASK   (1<<3)
-#define SIZE_MASK     (1<<4)
-#define ID_MASK       (1<<5)
-#define FILENAME_MASK (1<<6)
-
-/**
- * \brief CFG key parsing helper
- */
-typedef struct
-{
-	const char* key;
-	int (*validate)(const char* value, Section* section); 
-} KeyValidator;
-
- /**
-  * \brief Helper structure for CFG parsing of sections.
-  */
- struct SectionValidator
- {
-	Section*      section;      /**< Section array. */
-	size_t        sectionCount; /**< Number of processed sections. */
-	size_t        capacity;     /**< Section array element count. */
-	Section*      current;      /**< Current section being processed. */
-	uint32_t      flag;         /**< Bitfield where each bit corresponds to a specific key. */
-	int           keyCount;     /**< Number of supported key count. */
-	KeyValidator* keyChecker;   /**< . Set of key validators. */
- };
-
-/*
- * \brief Expand section array.
- *
- * \param validator  contains the section array to expand.
- * \return
- *     SECTION_MEMORY_ISSUE if reallocation failed.
- *     SECTION_OK if the section array was succesfully expanded.
- */
-static SECTION_ERR ExpandSection(struct SectionValidator* validator)
-{
-	int count = validator->capacity + 4;
-	Section *tmp;
-
-	tmp = (Section*)malloc(count * sizeof(Section));
-	if(tmp == NULL)
-	{
-		return SECTION_MEMORY_ISSUE;
-	}
-	
-	validator->current = tmp + (validator->current - validator->section);
-
-	if(validator->section != NULL)
-	{
-		memcpy(tmp, validator->section, validator->capacity * sizeof(Section));	
-		free(validator->section);
-	}
-
-	validator->capacity = count;
-	validator->section  = tmp;
-	
-	return SECTION_OK;
-}
-
-/**
- * \brief Section start callback
- *
- * \param data         Section validator
- * \param sectionName  Section name
- * \return 0 if an error occured, 1 on success
- */
-static int beginCFGSection(void *data, const char* sectionName)
-{
-	struct SectionValidator *validator = (struct SectionValidator*)data;
-
-	if(validator->sectionCount == validator->capacity)
-	{
-		if(ExpandSection(validator) != SECTION_OK)
-		{
-			return 0;
-		}
-	}
-
-    validator->current           = validator->section + validator->sectionCount;
-    validator->current->bank     = 0;
-    validator->current->org      = 0;
-    validator->current->start    = 0;
-    validator->current->size     = 0;
-    validator->current->id       = validator->sectionCount;
-    validator->current->filename = NULL;
-    validator->current->name     = strdup(sectionName);
-
-	validator->flag  = 0;
-
-	++validator->sectionCount;
-
-	return 1;
-}
-
-/*
- * \brief Check section attributes and compute start offset if needed.
- * \param data         Section validator
- * \return 0 if an error occured, 1 on success
- */
- static int finalizeCFGSection( void *data )
- {
-	struct SectionValidator *validator = (struct SectionValidator*)data;
-
-	uint32_t flag           = validator->flag;
-	Section *currentSection = validator->current;
-
-	if( !(flag & (TYPE_MASK)) )
-	{
-		ERROR_MSG("[%s] : missing type.\n", currentSection->name );
-		return 0;
-	}
-	
-	if( !(flag & (BANK_MASK)) )
-	{
-		ERROR_MSG("[%s] : missing bank.\n", currentSection->name );
-		return 0;
-	}
-	
-	if( !(flag & (ORG_MASK)) )
-	{
-		ERROR_MSG("[%s] : missing org.\n", currentSection->name );
-		return 0;
-	}
-	
-	if( !(flag & OFFSET_MASK) )
-	{
-		currentSection->start = (currentSection->bank << 13) | (currentSection->org & 0x1fff);
-	}
-
-	if((currentSection->type != CODE) && (currentSection->size == 0))
-	{
-		ERROR_MSG("[%s] Automatic section size detection doesn't work for data.\n", currentSection->name);
-		return 0;
-	}
-
-	return 1;
- }
-
-/**
- * \brief Validate current key value pair.
- * \param data   Pointer to current section validator.
- * \param key    Key string.
- * \param value  Value string.
- * \return 0 on error, 1 on sucess.
- */
-static int validateCFGTuple(void *data, const char* key, const char* value)
-{
-	struct SectionValidator *validator = (struct SectionValidator*)data;
-
-	int i;
-	for(i=0; i<validator->keyCount; ++i)
-	{
-		if(strcmp(validator->keyChecker[i].key, key) == 0)
-		{
-			if(validator->flag & (1 << i))
-			{
-				ERROR_MSG("%s already set", key );
-				return 0;
-			}
-			validator->flag |= (1 << i);
-			return validator->keyChecker[i].validate(value, validator->current);
-		}
-	}
-
-	return 0;
-}
-
-/*
- * \brief Extract sections from a CFG file
- *
- * \param iFileName     CFG file name
- * \param iSection      Section array (in/out)
- * \param iSectionCount Number of read sections (in/out)
- * \return SECTION_OK on success.
- */ 
-SECTION_ERR readSectionsFromCFG(char* iFileName, Section** iSection, size_t* iSectionCount)
-{
-	struct CFGPayload payload;
-	struct SectionValidator validator;
-
-	CFG_ERR cfgErr;
-	SECTION_ERR sectionErr;
-
-	static KeyValidator keyCheckers[KEY_COUNT] =
-	{
-        { "type",     validateType     },
-        { "bank",     validateBank     },
-        { "org",      validateOrg      },
-        { "offset",   validateOffset   },
-        { "size",     validateSize     },
-        { "id",       validateId       },
-        { "filename", validateFilename }
-	};
-
-	validator.capacity     = *iSectionCount;
-	validator.sectionCount = *iSectionCount;
-	validator.current      = (Section*)(*iSectionCount); 
-	validator.section      = NULL;
-	validator.keyCount     = KEY_COUNT;
-	validator.keyChecker   = keyCheckers;
-
-	sectionErr = ExpandSection(&validator);
-	if(sectionErr != SECTION_OK)
-	{
-		return sectionErr;
-	}
-
-	payload.data                 = &validator;
-	payload.keyValueCallback     = validateCFGTuple;
-	payload.beginSectionCallback = beginCFGSection;
-	payload.endSectionCallback   = finalizeCFGSection;
-	
-	cfgErr = ParseCFG(iFileName, &payload);
-	if(cfgErr != CFG_OK)
-	{
-		ERROR_MSG("%s[%d] %s", iFileName, payload.line, GetCFGErrorMsg(cfgErr));
-		return SECTION_PARSING_ERROR;
-	}
-
-	*iSectionCount = validator.sectionCount;
-	*iSection      = validator.section;
-
-	return SECTION_OK;
 }
 

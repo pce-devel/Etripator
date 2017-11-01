@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 #include "config.h"
 
 /* Command line options */
-struct CommandLineOptions_
+typedef struct
 {
     uint8_t extractIRQ;
     uint8_t cdrom;
@@ -29,8 +29,7 @@ struct CommandLineOptions_
     char *romFileName;
     char *mainFileName;
     char *labelsFileName;
-};
-typedef struct CommandLineOptions_ CommandLineOptions;
+} CommandLineOptions;
 
 /* Print usage */
 void usage();
