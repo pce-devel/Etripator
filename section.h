@@ -26,10 +26,11 @@
  **/
 typedef enum {
     UnknownSectionType = -1,
-    BinData = 0, /**< The section will be extracted from the input ROM and stored in a separate file. **/
-    IncData,     /**< The section will be output as a series of .db directives. **/
+    BinData = 0, /**< The section will be extracted from the input ROM and
+                    stored in a separate file. **/
+    IncData, /**< The section will be output as a series of .db directives. **/
     Code,
-    SectionTypeCount	
+    SectionTypeCount
 } SectionType;
 
 /**
@@ -37,24 +38,25 @@ typedef enum {
  * This area can contain data or code.
  **/
 typedef struct {
-    SectionType type;     /**< type **/
-    char*       name;     /**< name **/
-    uint8_t     bank;     /**< rom bank / memory page **/
-    uint16_t    org;      /**< org **/
-    int32_t     offset;   /**< start address (file offset in bytes) **/
-    int32_t     size;     /**< section size **/
-    char*       filename; /**< output filename **/
+    SectionType type; /**< type **/
+    char *name;       /**< name **/
+    uint8_t bank;     /**< rom bank / memory page **/
+    uint16_t org;     /**< org **/
+    int32_t offset;   /**< start address (file offset in bytes) **/
+    int32_t size;     /**< section size **/
+    char *filename;   /**< output filename **/
+    uint8_t mpr[8];   /**< mpr registers **/
 } Section;
 /**
  * Reset a section to its default values.
  **/
-void resetSection(Section* out);
+void resetSection(Section *out);
 /**
  * Initializes section from JSON object.
  * @param [in] obj JSON object.
  * @param [out] out Section.
  * @return 1 upon success or 0 if an error occured.
  **/
-int parseSection(const json_t* obj, Section* out);
+int parseSection(const json_t *obj, Section *out);
 
 #endif // _SECTION_H_
