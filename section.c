@@ -44,7 +44,7 @@ void resetSection(Section *out) {
     out->bank = 0;
     out->org = 0;
     out->offset = 0;
-    out->size = -1;
+    out->size = 0;
     out->filename = NULL;
     memset(out->mpr, 0, 8);
 }
@@ -98,7 +98,7 @@ int parseSection(const json_t *obj, Section *out) {
     tmp = json_object_get(obj, "offset");
     if (tmp) {
         if (!json_validateInt(tmp, &num)) {
-            ERROR_MSG("Invalid or missing org value.");
+            ERROR_MSG("Invalid or missing offset value.");
             return 0;
         }
     }
@@ -119,7 +119,6 @@ int parseSection(const json_t *obj, Section *out) {
         size_t index;
         json_t* value;
         json_array_foreach(tmp, index, value) {
-            int num;
             if(index > 7) {
                 WARNING_MSG("Extra mpr values");
                 break;
@@ -142,3 +141,42 @@ int parseSection(const json_t *obj, Section *out) {
     out->filename = strdup(json_string_value(tmp));
     return 1;
 }
+
+int readSections(const char* filename, Section **out, int *count) {
+    json_t* root;
+    json_t* obj;
+    const char* key;
+    json_error_t err;
+    int ret = 1;
+    size_t size;
+    Section *ptr;
+
+    root = json_load_file(filename, 0, &err);
+    if(!root) {
+        ERROR_MSG("Failed to parse %s: %s", filename, err.text);
+        return 0;
+    }
+
+    if(!json_is_object(root)) {
+        ERROR_MSG("Invalid root element");
+        json_decref(root);
+        return ret;
+    }
+
+    size = json_object_size(root);
+    *out = (Section*)realloc(*out, (*count+size) * sizeof(Section));
+    ptr = *out + *count;
+    *count += size;
+    json_object_foreach(root, key, obj) {
+        resetSection(ptr);
+        ret = ret && parseSection(obj, ptr);
+        if(ret) {
+            ptr->name = strdup(key);
+        }
+        ptr++;
+    }
+
+    json_decref(root);
+    return ret;
+}
+

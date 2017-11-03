@@ -15,8 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "labelsloader.h"
+#include <jansson.h>
 #include "message.h"
+#include "jsonhelpers.h"
+#include "labelsloader.h"
 
 #define MAX_LABEL_NAME 64
 
@@ -37,9 +39,9 @@ int loadLabels(const char* filename, LabelRepository* repository)
     uint16_t logical;
     uint8_t page;
 
-    root = json_load_file(filename, 0, &error);
+    root = json_load_file(filename, 0, &err);
     if(!root) {
-        ERROR_MSG("Failed to parse %s: %s", filename, error.text);
+        ERROR_MSG("Failed to parse %s: %s", filename, err.text);
         return 0;
     }
     if(!json_is_object(root)) {

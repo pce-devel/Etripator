@@ -119,12 +119,10 @@ static int setLabelName(LabelRepository* repository, Label *label, const char* n
 int addLabel(LabelRepository* repository, const char* name, uint16_t logical, uint8_t page) {
     char *dummy;
     if(findLabel(repository, logical, page, &dummy)) {
-/*
         if(strcmp(name, dummy)) {
-            
+        //    return 0;
         }
-*/
-        return 0;
+        return  1;
     }
 
     /* Expand arrays if necessary */

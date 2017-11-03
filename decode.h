@@ -32,15 +32,15 @@ struct SectionProcessor_
     MemoryMap *memmap;    /* Memory map */
     FILE      *out;       /* Output */
 
-    size_t   physicalAddr; /* Physical address. */
-    uint16_t logicalAddr;  /* Logical address. */
+    uint32_t physical; /* Physical address. */
+    uint16_t logical;  /* Logical address. */
 
     size_t   offset; /* Current section offset */
 
     LabelRepository* labelRepository; /* label repository for this section */
 
     /* Used for raw binary data output */
-    uint8_t *buffer;       /* Data buffer */
+    uint8_t *buffer; /* Data buffer */
 };
 typedef struct SectionProcessor_ SectionProcessor;
 

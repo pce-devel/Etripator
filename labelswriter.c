@@ -15,6 +15,9 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <errno.h>
+#include <string.h>
+
 #include "labelswriter.h"
 #include "message.h"
 
@@ -25,47 +28,24 @@
  * \return 1 if the labels in the repository were succesfully written to the file.
  *         0 if an error occured.
  */
-int writeLabels(const char* filename, LabelRepository* repository)
-{
-    int i;
-    int count = 0;
-    int ret = 0;
-    FILE* stream = NULL;
-    if((NULL == repository) || (NULL == filename))
-    {
-        ERROR_MSG("Invalid parameters.");
-        return 0;
-    }
-    count = getLabelCount(repository);
-    if(0 == count)
-    {
-        ERROR_MSG("Empty label repository.");
-        return 0;
-    }
-    stream = fopen(filename, "wb");
-    if(NULL == stream)
-    {
+int writeLabels(const char* filename, LabelRepository* repository) {
+    FILE *stream = fopen(filename, "wb");
+    int i, count = getLabelCount(repository);
+    if(NULL == stream) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
         return 0;
     }
-
-    ret = 1;
-    for(i=0; ret && (i<count); i++)
-    {
-        uint32_t physical;
+    fprintf(stream, "{\n");
+    for(i=0; i<count; i++) {
         uint16_t logical;
+        uint8_t page;
         char* name;
-        if(!getLabel(repository, i, &physical, &logical, &name))
+        if(getLabel(repository, i, &logical, &page, &name))
         {
-            ERROR_MSG("Failed to retrieve label #%d", i);
-            ret = 0;
-        }
-        else
-        {
-            fprintf(stream, "[%s]\nlogical=%04x\nphysical=%06x\n\n", name, logical, physical); 
+            fprintf("\t\"%s\": {\"logical\":\"%04x\", \"page\":\"%02x\"}%c\n", name, logical, page, (i<(count-1)) ? ',' : ' ');
         }
     }
-
+    fprintf(stream, "}\n");
     fclose(stream);
-    return ret;
+    return 1;
 }

@@ -59,4 +59,6 @@ void resetSection(Section *out);
  **/
 int parseSection(const json_t *obj, Section *out);
 
+int readSections(const char* filename, Section **out, int *count);
+
 #endif // _SECTION_H_

@@ -16,80 +16,70 @@
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "config.h"
-#include "message.h"
-#include "message/file.h"
-#include "message/console.h"
-#include "cfg.h"
+#include <jansson.h>
 
-#include "memorymap.h"
-#include "section.h"
-#include "decode.h"
-#include "opcodes.h"
-#include "irq.h"
-#include "rom.h"
+#include "message.h"
+#include "message/console.h"
+#include "message/file.h"
+
 #include "cd.h"
-#include "options.h"
+#include "decode.h"
+#include "irq.h"
 #include "labelsloader.h"
 #include "labelswriter.h"
+#include "memorymap.h"
+#include "opcodes.h"
+#include "options.h"
+#include "rom.h"
+#include "section.h"
 
 /*
   exit callback
  */
-void exit_callback(void)
-{
-    DestroyMsgPrinters();
-}
+void exit_callback(void) { DestroyMsgPrinters(); }
 
 /*
   output labels
 */
-int outputLabels(CommandLineOptions *options, LabelRepository* repository)
-{
+int outputLabels(CommandLineOptions *options, LabelRepository *repository) {
     char buffer[256];
     char *labelOut;
-    
-    if(NULL == options->labelsFileName)
-    {
+
+    if (NULL == options->labelsFileName) {
         char *tmp = basename(options->romFileName);
         size_t len = strlen(tmp);
-        if(len >= (256-5))
-        {   len = 256-5;
+        if (len >= (256 - 5)) {
+            len = 256 - 5;
         }
         labelOut = &buffer[0];
         memcpy(labelOut, tmp, len);
-        memcpy(labelOut+len, ".lbl", 5);
-    }
-	else
-    {
+        memcpy(labelOut + len, ".lbl", 5);
+    } else {
         labelOut = options->labelsFileName;
     }
-    if(!writeLabels(labelOut, repository))
-    {
+    if (!writeLabels(labelOut, repository)) {
         ERROR_MSG("Failed to write/update label file: %s", labelOut);
         return 0;
     }
     return 1;
 }
-    
 
 // [todo] fix
 FileMsgPrinter filePrinter;
 ConsoleMsgPrinter consolePrinter;
 
 /* Main */
-int main(int argc, char** argv)
-{
-    FILE* out;
-    FILE* mainFile;
+int main(int argc, char **argv) {
+    FILE *out;
+    FILE *mainFile;
 
     unsigned int i;
     int ret, failure;
-    SECTION_ERR sectErr;
 
     CommandLineOptions cmdOptions;
 
-    Section* section;
-    size_t sectionCount;
+    Section *section;
+    int sectionCount;
 
     SectionProcessor processor;
 
@@ -97,27 +87,23 @@ int main(int argc, char** argv)
 
     atexit(exit_callback);
 
-
     SetupMsgPrinters();
 
     SetupFileMsgPrinter(&filePrinter);
     SetupConsoleMsgPrinter(&consolePrinter);
 
-    if(AddMsgPrinter(&filePrinter.super))
-    {
+    if (AddMsgPrinter(&filePrinter.super)) {
         fprintf(stderr, "Failed to setup file printer.\n");
         return EXIT_FAILURE;
     }
-    if(AddMsgPrinter(&consolePrinter.super))
-    {
+    if (AddMsgPrinter(&consolePrinter.super)) {
         fprintf(stderr, "Failed to setup console printer.\n");
         return EXIT_FAILURE;
     }
 
     /* Extract command line options */
     ret = getCommandLineOptions(argc, argv, &cmdOptions);
-    if(ret <= 0)
-    {
+    if (ret <= 0) {
         usage();
         return (ret < 0);
     }
@@ -125,27 +111,21 @@ int main(int argc, char** argv)
     failure = 1;
 
     /* Read cfg file */
-    if(cmdOptions.extractIRQ)
-    {
+    if (cmdOptions.extractIRQ) {
         sectionCount = 5;
-        section = (Section*)malloc(sectionCount * sizeof(Section));
-        if(NULL == section)
-        {
+        section = (Section *)malloc(sectionCount * sizeof(Section));
+        if (NULL == section) {
             ERROR_MSG("Failed to allocate memory: %s", strerror(errno));
             goto error_1;
         }
-    }
-    else
-    {
+    } else {
         sectionCount = 0;
-        section      = NULL;
+        section = NULL;
     }
 
-    if(cmdOptions.cfgFileName)
-    {
-        sectErr = readSectionsFromCFG(cmdOptions.cfgFileName, &section, &sectionCount);
-        if(SECTION_OK != sectErr)
-        {
+    if (cmdOptions.cfgFileName) {
+        ret = readSections(cmdOptions.cfgFileName, &section, &sectionCount);
+        if (!ret) {
             ERROR_MSG("Unable to read %s", cmdOptions.cfgFileName);
             goto error_1;
         }
@@ -153,36 +133,28 @@ int main(int argc, char** argv)
 
     /* Initialize memory map. */
     ret = initializeMemoryMap(&memmap);
-    if(0 == ret)
-    {
+    if (0 == ret) {
         goto error_1;
     }
 
     /* Read ROM */
-    if(0 == cmdOptions.cdrom)
-    {
+    if (0 == cmdOptions.cdrom) {
         ret = loadROM(cmdOptions.romFileName, &memmap);
-        if(0 == ret)
-        {
+        if (0 == ret) {
             goto error_2;
         }
 
         /* Get irq offsets */
-        if(cmdOptions.extractIRQ)
-        {
+        if (cmdOptions.extractIRQ) {
             ret = getIRQSections(&memmap, section);
-            if(0 == ret)
-            {
+            if (0 == ret) {
                 ERROR_MSG("An error occured while reading irq vector offsets");
                 goto error_2;
             }
         }
-    }
-    else
-    {
+    } else {
         ret = addCDRAMMemoryMap(&memmap);
-        if(0 == ret)
-        {
+        if (0 == ret) {
             goto error_2;
         }
         /*  Data will be loaded during section disassembly */
@@ -192,22 +164,18 @@ int main(int argc, char** argv)
     initializeSectionProcessor(&processor);
 
     /* Load labels */
-    if(NULL != cmdOptions.labelsFileName)
-    {
+    if (NULL != cmdOptions.labelsFileName) {
         ret = loadLabels(cmdOptions.labelsFileName, processor.labelRepository);
-        if(0 == ret)
-        {
+        if (0 == ret) {
             ERROR_MSG("An error occured while loading labels from %s : %s", cmdOptions.labelsFileName, strerror(errno));
             goto error_4;
         }
     }
 
     /* For each section reset every existing files */
-    for(i=0; i<sectionCount; ++i)
-    {
+    for (i = 0; i < sectionCount; ++i) {
         out = fopen(section[i].filename, "wb");
-        if(NULL == out)
-        {
+        if (NULL == out) {
             ERROR_MSG("Can't open %s : %s", section[i].filename, strerror(errno));
             goto error_4;
         }
@@ -215,80 +183,65 @@ int main(int argc, char** argv)
     }
 
     /* Add section name to label repository. */
-    for(i=0; i<sectionCount; ++i)
-    {
-        ret = addLabel(processor.labelRepository, section[i].name, section[i].org, (section[i].bank << 13) | (section[i].org & 0x1fff));
-        if(0 == ret)
-        {
+    for (i = 0; i < sectionCount; ++i) {
+        ret = addLabel(processor.labelRepository, section[i].name, section[i].org, section[i].bank);
+        if (0 == ret) {
             ERROR_MSG("Failed to add section name (%s) to labels", section[i].name);
             goto error_4;
         }
     }
 
     /* Disassemble and output */
-    for(i=0; i<sectionCount; ++i)
-    {
+    for (i = 0; i < sectionCount; ++i) {
         out = fopen(section[i].filename, "ab");
-        if(NULL == out)
-        {
+        if (NULL == out) {
             ERROR_MSG("Can't open %s : %s", section[i].filename, strerror(errno));
             goto error_4;
         }
 
-        if(0 != cmdOptions.cdrom)
-        {
+        if (0 != cmdOptions.cdrom) {
             /* Copy CDROM data */
-            ret = loadCD(cmdOptions.romFileName, section[i].start, section[i].size, section[i].bank, section[i].org, &memmap);
-            if(0 == ret)
-            {
+            ret = loadCD(cmdOptions.romFileName, section[i].offset, section[i].size, section[i].bank, section[i].org,
+                         &memmap);
+            if (0 == ret) {
                 ERROR_MSG("Failed to load CD data (section %d)", i);
                 goto error_4;
             }
         }
 
-        if(section[i].type != BIN_DATA)
-        {
+        if (section[i].type != BinData) {
             /* Print header */
             fprintf(out, "\t.%s\n"
                          "\t.bank %x\n"
                          "\t.org $%04x\n",
-                         (section[i].type == CODE) ? "code" : "data", section[i].bank,
-                          section[i].org);
+                    (section[i].type == Code) ? "code" : "data", section[i].bank, section[i].org);
         }
 
         /* Reset section processor */
         resetSectionProcessor(&memmap, out, &section[i], &processor);
 
-        if(CODE == section[i].type)
-        {
+        if (Code == section[i].type) {
             char eor;
-            
+
             /* Extract labels */
             ret = extractLabels(&processor);
-            if(0 == ret)
-            {
+            if (0 == ret) {
                 goto error_4;
             }
 
             /* Process opcodes */
-            do 
-            {
+            do {
                 eor = processOpcode(&processor);
-                if(!cmdOptions.extractIRQ)
-                {
-                    if(processor.offset >= processor.processed->size)
+                if (!cmdOptions.extractIRQ) {
+                    if (processor.offset >= processor.processed->size)
                         eor = 1;
                     else
                         eor = 0;
                 }
-            } while(!eor);
-        }
-        else
-        {
+            } while (!eor);
+        } else {
             ret = processDataSection(&processor);
-            if(0 == ret)
-            {
-                
+            if (0 == ret) {
             }
         }
         fputc('\n', processor.out);
@@ -299,17 +252,14 @@ int main(int argc, char** argv)
 
     /* Open main asm file */
     mainFile = fopen(cmdOptions.mainFileName, "w");
-    if(NULL == mainFile)
-    {
+    if (NULL == mainFile) {
         ERROR_MSG("Unable to open %s : %s", cmdOptions.mainFileName, strerror(errno));
         goto error_4;
     }
-  
-    if(cmdOptions.extractIRQ)
-    {
+
+    if (cmdOptions.extractIRQ) {
         fprintf(mainFile, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
-        for(i=0; i<5; ++i)
-        {
+        for (i = 0; i < 5; ++i) {
             fprintf(mainFile, "\t.dw $%04x\n", section[i].org);
         }
     }
@@ -317,8 +267,7 @@ int main(int argc, char** argv)
     fclose(mainFile);
 
     /* Output labels  */
-	if(!outputLabels(&cmdOptions, processor.labelRepository))
-    {
+    if (!outputLabels(&cmdOptions, processor.labelRepository)) {
         goto error_4;
     }
     failure = 0;
@@ -328,8 +277,7 @@ error_4:
 error_2:
     destroyMemoryMap(&memmap);
 error_1:
-    for(i=0; i<sectionCount; ++i)
-    {
+    for (i = 0; i < sectionCount; ++i) {
         free(section[i].name);
         free(section[i].filename);
         section[i].name = NULL;

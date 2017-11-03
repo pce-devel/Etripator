@@ -26,8 +26,8 @@ set(etripator_SRC
     message.c 
     message/file.c
     message/console.c
+    jsonhelpers.c
     decode.c
-    cfg.c
     section.c
     opcodes.c
     labels.c
