@@ -18,6 +18,7 @@ script:
 addons:
   apt:
     packages:
+      - libjansson-dev
       - cmake
       - cmake-data
   coverity_scan:
