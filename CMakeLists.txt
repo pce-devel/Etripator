@@ -22,6 +22,8 @@ find_package(Jansson)
 
 set(CMAKE_C_STANDARDS 11)
 
+add_compile_options(-Wall -Wextra -Wshadow)
+
 set(etripator_SRC
     message.c 
     message/file.c

@@ -32,10 +32,9 @@ struct SectionProcessor_
     MemoryMap *memmap;    /* Memory map */
     FILE      *out;       /* Output */
 
-    uint32_t physical; /* Physical address. */
     uint16_t logical;  /* Logical address. */
 
-    size_t   offset; /* Current section offset */
+    int32_t offset; /* Current section offset */
 
     LabelRepository* labelRepository; /* label repository for this section */
 

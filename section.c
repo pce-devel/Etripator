@@ -102,7 +102,7 @@ int parseSection(const json_t *obj, Section *out) {
             return 0;
         }
     }
-    if (out->offset < 0) {
+    if (out->offset == 0) {
         out->offset = (out->bank << 13) | (out->org & 0x1fff);
     }
     /* size */

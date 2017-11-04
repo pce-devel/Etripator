@@ -42,7 +42,7 @@ typedef struct {
     char *name;       /**< name **/
     uint8_t bank;     /**< rom bank / memory page **/
     uint16_t org;     /**< org **/
-    int32_t offset;   /**< start address (file offset in bytes) **/
+    uint32_t offset;  /**< start address (file offset in bytes) **/
     int32_t size;     /**< section size **/
     char *filename;   /**< output filename **/
     uint8_t mpr[8];   /**< mpr registers **/

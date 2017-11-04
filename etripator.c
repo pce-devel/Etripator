@@ -45,18 +45,17 @@ int outputLabels(CommandLineOptions *options, LabelRepository *repository) {
     char buffer[256];
     char *labelOut;
 
-    if (NULL == options->labelsFileName) {
-        char *tmp = basename(options->romFileName);
-        size_t len = strlen(tmp);
-        if (len >= (256 - 5)) {
-            len = 256 - 5;
-        }
-        labelOut = &buffer[0];
-        memcpy(labelOut, tmp, len);
-        memcpy(labelOut + len, ".lbl", 5);
-    } else {
-        labelOut = options->labelsFileName;
+    /* We don't want to destroy the original label file. */
+    // [todo] function to generate a timestamped filename.
+    char *tmp = basename(options->romFileName);
+    size_t len = strlen(tmp);
+    if (len >= (256 - 5)) {
+        len = 256 - 5;
     }
+    labelOut = &buffer[0];
+    memcpy(labelOut, tmp, len);
+    memcpy(labelOut + len, ".lbl", 5);
+    
     if (!writeLabels(labelOut, repository)) {
         ERROR_MSG("Failed to write/update label file: %s", labelOut);
         return 0;
@@ -73,7 +72,7 @@ int main(int argc, char **argv) {
     FILE *out;
     FILE *mainFile;
 
-    unsigned int i;
+    int i;
     int ret, failure;
 
     CommandLineOptions cmdOptions;
@@ -110,7 +109,7 @@ int main(int argc, char **argv) {
 
     failure = 1;
 
-    /* Read cfg file */
+    /* Read configuration file */
     if (cmdOptions.extractIRQ) {
         sectionCount = 5;
         section = (Section *)malloc(sectionCount * sizeof(Section));
@@ -131,7 +130,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    /* Initialize memory map. */
+    /* Initialize memory map */
     ret = initializeMemoryMap(&memmap);
     if (0 == ret) {
         goto error_1;
@@ -228,7 +227,6 @@ int main(int argc, char **argv) {
             if (0 == ret) {
                 goto error_4;
             }
-
             /* Process opcodes */
             do {
                 eor = processOpcode(&processor);

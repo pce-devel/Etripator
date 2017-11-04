@@ -42,7 +42,7 @@ int writeLabels(const char* filename, LabelRepository* repository) {
         char* name;
         if(getLabel(repository, i, &logical, &page, &name))
         {
-            fprintf("\t\"%s\": {\"logical\":\"%04x\", \"page\":\"%02x\"}%c\n", name, logical, page, (i<(count-1)) ? ',' : ' ');
+            fprintf(stream, "\t\"%s\": {\"logical\":\"%04x\", \"page\":\"%02x\"}%c\n", name, logical, page, (i<(count-1)) ? ',' : ' ');
         }
     }
     fprintf(stream, "}\n");
