@@ -17,6 +17,8 @@
 */
 #include "config.h"
 #include <jansson.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "message.h"
 #include "message/console.h"
@@ -42,22 +44,22 @@ void exit_callback(void) { DestroyMsgPrinters(); }
   output labels
 */
 int outputLabels(CommandLineOptions *options, LabelRepository *repository) {
-    char buffer[256];
-    char *labelOut;
-
     /* We don't want to destroy the original label file. */
-    // [todo] function to generate a timestamped filename.
-    char *tmp = basename(options->romFileName);
-    size_t len = strlen(tmp);
-    if (len >= (256 - 5)) {
-        len = 256 - 5;
-    }
-    labelOut = &buffer[0];
-    memcpy(labelOut, tmp, len);
-    memcpy(labelOut + len, ".lbl", 5);
+    char buffer[256];
+    char *tmp;
+
+    struct timeval tv;
+    struct tm *now;
+    char dateString[128];
+        
+    gettimeofday(&tv, NULL);
+    now = localtime(&tv.tv_sec);
+    strftime(dateString, 128, "%Y%m%d%H%M%S", now);
     
-    if (!writeLabels(labelOut, repository)) {
-        ERROR_MSG("Failed to write/update label file: %s", labelOut);
+    tmp = basename(options->romFileName);
+    snprintf(buffer, 256, "%s.%s.lbl", tmp, dateString);     
+    if (!writeLabels(&buffer[0], repository)) {
+        ERROR_MSG("Failed to write/update label file: %s", buffer);
         return 0;
     }
     return 1;
