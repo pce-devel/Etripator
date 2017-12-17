@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,54 +24,52 @@
 #include "memorymap.h"
 
 /**
- * \todo Rename
+ * Decoder
  */
-struct SectionProcessor_
+typedef struct
 {
-    Section   *processed; /* Section being processed */
-    MemoryMap *memmap;    /* Memory map */
-    FILE      *out;       /* Output */
+    Section   *current; /* Section being processed */
+    MemoryMap *memmap;  /* Memory map */
+    FILE      *out;     /* Output */
 
     uint16_t logical;  /* Logical address. */
-
     int32_t offset; /* Current section offset */
 
-    LabelRepository* labelRepository; /* label repository for this section */
+    LabelRepository *labels; /* label repository */
 
     /* Used for raw binary data output */
     uint8_t *buffer; /* Data buffer */
-};
-typedef struct SectionProcessor_ SectionProcessor;
+} Decoder;
 
 /*
- * Initialize section processor
+ * Initializes decoder
  * \return 1 upon success, 0 otherwise.
  */
-int initializeSectionProcessor(SectionProcessor* processor);
+int createDecoder(Decoder* decoder);
 
 /*
- * Reset section processor
+ * Reset decoder
  */
-void resetSectionProcessor(MemoryMap*, FILE*, Section*, SectionProcessor*);
+void resetDecoder(MemoryMap *memmap, FILE *out, Section *section, Decoder *decoder);
   
 /*
- * Delete section processor
+ * Release decoder resources
  */
-void deleteSectionProcessor(SectionProcessor*);
+void deleteDecoder(Decoder *decoder);
 
 /*
  * Process data section
  */
-int processDataSection(SectionProcessor* iProcessor);
+int processDataSection(Decoder *decoder);
 
 /* 
  * Parse section to identify potential labels 
  */
-int extractLabels(SectionProcessor* processor);
+int extractLabels(Decoder *decoder);
 
 /*
  * Process opcode
  */
-char processOpcode(SectionProcessor* processor);
+char processOpcode(Decoder *decoder);
 
 #endif // DECODE_H

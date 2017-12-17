@@ -20,22 +20,23 @@
 #include "opcodes.h"
 
 /**
- * Initialize section processor
+ * Initialize decoder
  * \return 1 upon success, 0 otherwise.
  */
-int initializeSectionProcessor(SectionProcessor *processor) {
-    processor->processed = NULL;
-    processor->memmap = NULL;
-    processor->out = NULL;
+int createDecoder(Decoder *decoder) {
+    decoder->current = NULL;
+    decoder->memmap = NULL;
+    decoder->out = NULL;
 
-    processor->logical = 0;
+    decoder->logical = 0;
 
-    processor->offset = 0;
+    decoder->offset = 0;
 
-    processor->buffer = NULL;
+    decoder->buffer = NULL;
 
-    processor->labelRepository = createLabelRepository();
-    if (NULL == processor->labelRepository) {
+    decoder->labels = createLabelRepository();
+    if (NULL == decoder->labels) {
+        ERROR_MSG("Failed to create label repository");
         return 0;
     }
     return 1;
@@ -44,55 +45,55 @@ int initializeSectionProcessor(SectionProcessor *processor) {
 /*
  * Reset section processor
  */
-void resetSectionProcessor(MemoryMap *memmap, FILE *out, Section *current, SectionProcessor *processor) {
-    processor->processed = current;
-    processor->memmap = memmap;
-    processor->out = out;
-    processor->offset = 0;
-    processor->logical = current->org;
-    current->mpr[(current->org >> 13) & 0x07] = current->bank;
-    current->offset = 0;
+void resetDecoder(MemoryMap *memmap, FILE *out, Section *current, Decoder *decoder) {
+    decoder->current = current;
+    decoder->memmap = memmap;
+    decoder->out = out;
+    decoder->offset = 0;
+    decoder->logical = current->org;
+    memmap->mpr[(current->org >> 13) & 0x07] = current->bank;
+    decoder->offset = 0;
 
     updateMPRs(memmap, current->mpr);
 }
 
 /**
- * Delete section processor
+ * Delete decoder
  */
-void deleteSectionProcessor(SectionProcessor *processor) {
-    if (NULL != processor->buffer) {
-        free(processor->buffer);
-        processor->buffer = NULL;
+void deleteDecoder(Decoder *decoder) {
+    if (NULL != decoder->buffer) {
+        free(decoder->buffer);
+        decoder->buffer = NULL;
     }
-    if (NULL != processor->labelRepository) {
-        deleteLabelRepository(processor->labelRepository);
-        free(processor->labelRepository);
-        processor->labelRepository = NULL;
+    if (NULL != decoder->labels) {
+        deleteLabelRepository(decoder->labels);
+        free(decoder->labels);
+        decoder->labels = NULL;
     }
 }
 
 /*
  * Process data section
  */
-int processDataSection(SectionProcessor *processor) {
+int processDataSection(Decoder *decoder) {
     uint8_t data;
     int i;
     uint16_t addr;
-    if (IncData == processor->processed->type) {
+    if (IncData == decoder->current->type) {
         int j;
-        fprintf(processor->out, "%s:\n", processor->processed->name);
-        for (i = processor->processed->size, addr = processor->logical; i > 0;) {
-            fprintf(processor->out, "    .db ");
+        fprintf(decoder->out, "%s:\n", decoder->current->name);
+        for (i = decoder->current->size, addr = decoder->logical; i > 0;) {
+            fprintf(decoder->out, "    .db ");
 
             for (j = 0; (i > 0) && (j < 8); j++, i--) {
-                data = readByte(processor->memmap, addr++);
-                fprintf(processor->out, "$%02x%c", data, ((j < 7) && (i > 1)) ? ',' : '\n');
+                data = readByte(decoder->memmap, addr++);
+                fprintf(decoder->out, "$%02x%c", data, ((j < 7) && (i > 1)) ? ',' : '\n');
             }
         }
     } else {
-        for (i = processor->processed->size, addr = processor->logical; i > 0; i--) {
-            data = readByte(processor->memmap, addr++);
-            fwrite(&data, 1, 1, processor->out);
+        for (i = decoder->current->size, addr = decoder->logical; i > 0; i--) {
+            data = readByte(decoder->memmap, addr++);
+            fwrite(&data, 1, 1, decoder->out);
         }
     }
     return 1;
@@ -102,7 +103,7 @@ int processDataSection(SectionProcessor *processor) {
  * Parse section to identify potential labels
  * \return 1 upon success, 0 if an error occured.
  */
-int extractLabels(SectionProcessor *processor) {
+int extractLabels(Decoder *decoder) {
     int eor, i;
     uint8_t inst;
     uint8_t data[6];
@@ -112,20 +113,20 @@ int extractLabels(SectionProcessor *processor) {
     uint16_t logical;
     uint8_t page;
 
-    LabelRepository *repository = processor->labelRepository;
-    Section *section = processor->processed;
+    LabelRepository *repository = decoder->labels;
+    Section *section = decoder->current;
 
     if (Code != section->type) {
         return 1;
     }
 
     offset = 0;
-    logical = processor->logical;
+    logical = decoder->logical;
 
     INFO_MSG("%s:", section->name);
 
     /* Push the section org */
-    page = getPage(processor->memmap, logical);
+    page = getPage(decoder->memmap, logical);
     if (0 == addLabel(repository, section->name, logical, page)) {
         return 0;
     }
@@ -133,10 +134,10 @@ int extractLabels(SectionProcessor *processor) {
     eor = 0;
     while (!eor) {
         /* Read instruction */
-        inst = readByte(processor->memmap, logical);
+        inst = readByte(decoder->memmap, logical);
         /* Read data (if any) */
         for (i = 0; i < (pce_opcode[inst].size - 1); i++) {
-            data[i] = readByte(processor->memmap, logical + i + 1);
+            data[i] = readByte(decoder->memmap, logical + i + 1);
         }
 
         if (isLocalJump(inst)) {
@@ -152,7 +153,7 @@ int extractLabels(SectionProcessor *processor) {
             }
             delta += pce_opcode[inst].size;
             jump = logical + delta;
-            page = getPage(processor->memmap, jump);
+            page = getPage(decoder->memmap, jump);
             /* Create label name */
             snprintf(buffer, 32, "l%04x_%02d", jump, page);
 
@@ -165,7 +166,7 @@ int extractLabels(SectionProcessor *processor) {
         } else {
             if (isFarJump(inst)) {
                 uint16_t jump = data[0] | (data[1] << 8);
-                page = getPage(processor->memmap, jump);
+                page = getPage(decoder->memmap, jump);
                 /* Create label name */
                 snprintf(buffer, 32, "l%04x_%02d", jump, page);
                 /* Insert offset to repository */
@@ -198,7 +199,7 @@ static const char *spacing = "          ";
 /*
  * Process opcode
  */
-char processOpcode(SectionProcessor *processor) {
+char processOpcode(Decoder *decoder) {
     int i, delta;
     uint8_t inst, data[6], isJump;
     char eor, *name;
@@ -209,28 +210,28 @@ char processOpcode(SectionProcessor *processor) {
     eor = 0;
 
     memset(data, 0, 6);
-    logical = processor->logical + processor->offset;
-    page = getPage(processor->memmap, logical); 
+    logical = decoder->logical + decoder->offset;
+    page = getPage(decoder->memmap, logical); 
 
     /* Opcode */
-    inst = readByte(processor->memmap, logical);
+    inst = readByte(decoder->memmap, logical);
 
     nextLogical = logical + pce_opcode[inst].size;
 
     /* Is there a label ? */
-    if (findLabel(processor->labelRepository, logical, page, &name)) {
+    if (findLabel(decoder->labels, logical, page, &name)) {
         /* Print label*/
-        fprintf(processor->out, "%s:\n", name);
+        fprintf(decoder->out, "%s:\n", name);
     }
 
     /* Front spacing */
-    fwrite(spacing, 1, 10, processor->out);
+    fwrite(spacing, 1, 10, decoder->out);
 
     /* Print opcode sting */
-    fwrite(pce_opcode[inst].name, 1, 4, processor->out);
+    fwrite(pce_opcode[inst].name, 1, 4, decoder->out);
 
     /* Add spacing */
-    fwrite(spacing, 1, 4, processor->out);
+    fwrite(spacing, 1, 4, decoder->out);
 
     /* End Of Routine (eor) is set to 1 if the instruction is RTI or RTS */
     eor = ((inst == 64) || (inst == 96));
@@ -238,11 +239,11 @@ char processOpcode(SectionProcessor *processor) {
     /* Data */
     if (pce_opcode[inst].size > 1) {
         for (i = 0; i < (pce_opcode[inst].size - 1); i++) {
-            data[i] = readByte(processor->memmap, logical + i + 1);
+            data[i] = readByte(decoder->memmap, logical + i + 1);
         }
     }
 
-    processor->offset += pce_opcode[inst].size;
+    decoder->offset += pce_opcode[inst].size;
     logical = nextLogical;
 
     /* Swap LSB and MSB for words */
@@ -292,21 +293,21 @@ char processOpcode(SectionProcessor *processor) {
     }
 
     if (pce_opcode[inst].type == 1) {
-        fputc('A', processor->out);
+        fputc('A', decoder->out);
     } else if (isJump) {
         /* BBR* and BBS* */
         if ((inst & 0x0F) == 0x0F) {
             uint16_t zp_offset = 0x2000 + data[0];
-            page = getPage(processor->memmap, zp_offset);
-            if (findLabel(processor->labelRepository, zp_offset, page, &name)) {
-                fprintf(processor->out, "<%s, ", name);
+            page = getPage(decoder->memmap, zp_offset);
+            if (findLabel(decoder->labels, zp_offset, page, &name)) {
+                fprintf(decoder->out, "<%s, ", name);
             } else {
-                fprintf(processor->out, "<$%02x, ", data[0]);
+                fprintf(decoder->out, "<$%02x, ", data[0]);
             }
         }
-        page = getPage(processor->memmap, offset);
-        findLabel(processor->labelRepository, offset, page, &name);
-        fwrite(name, 1, strlen(name), processor->out);
+        page = getPage(decoder->memmap, offset);
+        findLabel(decoder->labels, offset, page, &name);
+        fwrite(name, 1, strlen(name), decoder->out);
     } else {
         int hasLabel = 0;
         if ((inst == 0x43) || (inst == 0x53)) {
@@ -327,20 +328,20 @@ char processOpcode(SectionProcessor *processor) {
                 extra = ", X";
             case 3: /* #$aa, <$zp */
                 offset = 0x2000 + data[1];
-                page = getPage(processor->memmap, offset);
-                hasLabel = findLabel(processor->labelRepository, offset, page, &name);
+                page = getPage(decoder->memmap, offset);
+                hasLabel = findLabel(decoder->labels, offset, page, &name);
                 if (hasLabel) {
-                    fprintf(processor->out, "#$%02x, <%s%s", data[0], name, extra);
+                    fprintf(decoder->out, "#$%02x, <%s%s", data[0], name, extra);
                 }
                 break;
             case 6: /* #$aa, $hhll, X */
                 extra = ", X";
             case 5: /* #$aa, $hhll */
                 offset = (data[0] << 8) + data[1];
-                page = getPage(processor->memmap, offset);
-                hasLabel = findLabel(processor->labelRepository, offset, page, &name);
+                page = getPage(decoder->memmap, offset);
+                hasLabel = findLabel(decoder->labels, offset, page, &name);
                 if (hasLabel) {
-                    fprintf(processor->out, "#$%02x, %s%s", data[0], name, extra);
+                    fprintf(decoder->out, "#$%02x, %s%s", data[0], name, extra);
                 }
                 break;
 
@@ -352,10 +353,10 @@ char processOpcode(SectionProcessor *processor) {
                 }
             case 7: /* <zp    */
                 offset = 0x2000 + data[0];
-                page = getPage(processor->memmap, offset);
-                hasLabel = findLabel(processor->labelRepository, offset, page, &name);
+                page = getPage(decoder->memmap, offset);
+                hasLabel = findLabel(decoder->labels, offset, page, &name);
                 if (hasLabel) {
-                    fprintf(processor->out, "<%s%s", name, extra);
+                    fprintf(decoder->out, "<%s%s", name, extra);
                 }
                 break;
 
@@ -370,10 +371,10 @@ char processOpcode(SectionProcessor *processor) {
                     extra = "]";
                 }
                 offset = 0x2000 + data[0];
-                page = getPage(processor->memmap, offset);
-                hasLabel = findLabel(processor->labelRepository, offset, page, &name);
+                page = getPage(decoder->memmap, offset);
+                hasLabel = findLabel(decoder->labels, offset, page, &name);
                 if (hasLabel) {
-                    fprintf(processor->out, "[%s%s", name, extra);
+                    fprintf(decoder->out, "[%s%s", name, extra);
                 }
                 break;
 
@@ -384,10 +385,10 @@ char processOpcode(SectionProcessor *processor) {
                     extra = "]";
                 }
                 offset = (data[0] << 8) | data[1];
-                page = getPage(processor->memmap, offset);
-                hasLabel = findLabel(processor->labelRepository, offset, page, &name);
+                page = getPage(decoder->memmap, offset);
+                hasLabel = findLabel(decoder->labels, offset, page, &name);
                 if (hasLabel) {
-                    fprintf(processor->out, "[%s%s", name, extra);
+                    fprintf(decoder->out, "[%s%s", name, extra);
                 }
                 break;
 
@@ -399,29 +400,29 @@ char processOpcode(SectionProcessor *processor) {
                 }
             case 14: /* hhll */
                 offset = (data[0] << 8) | data[1];
-                page = getPage(processor->memmap, offset);
-                hasLabel = findLabel(processor->labelRepository, offset, page, &name);
+                page = getPage(decoder->memmap, offset);
+                hasLabel = findLabel(decoder->labels, offset, page, &name);
                 if (hasLabel) {
-                    fprintf(processor->out, "%s%s", name, extra);
+                    fprintf(decoder->out, "%s%s", name, extra);
                 }
                 break;
 
             case 13: /* <zp, $hhll */
                 offset = 0x2000 + data[0];
-                page = getPage(processor->memmap, offset);
-                hasLabel = findLabel(processor->labelRepository, offset, page, &name);
+                page = getPage(decoder->memmap, offset);
+                hasLabel = findLabel(decoder->labels, offset, page, &name);
                 if (hasLabel) {
-                    fprintf(processor->out, "<%s, ", name);
+                    fprintf(decoder->out, "<%s, ", name);
                 } else {
-                    fprintf(processor->out, "<%02x, ", data[0]);
+                    fprintf(decoder->out, "<%02x, ", data[0]);
                 }
                 offset = (data[1] << 8) | data[2];
-                page = getPage(processor->memmap, offset);
-                hasLabel = findLabel(processor->labelRepository, offset, page, &name);
+                page = getPage(decoder->memmap, offset);
+                hasLabel = findLabel(decoder->labels, offset, page, &name);
                 if (hasLabel) {
-                    fprintf(processor->out, "%s", name);
+                    fprintf(decoder->out, "%s", name);
                 } else {
-                    fprintf(processor->out, "$%04x", offset);
+                    fprintf(decoder->out, "$%04x", offset);
                 }
                 hasLabel = 1;
                 break;
@@ -430,16 +431,16 @@ char processOpcode(SectionProcessor *processor) {
                 /* Source and destination */
                 for (i = 0; i < 4; i += 2) {
                     offset = (data[i] << 8) | data[i + 1];
-                    page = getPage(processor->memmap, offset);
-                    hasLabel = findLabel(processor->labelRepository, offset, page, &name);
+                    page = getPage(decoder->memmap, offset);
+                    hasLabel = findLabel(decoder->labels, offset, page, &name);
                     if (hasLabel) {
-                        fprintf(processor->out, "%s, ", name);
+                        fprintf(decoder->out, "%s, ", name);
                     } else {
-                        fprintf(processor->out, "$%04x, ", offset);
+                        fprintf(decoder->out, "$%04x, ", offset);
                     }
                 }
                 /* Size */
-                fprintf(processor->out, "$%02x%02x", data[4], data[5]);
+                fprintf(decoder->out, "$%02x%02x", data[4], data[5]);
                 hasLabel = 1;
                 break;
 
@@ -450,11 +451,11 @@ char processOpcode(SectionProcessor *processor) {
 
             if (!hasLabel) {
                 for (i = 0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i) {
-                    fprintf(processor->out, pce_opstring[pce_opcode[inst].type][i], data[i]);
+                    fprintf(decoder->out, pce_opstring[pce_opcode[inst].type][i], data[i]);
                 }
             }
         }
     }
-    fputc('\n', processor->out);
+    fputc('\n', decoder->out);
     return eor;
 }
