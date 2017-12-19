@@ -34,6 +34,7 @@
 #include "options.h"
 #include "rom.h"
 #include "section.h"
+#include "sectionsloader.h"
 
 /*
   exit callback
@@ -125,12 +126,15 @@ int main(int argc, char **argv) {
     }
 
     if (cmdOptions.cfgFileName) {
-        ret = readSections(cmdOptions.cfgFileName, &section, &sectionCount);
+        ret = loadSections(cmdOptions.cfgFileName, &section, &sectionCount);
         if (!ret) {
             ERROR_MSG("Unable to read %s", cmdOptions.cfgFileName);
             goto error_1;
         }
     }
+
+    /**/
+    sortSections(section, sectionCount);
 
     /* Initialize memory map */
     ret = initializeMemoryMap(&memmap);

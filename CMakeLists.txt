@@ -31,6 +31,7 @@ set(etripator_SRC
     jsonhelpers.c
     decode.c
     section.c
+    sectionsloader.c
     opcodes.c
     labels.c
     labelsloader.c

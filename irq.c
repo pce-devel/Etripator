@@ -36,7 +36,7 @@ int getIRQSections(MemoryMap* memmap, Section *section)
 {
     int i;
     uint8_t addr[2];
-    off_t   offset = 0x1ff6;
+    uint16_t offset = 0xfff6;
     size_t  filenameLen;
     for(i=0; i<5; ++i)
     {
@@ -50,14 +50,17 @@ int getIRQSections(MemoryMap* memmap, Section *section)
         section[i].bank     = 0;
         section[i].org      = (addr[1] << 8) | addr[0];
         section[i].type     = Code;
-        section[i].offset   = ((addr[1] & 0x1f) << 8) | addr[0];
+        section[i].offset   = 0;
         section[i].size     = 0;
+        memset(section[i].mpr, 0, 8);
+        section[i].mpr[0] = 0xff;
+        section[i].mpr[1] = 0xf8;
         
 	filenameLen = strlen(IRQNames[i]) + 5;
         section[i].filename = (char*)malloc(filenameLen);
         snprintf(section[i].filename, filenameLen, "%s.asm", IRQNames[i]);
 
-        INFO_MSG("%s found at %04x (%lx)\n", section[i].name, section[i].org, section[i].offset);
+        INFO_MSG("%s found at %04x", section[i].name, section[i].org);
     }
     
     return 1;

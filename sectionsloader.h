@@ -15,18 +15,20 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef LABELS_LOADER_H
-#define LABELS_LOADER_H
+#ifndef SECTIONS_LOADER_H
+#define SECTIONS_LOADER_H
 
-#include "labels.h"
+#include "config.h"
+#include "section.h"
 
 /**
- * Load labels from file.
+ * Load sections from file.
  * \param [in]  filename Input filename.
- * \param [out] repository Label repository.
- * \return 1 if the labels contained in the file was succesfully added to the repository.
+ * \param [out] out Loaded sections.
+ * \param [out] count Number of loaded sections. 
+ * \return 1 if the sections contained in the file were succesfully loaded.
  *         0 if an error occured.
  */
-int loadLabels(const char* filename, LabelRepository* repository);
+int loadSections(const char* filename, Section **out, int *count);
 
-#endif // LABELS_LOADER_H
+#endif // SECTIONS_LOADER_H

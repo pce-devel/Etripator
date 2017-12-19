@@ -19,7 +19,6 @@
 #define _SECTION_H_
 
 #include "config.h"
-#include <jansson.h>
 
 /**
  * Section type
@@ -27,7 +26,7 @@
 typedef enum {
     UnknownSectionType = -1,
     BinData = 0, /**< The section will be extracted from the input ROM and
-                    stored in a separate file. **/
+                      stored in a separate file. **/
     IncData, /**< The section will be output as a series of .db directives. **/
     Code,
     SectionTypeCount
@@ -51,14 +50,7 @@ typedef struct {
  * Reset a section to its default values.
  **/
 void resetSection(Section *out);
-/**
- * Initializes section from JSON object.
- * @param [in] obj JSON object.
- * @param [out] out Section.
- * @return 1 upon success or 0 if an error occured.
- **/
-int parseSection(const json_t *obj, Section *out);
 
-int readSections(const char* filename, Section **out, int *count);
+void sortSections(Section *sections, int count);
 
 #endif // _SECTION_H_

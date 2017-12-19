@@ -25,8 +25,8 @@
 /**
  * Load labels from file.
  * \param [in]  filename Input filename.
- * \param [out] reposity Label repository.
- * \return 1 if the labels contained in the file was succesfully added to the repository.
+ * \param [out] repository Label repository.
+ * \return 1 if the labels contained in the file were succesfully added to the repository.
  *         0 if an error occured.
  */
 int loadLabels(const char* filename, LabelRepository* repository)
