@@ -64,13 +64,16 @@ int AddMsgPrinter(MsgPrinter *printer)
 void PrintMsg(MessageType type, const char* file, size_t line, const char* function, const char* format, ...)
 {
     MsgPrinter* printer;
+    const char* filename = strrchr(file, '/');
+    filename = filename ? (filename+1) : file;
+    
     for(printer=g_MsgPrinter; NULL != printer; printer=printer->next)
     {
         if(printer->output)
         {
             va_list args; 
             va_start(args, format);
-            printer->output(printer, type, file, line, function, format, args);
+            printer->output(printer, type, filename, line, function, format, args);
             va_end(args);
         }
     }

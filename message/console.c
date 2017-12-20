@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
@@ -90,14 +91,14 @@ static int ConsoleMsgPrinterOutput(void* impl, MessageType type, const char* fil
         struct timeval tv;
         struct tm *now;
         char dateString[128];
-        
+
         gettimeofday(&tv, NULL);
         now = localtime(&tv.tv_sec);
         strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", now);
 
         if(printer->useEscapeCode)
         {
-            fprintf(stderr, "%s%s\x1b[0m %s.%06ld \x1b[0;33m%s:%zd %s \x1b[1;37m : ", messageTypePrefix[type], messageTypeName[type], dateString, tv.tv_usec, file, line, function);
+            fprintf(stderr, "%s%s\x1b[0m %s.%03ld \x1b[0;33m%s:%zd %s \x1b[1;37m : ", messageTypePrefix[type], messageTypeName[type], dateString, tv.tv_usec/1000, file, line, function);
         }
         else
         {
