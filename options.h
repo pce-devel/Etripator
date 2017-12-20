@@ -29,6 +29,7 @@ typedef struct
     char *romFileName;
     char *mainFileName;
     char *labelsFileName;
+    char *labelsOut;
 } CommandLineOptions;
 
 /* Print usage */

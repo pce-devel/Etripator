@@ -29,6 +29,7 @@ void usage()
             "                        as long the irq vector table if the irq-detect\n"
             "                        option is enabled.\n"
             "--labels or -l <file> : labels definition filename.\n"
+            "--labels-out <file>   : extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl.\n"
             "<cfg>                 : configuration file (optional with -i option).\n"
             "<in>                  : binary.\n");
 }
@@ -43,6 +44,7 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
         {"help",       0, 0, 'h'},
         {"out",        1, 0, 'o'},
         {"labels",     1, 0, 'l'},
+        {"labels-out", 1, 0,  1 },
         { 0,           0, 0,  0 }
     };
     int idx, opt;
@@ -54,12 +56,15 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
     iOptions->romFileName    = NULL;
     iOptions->mainFileName   = "main.asm";
     iOptions->labelsFileName = NULL;
-    
+    iOptions->labelsOut      = NULL;
     /* Note : IRQ detection is disabled with the cdrom option */
     while ((opt = getopt_long (argc, argv, shortOptions, longOptions, &idx)) > 0)
     {
         switch(opt)
         {
+            case 1:
+                iOptions->labelsOut = optarg;
+                break;
             case 'i':
                 if(!iOptions->cdrom)
                     iOptions->extractIRQ = 1;

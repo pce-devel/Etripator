@@ -15,6 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "config.h"
 #include "message.h"
 
 static MsgPrinter* g_MsgPrinter = NULL;
@@ -64,8 +65,8 @@ int AddMsgPrinter(MsgPrinter *printer)
 void PrintMsg(MessageType type, const char* file, size_t line, const char* function, const char* format, ...)
 {
     MsgPrinter* printer;
-    const char* filename = strrchr(file, '/');
-    filename = filename ? (filename+1) : file;
+    char* tmp = strdup(file);
+    char* filename = basename(file);
     
     for(printer=g_MsgPrinter; NULL != printer; printer=printer->next)
     {
@@ -77,6 +78,7 @@ void PrintMsg(MessageType type, const char* file, size_t line, const char* funct
             va_end(args);
         }
     }
+    free(tmp);
 }
 
 

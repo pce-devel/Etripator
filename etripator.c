@@ -45,22 +45,26 @@ void exit_callback(void) { DestroyMsgPrinters(); }
   output labels
 */
 int outputLabels(CommandLineOptions *options, LabelRepository *repository) {
-    /* We don't want to destroy the original label file. */
     char buffer[256];
-    char *tmp;
 
-    struct timeval tv;
-    struct tm *now;
-    char dateString[128];
+    if(NULL == options->labelsOut) { 
+        /* We don't want to destroy the original label file. */
+        char *tmp;
+
+        struct timeval tv;
+        struct tm *now;
+        char dateString[128];
+            
+        gettimeofday(&tv, NULL);
+        now = localtime(&tv.tv_sec);
+        strftime(dateString, 128, "%Y%m%d%H%M%S", now);
         
-    gettimeofday(&tv, NULL);
-    now = localtime(&tv.tv_sec);
-    strftime(dateString, 128, "%Y%m%d%H%M%S", now);
-    
-    tmp = basename(options->romFileName);
-    snprintf(buffer, 256, "%s.%s.lbl", tmp, dateString);     
-    if (!writeLabels(&buffer[0], repository)) {
-        ERROR_MSG("Failed to write/update label file: %s", buffer);
+        tmp = basename(options->romFileName);
+        snprintf(buffer, 256, "%s.%s.lbl", tmp, dateString);     
+        options->labelsOut = buffer;
+    }
+    if (!writeLabels(options->labelsOut, repository)) {
+        ERROR_MSG("Failed to write/update label file: %s", options->labelsOut);
         return 0;
     }
     return 1;
