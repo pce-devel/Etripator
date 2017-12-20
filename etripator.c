@@ -215,11 +215,39 @@ int main(int argc, char **argv) {
         }
 
         if (section[i].type != BinData) {
-            /* Print header */
-            fprintf(out, "\t.%s\n"
-                         "\t.bank %x\n"
-                         "\t.org $%04x\n",
-                    (section[i].type == Code) ? "code" : "data", section[i].bank, section[i].org);
+            if((i > 0) && (0 == strcmp(section[i].filename, section[i-1].filename))
+                       && (section[i].type == section[i-1].type)
+                       && (section[i].bank == section[i-1].bank)
+                       && (section[i].org <= (section[i-1].org + section[i-1].size))) {
+                // "Merge" sections and adjust size if necessary.
+                if(section[i].size > 0) {
+                    uint32_t end0 = section[i-1].org + section[i-1].size;
+                    uint32_t end1 = section[i].org + section[i].size;
+                    if(end1 > end0) {
+                        section[i].size = end1 - end0;
+                        section[i].org = end0;
+                        INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
+                    }
+                    else {
+                        // The previous section overlaps the current one.
+                        // We skip it as it has already been processed.
+                        fclose(out);
+                        out = NULL;
+                        continue;
+                    }
+                }
+                else {
+                    section[i].org = section[i-1].org + section[i-1].size;
+                    INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
+                }
+            }
+            else {
+                /* Print header */
+                fprintf(out, "\t.%s\n"
+                             "\t.bank %x\n"
+                             "\t.org $%04x\n",
+                        (section[i].type == Code) ? "code" : "data", section[i].bank, section[i].org);
+            }
         }
 
         /* Reset decoder */

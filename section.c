@@ -58,6 +58,11 @@ static int compareAddresses(const void *a, const void *b) {
     }
 }
 
+/**
+ * Group section per output filename and sort them in bank/org order.
+ * \param [in][out] sections Sections.
+ * \param [in] count Number of sections to sort.
+ */
 void sortSections(Section *sections, int count) {
     int i, j;
     qsort(sections, count, sizeof(Section), &compareOutputFilename);

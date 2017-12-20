@@ -22,7 +22,7 @@
 
 /**
  * Section type
- **/
+ */
 typedef enum {
     UnknownSectionType = -1,
     BinData = 0, /**< The section will be extracted from the input ROM and
@@ -35,7 +35,7 @@ typedef enum {
 /**
  * Define a ROM area.
  * This area can contain data or code.
- **/
+ */
 typedef struct {
     SectionType type; /**< type **/
     char *name;       /**< name **/
@@ -48,9 +48,13 @@ typedef struct {
 } Section;
 /**
  * Reset a section to its default values.
- **/
+ */
 void resetSection(Section *out);
-
+/**
+ * Group section per output filename and sort them in bank/org order.
+ * \param [in][out] sections Sections.
+ * \param [in] count Number of sections to sort.
+ */
 void sortSections(Section *sections, int count);
 
 #endif // _SECTION_H_
