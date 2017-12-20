@@ -4,7 +4,34 @@
         "type": "code",
         "bank": "0",
         "org" : "e000",
-        "size": "1e2d",
+        "size": "5d7",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "ex_satclr.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "e5da",
+        "size": "12cf",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.0": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "f8a9",
+        "size": "f",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "bm_free.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "f8b8",
+        "size": "575",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
@@ -35,7 +62,7 @@
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
-    "unknown": {
+    "unknown.1": {
         "filename": "syscard.asm",
         "type": "inc_data",
         "bank": "0",
