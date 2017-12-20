@@ -1,0 +1,55 @@
+{
+    "cdbios_functions": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "e000",
+        "size": "1e2d",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "grp_bios.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "fe57",
+        "size": "18",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "jump_table.0": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "fe2d",
+        "size": "2a",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "jump_table.1": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "fe70",
+        "size": "22",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "fe92",
+        "size": "32",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "irq_vectors": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org": "fff6",
+        "size": "a",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    }
+}
