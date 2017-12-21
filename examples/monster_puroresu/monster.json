@@ -1,0 +1,110 @@
+{
+    "irq_reset": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "e000",
+        "size": "58",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "irq_1": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "e058",
+        "size": "55",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown0": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "e138",
+        "size": "1d",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "update_satb": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "e0cc",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "set_vdc_ctrl": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "e4b5",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "update_scroll": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "e0ad",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "read_joy": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "e4ca",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "update_sound": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "fbc2",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "update_channel": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "fcac",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown7": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "fd36",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown8": {
+        "filename": "bank2.asm",
+        "type": "code",
+        "bank": "2",
+        "org": "a0b6",
+        "size": "27",
+        "mpr": ["ff", "f8", 0, 0, 0, 2, 0, 0 ]
+    },
+
+    "irq_dummy": {
+        "filename": "startup.asm",
+        "type": "code",
+        "bank": "0",
+        "org": "fff0",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "irq_vectors": {
+        "filename": "startup.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org": "fff6",
+        "size": "a",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    }
+}
