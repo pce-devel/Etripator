@@ -69,7 +69,7 @@ A new configuration file will be created in order to overcome those issues.
         "bank": "0",
         "org": "fff0",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
-    }
+    },
 
     "irq_vectors": {
         "filename": "startup.asm",
@@ -235,7 +235,7 @@ le029_00:
           INX     
           BNE     le029_00
 ```
-Clears zero-page and stack memory. le029_00 can be renamed to .clear_zp_sp. This is done by creating what is called a label definition file. Here we will call it labels.cfg.
+Clears zero-page and stack memory. le029_00 can be renamed to .clear_zp_sp. This is done by creating what is called a label definition file. Here we will call it labels.json.
 ```json
 ".clear_zp_sp": { "logical": "e029", "page": "00" }
 ```
