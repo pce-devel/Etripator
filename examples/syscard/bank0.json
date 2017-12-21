@@ -4,7 +4,34 @@
         "type": "code",
         "bank": "0",
         "org" : "e000",
-        "size": "5d7",
+        "size": "505",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.0": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "e504",
+        "size": "5",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "ex_colorcmd.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "e509",
+        "size": "ce",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.1": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "e5d7",
+        "size": "3",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
@@ -17,7 +44,7 @@
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
-    "unknown.0": {
+    "unknown.2": {
         "filename": "syscard.asm",
         "type": "inc_data",
         "bank": "0",
@@ -62,12 +89,21 @@
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
-    "unknown.1": {
+    "ex_memopen.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "fe92",
+        "size": "30",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.3": {
         "filename": "syscard.asm",
         "type": "inc_data",
         "bank": "0",
-        "org" : "fe92",
-        "size": "32",
+        "org" : "fec2",
+        "size": "134",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 

@@ -1,4 +1,6 @@
 {
+    "le20b": { "logical": "e20b", "page": "00" },
+    "irq_vectors": { "logical": "fff6", "page": "00" },
     "irq_2": { "logical": "e736", "page": "00" },
     "irq_1": { "logical": "e870", "page": "00" },
     "irq_timer": { "logical": "e6b3", "page": "00" },
