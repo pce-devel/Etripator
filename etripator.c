@@ -137,9 +137,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    /**/
-    sortSections(section, sectionCount);
-
     /* Initialize memory map */
     ret = initializeMemoryMap(&memmap);
     if (0 == ret) {
@@ -168,6 +165,9 @@ int main(int argc, char **argv) {
         }
         /*  Data will be loaded during section disassembly */
     }
+
+    /**/
+    sortSections(section, sectionCount);
 
     /* Initialize decoder */
     createDecoder(&decoder);
