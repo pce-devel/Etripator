@@ -41,6 +41,7 @@ set(etripator_SRC
     memorymap.c
     rom.c
     cd.c
+    ipl.c
     options.c
     etripator.c
 )
