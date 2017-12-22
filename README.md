@@ -17,8 +17,8 @@ The options are :
 * **--irq-detect** or **-i** : automatically detect and extract irq vectors.
 * **--cd** or **-c** : cdrom image disassembly. Irq detection and rom header jump are not performed.
 * **--help** or **-h** : displays help.
-* **--out** or **-o <file>** : main asm file containing includes for all sections as long the irq vector table if the irq-detect  option is enabled.
-* **--labels** or **-l <file>** : labels definition filename.
+* **--out** or **-o < file >** : main asm file containing includes for all sections as long the irq vector table if the irq-detect  option is enabled.
+* **--labels** or **-l < file >** : labels definition filename.
 * **--labels-out <file>** : extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl.\n"
 * **cfg** :  configuration file. It is optional if irq detection is enabled.
 * **in** : binary to be disassembled (ROM or CDROM track).
