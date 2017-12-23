@@ -66,13 +66,11 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
                 iOptions->labelsOut = optarg;
                 break;
             case 'i':
-                if(!iOptions->cdrom)
-                    iOptions->extractIRQ = 1;
+                iOptions->extractIRQ = 1;
                 break;
 
             case 'c':
                 iOptions->cdrom      = 1;
-                iOptions->extractIRQ = 0;
                 break;
 
             case 'o':

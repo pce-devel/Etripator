@@ -33,6 +33,7 @@
 #include "opcodes.h"
 #include "options.h"
 #include "rom.h"
+#include "ipl.h"
 #include "section.h"
 #include "sectionsloader.h"
 
@@ -117,17 +118,8 @@ int main(int argc, char **argv) {
     failure = 1;
 
     /* Read configuration file */
-    if (cmdOptions.extractIRQ) {
-        sectionCount = 5;
-        section = (Section *)malloc(sectionCount * sizeof(Section));
-        if (NULL == section) {
-            ERROR_MSG("Failed to allocate memory: %s", strerror(errno));
-            goto error_1;
-        }
-    } else {
-        sectionCount = 0;
-        section = NULL;
-    }
+    sectionCount = 0;
+    section = NULL;
 
     if (cmdOptions.cfgFileName) {
         ret = loadSections(cmdOptions.cfgFileName, &section, &sectionCount);
@@ -152,7 +144,7 @@ int main(int argc, char **argv) {
 
         /* Get irq offsets */
         if (cmdOptions.extractIRQ) {
-            ret = getIRQSections(&memmap, section);
+            ret = getIRQSections(&memmap, &section, &sectionCount);
             if (0 == ret) {
                 ERROR_MSG("An error occured while reading irq vector offsets");
                 goto error_2;
@@ -162,6 +154,16 @@ int main(int argc, char **argv) {
         ret = addCDRAMMemoryMap(&memmap);
         if (0 == ret) {
             goto error_2;
+        }
+
+        if (cmdOptions.extractIRQ) {
+            IPL ipl;
+            ret = readIPL(&ipl, cmdOptions.romFileName);
+            ret = ret && getIPLSections(&ipl, &section, &sectionCount);
+            if (0 == ret) {
+                ERROR_MSG("An error occured while setting up sections from IPL data.");
+                goto error_2;
+            }
         }
         /*  Data will be loaded during section disassembly */
     }
@@ -293,7 +295,7 @@ int main(int argc, char **argv) {
         goto error_4;
     }
 
-    if (cmdOptions.extractIRQ) {
+    if (!cmdOptions.cdrom && cmdOptions.extractIRQ) {
         fprintf(mainFile, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
         for (i = 0; i < 5; ++i) {
             fprintf(mainFile, "\t.dw $%04x\n", section[i].org);

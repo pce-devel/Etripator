@@ -134,6 +134,9 @@ void printIPL(IPL *in) {
 
 /**
  * Read IPL data from file.
+ * \param [out] out IPL infos.
+ * \param [in] filename Input filename.
+ * \return 0 on error, 1 otherwise.
  */
 int readIPL(IPL *out, const char *filename) {
     FILE *in = fopen(filename, "rb");
@@ -142,11 +145,53 @@ int readIPL(IPL *out, const char *filename) {
         return 0;
     }
 
-    int err = 0;
-    // [todo] read system_hudson.ipl
+    int ret = 0;
     fseek(in, 0x800, SEEK_SET);
-    err = readIPLHeader(out, in, filename);
-    
+    ret = readIPLHeader(out, in, filename);
+    if(ret) {
+        printIPL(out);
+    }
     fclose(in);
-    return err;
+    return ret;
+}
+
+/**
+ * Get irq code offsets from IPL.
+ * \param [in]  in IPL infos.
+ * \param [out] section Sections.
+ * \param [out] count  Section count.
+ * \return 0 on error, 1 otherwise.
+ */
+int getIPLSections(IPL *in, Section **out, int *count) {
+    int i, j;
+    Section *section;
+    const char *section_name = "cd_start";
+    const char *section_filename = "cd_start.asm";
+    uint32_t record;
+    
+    j = *count;
+    section = (Section*)realloc(*out, (j+1) * sizeof(Section)); // [todo] add sections for gfx and adpcm
+    if(NULL == section) {
+        ERROR_MSG("Failed to add extra sections.");
+        return 0;
+    }
+    *count += 1;
+    *out = section;
+    
+    record = (in->load_start_record[0] << 16) | (in->load_start_record[1] << 8) | in->load_start_record[2];
+    section[j].mpr[0] = 0xff;
+    section[j].mpr[1] = 0xf8;
+    section[j].mpr[7] = 0x00;
+    for(i=0; i<5; i++) {
+        section[j].mpr[2+i] = 0x80 + in->mpr[i];
+    }
+    section[j].name     = strdup(section_name);
+    section[j].type     = Code;
+    section[j].bank     = section[j].mpr[in->load_exec_address[1]>>5];
+    section[j].org      = (in->load_exec_address[1] << 8) | in->load_exec_address[0];
+    section[j].offset   = record * 2048;
+    section[j].size     = in->load_sector_count * 2048;
+    section[j].filename = strdup(section_filename);
+
+    return 1;
 }

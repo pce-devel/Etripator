@@ -18,7 +18,8 @@
 #ifndef IPL_H
 #define IPL_H
 
-#include <stdint.h>
+#include "config.h"
+#include "section.h"
 
 /**
  * IPL Information block data format
@@ -76,11 +77,27 @@ typedef struct
  BG font data  - GRPBLN - 2 records
  */
 
+/**
+ * Display IPL infos.
+ * \param [in] in IPL infos.
+ */
 void printIPL(IPL *in);
 
 /**
  * Read IPL data from file.
+ * \param [out] out IPL infos.
+ * \param [in] filename Input filename.
+ * \return 0 on error, 1 otherwise.
  */
 int readIPL(IPL *out, const char *filename);
+
+/**
+ * Get irq code offsets from IPL.
+ * \param [in]  in IPL infos.
+ * \param [out] section Sections.
+ * \param [out] count  Section count.
+ * \return 0 on error, 1 otherwise.
+ */
+int getIPLSections(IPL *in, Section **out, int *count);
 
 #endif // IPL_H
