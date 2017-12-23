@@ -21,7 +21,7 @@
 void usage()
 {
     fprintf(stderr, "Usage : etripator [options] <cfg> <in>\n"
-            "--irq-detect or -i    : automatically detect and extract irq vectors.\n"
+            "--irq-detect or -i    : automatically detect and extract irq vectors when disassembling a ROM, or extract opening code and gfx from CDROM IPL data.\n"
             "--cd or -c            : cdrom image disassembly. Irq detection and rom\n"
             "                        header jump are not performed.\n"
             "--help or -h          : displays this message.\n"

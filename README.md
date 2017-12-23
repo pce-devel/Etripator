@@ -14,7 +14,7 @@
 etripator [options] <cfg> <in>
 ```
 The options are :
-* **--irq-detect** or **-i** : automatically detect and extract irq vectors.
+* **--irq-detect** or **-i** : automatically detect and extract irq vectors when disassembling a ROM, or extract opening code and gfx from CDROM IPL data.
 * **--cd** or **-c** : cdrom image disassembly. Irq detection and rom header jump are not performed.
 * **--help** or **-h** : displays help.
 * **--out** or **-o < file >** : main asm file containing includes for all sections as long the irq vector table if the irq-detect  option is enabled.
