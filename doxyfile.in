@@ -1,0 +1,31 @@
+PROJECT_NAME           = "@CMAKE_PROJECT_NAME@"
+PROJECT_NUMBER         = @ETRIPATOR_VERSION@
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@ \
+                         @PROJECT_BINARY_DIR@ \
+                         @CMAKE_SOURCE_DIR@
+INPUT                  = @PROJECT_SOURCE_DIR@
+INPUT                 += @PROJECT_SOURCE_DIR@/README.md
+FILE_PATTERNS          = *.h \
+                         *.c
+GENERATE_LATEX         = NO
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+OPTIMIZE_OUTPUT_FOR_C  = YES
+OPTIMIZE_OUTPUT_JAVA   = NO
+SUBGROUPING            = YES
+EXTRACT_ALL            = YES
+OUTPUT_DIRECTORY       = doc
+EXCLUDE_PATTERNS       = */.git/*
+EXCLUDE_PATTERNS      += */build/*
+EXCLUDE_PATTERNS      += */cmake/*
+EXCLUDE_PATTERNS      += */doc/*
+EXCLUDE_PATTERNS      += */data/*
+EXCLUDE_PATTERNS      += */test/*
+EXCLUDE_PATTERNS      += */examples/*
+EXCLUDE                = *.in
+JAVADOC_AUTOBRIEF      = YES
+MARKDOWN_SUPPORT       = YES
+SUBGROUPING            = YES
+EXTRACT_STATIC         = YES
+SHOW_INCLUDE_FILES     = YES
+

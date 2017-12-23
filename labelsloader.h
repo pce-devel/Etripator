@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
 
 /**
  * Load labels from file.
- * \param [in]  filename Configuration file.
- * \param [out] reposity Label repository.
+ * \param [in]  filename Input filename.
+ * \param [out] repository Label repository.
  * \return 1 if the labels contained in the file was succesfully added to the repository.
  *         0 if an error occured.
  */

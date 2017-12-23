@@ -6,10 +6,21 @@ env:
   global:
     secure: "XiNQGgtIFhu0jNAPMmYU451+FIkplkrLusgBjlZaLMOknhWrLPHuEZPsqlBNjr3chGSgHTfYI3OTjA+dA31k0SYF8s6lXwy0J8L2lr3qMmrsp04+9B0GkKqW/Um8e5zoedf9CxWcdWx6fZkujEOsWzwguuzQ6MJrMHwEhwueALQA//6SZ9dF6EoKJak9Oy44uYlcm2nInQXB1rioBNlIeibp1z8ubU+Ilpy6l76mQPToZVpoceu1KjjTSMHECsECmA0q+jWAXiPS2kdDCzVWs1Hc+B+5EpXnkkQ7OjtXHbSykeMEhwnlq3t5+btW1+GHMizcpPCfv+H+2/UhJoWugHrQL/uAIabKeb1k9+lrB4pcHWeIrVWZ0CVVCtfE1+JjU2Q0zi/WvZdJn+4iPROlsy77h2PpIx9SDiNH7wa3akiG2S4i3m64V79HCPKrxQROcRb9dF+0IrzLlgvmIjdBhdIsJr/gLGO8FU7jlhc6Zc9r1BXzJM7D0xubCozyH31VCG4Qm68MALlDHmuIyQsnYdVTjc99ffR7h3SNnu3e7lEzLuSwDa8ZNrUWDnVWpcTa/X5FzEhOnMQ71BHmjBuB9bDT7ilF+SHbXyYCrVAnYERExy73EJ4IyTggmmtWO/eqcc2hBoSJxWR2Lx26DoFaDMR2jZJwSbR4wW/s2faYeWU="
 
+
+before_script:
+  - mkdir build
+  - cd build
+
 script:
+  - cmake ..
   - make
 
 addons:
+  apt:
+    packages:
+      - libjansson-dev
+      - cmake
+      - cmake-data
   coverity_scan:
     project:
       name: BlockoS/Etripator

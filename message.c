@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,73 +15,70 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "config.h"
 #include "message.h"
 
-static const char* g_MessageTypeLabel[] =
-{
-	"[Error]",
-	"[Warning] ",
-	"[Information] "
-};
-
-static FILE *g_Stream;
+static MsgPrinter* g_MsgPrinter = NULL;
 
 /**
- * \brief Open the file where the message will be printed. And set hook to print into a file.
- *
- * \param filename  Name of the file where the message will be printed.
- * \return 0 if an error occured, 1 on success.
-*/
-int PrintMsgOpenFile(const char* filename)
+ * Setup global message printer list.
+ */
+void SetupMsgPrinters()
 {
-	g_Stream = stderr;
-	if(filename != NULL)
-	{
-		FILE *out;
-		out = fopen(filename, "wb+");
-		if(out == NULL)
-		{
-			ERROR_MSG("An error occured while trying to open %s : %s", filename, strerror(errno));
-			return 0;
-		}
-		g_Stream = out;
-	}
-	return 1;
+    g_MsgPrinter = NULL;
+    // nothing much atm...
 }
-
 /**
- * \brief Close file used for printing messages.
-*/
-static void PrintMsgCloseFile()
+ * Releases the resources used by message printers.
+ */
+void DestroyMsgPrinters()
 {
-	if((g_Stream != NULL) && (g_Stream != stderr))
-	{
-		fclose(g_Stream);
-	}
+    MsgPrinter* printer;
+    for(printer=g_MsgPrinter; NULL != printer; printer=printer->next)
+    {
+        printer->close(printer);
+    }
 }
-
 /**
- * \brief Print message to a file.
- *
+ * Adds a new message printer to the global list.
+ * \param [in] printer Message printer to be added to the list.
+ * \return 0 upon success.
+ */
+int AddMsgPrinter(MsgPrinter *printer)
+{
+    if(printer->open(printer))
+    {
+        return 1;
+    }
+    printer->next = g_MsgPrinter;
+    g_MsgPrinter = printer;
+    return 0;
+}
+/**
+ * Dispatch messages to printers.
  * \param type      Message type.
  * \param file      Name of the file where the print message command was issued.
  * \param line      Line number in the file where the print message command was issued.
  * \param function  Function where the print message command was issued.
  * \param format    Format string.
  */
-static void PrintMsgFile(MessageType msgType, const char* file, size_t line, const char* function, const char* format, ...)
+void PrintMsg(MessageType type, const char* file, size_t line, const char* function, const char* format, ...)
 {
-	va_list argList;
-
-	fprintf(g_Stream, "%s %s:%zd %s : ", g_MessageTypeLabel[msgType], file, line, function);
-
-	va_start(argList, format);
-	vfprintf(g_Stream, format, argList);
-	va_end(argList);
-	
-	fputc('\n', g_Stream);
-	fflush(g_Stream);
+    MsgPrinter* printer;
+    char* tmp = strdup(file);
+    char* filename = basename(file);
+    
+    for(printer=g_MsgPrinter; NULL != printer; printer=printer->next)
+    {
+        if(printer->output)
+        {
+            va_list args; 
+            va_start(args, format);
+            printer->output(printer, type, filename, line, function, format, args);
+            va_end(args);
+        }
+    }
+    free(tmp);
 }
 
-PrintMsgProc      PrintMsg      = PrintMsgFile;
-PrintMsgCloseProc PrintMsgClose = PrintMsgCloseFile; 
+

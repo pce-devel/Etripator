@@ -1,0 +1,118 @@
+{
+    "cdbios_functions": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "e000",
+        "size": "505",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.0": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "e504",
+        "size": "5",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "ex_colorcmd.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "e509",
+        "size": "ce",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.1": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "e5d7",
+        "size": "3",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "ex_satclr.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "e5da",
+        "size": "12cf",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.2": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "f8a9",
+        "size": "f",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "bm_free.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "f8b8",
+        "size": "575",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "grp_bios.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "fe57",
+        "size": "18",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "jump_table.0": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "fe2d",
+        "size": "2a",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "jump_table.1": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "fe70",
+        "size": "22",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "ex_memopen.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "fe92",
+        "size": "30",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.3": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org" : "fec2",
+        "size": "134",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "irq_vectors": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org": "fff6",
+        "size": "a",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    }
+}

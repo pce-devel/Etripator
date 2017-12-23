@@ -14,17 +14,18 @@
 etripator [options] <cfg> <in>
 ```
 The options are :
-* **--irq-detect** or **-i** : automatically detect and extract irq vectors.
+* **--irq-detect** or **-i** : automatically detect and extract irq vectors when disassembling a ROM, or extract opening code and gfx from CDROM IPL data.
 * **--cd** or **-c** : cdrom image disassembly. Irq detection and rom header jump are not performed.
 * **--help** or **-h** : displays help.
-* **--out** or **-o <file>** : main asm file containing includes for all sections as long the irq vector table if the irq-detect  option is enabled.
-* **--labels** or **-l <file>** : labels definition filename.
+* **--out** or **-o < file >** : main asm file containing includes for all sections as long the irq vector table if the irq-detect  option is enabled.
+* **--labels** or **-l < file >** : labels definition filename.
+* **--labels-out <file>** : extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl.\n"
 * **cfg** :  configuration file. It is optional if irq detection is enabled.
 * **in** : binary to be disassembled (ROM or CDROM track).
 
 ## Configuration file format
 
-The configuration file is a standard **CFG**/**INI** file.
+The configuration file is a standard **JSON** file.
 The supported fields are :
  * **filename** *(mandatory)* : name of the output file. If multiple sections have the same output filename, their output will be appended to that file. On the other hand, note that the output file will be overwritten at each session.
 
@@ -47,36 +48,69 @@ The supported fields are :
 
  * **id** : section id. If this option is set, all the label will be postfixed with this value. Otherwise the section index will be used.
 
+ * **mpr** : an array containing the page value for each memory page register.
+ 
 There must be only one occurence of each field per section.
+
+Example:
+```json
+{
+    "cdbios_functions": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "e000",
+        "size": "505",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+    "ex_colorcmd.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "bank": "0",
+        "org" : "e509",
+        "size": "ce",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    }
+}
+```
 
 ## Labels definition file format
 
-The labels definition file is a standard **CFG**/**INI** file.
+The labels definition file is a standard **JSON** file.
 Each section starts with the name of the label between square brackets.
 The supported fields are :
  * **logical** : Logical address of the label in hexadecimal.
- * **physical** : physical address of the label in hexadecimal.
+ * **page** : physical page associated to the address, i.e. the value of the mpr.
+
+Example:
+```json
+{
+    "cd_reset": {"logical":"e22a", "page":"00"},
+    
+	"irq_2": {"logical":"eaa3", "page":"00"},
+	"irq_1": {"logical":"eba5", "page":"00"},
+	"irq_timer": {"logical":"ea9c", "page":"00"},
+	"irq_nmi": {"logical":"ea9b", "page":"00"},
+	"irq_reset": {"logical":"eab3", "page":"00"},
+
+	"main": {"logical":"f8a4", "page":"00"}
+}
+```
 
 ## Build
-### GNU (Linux, MinGW, ...)
-To build **Etripator** binary (build/GNU/Release/etripator):
-```bash
-make
+**Etripator** uses **CMake** as its build system.
+Theorically you can build **Etripator** for any platform supported by **CMake**.
+Here are the build step:
+### Configuration
 ```
-To build **Etripator** binary for debugging (build/GNU/Debug/etripator):
-```bash
-make DEBUG=1
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
 ```
-To clean the corresponding build:
-```bash
-make clean
+### Build
 ```
-or
-```bash
-make DEBUG=1 clean
+cmake --build . --config Release
 ```
-### MSVC
-A project file for Visual Studio 2010 can be found in [platform/windows/etripator.vcxproj](platform/windows/etripator.vcxproj).
 
 ## Authors
 

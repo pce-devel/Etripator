@@ -23,18 +23,16 @@
 /**
  * Label.
  */
-typedef struct
-{
-    size_t   name;     /**< Offset in the repository name buffer */
-    uint16_t logical;  /**< Logical address */
-    uint32_t physical; /**< Physical address */
+typedef struct {
+    size_t   name;    /**< Offset in the repository name buffer */
+    uint16_t logical; /**< Logical address */
+    uint8_t  page;    /**< Memory page  */
 } Label;
 
 /**
  * Label repository.
  */
-struct LabelRepositoryImpl
-{
+struct LabelRepositoryImpl {
     size_t size;          /**< Size of label repository */
     size_t last;          /**< Last element in the repository */
     Label  *labels;       /**< Labels */
@@ -47,12 +45,10 @@ struct LabelRepositoryImpl
  * Create label repository.
  * \return A pointer to a label repository or NULL if an error occured.
  */
-LabelRepository* createLabelRepository()
-{
+LabelRepository* createLabelRepository() {
     LabelRepository *repository;
     repository = (LabelRepository*)malloc(sizeof(LabelRepository));
-    if(NULL == repository)
-    {
+    if(NULL == repository) {
         return NULL;
     }
     
@@ -65,8 +61,7 @@ LabelRepository* createLabelRepository()
 
     repository->size = LABEL_ARRAY_INC;
     repository->labels = (Label*)malloc(repository->size * sizeof(Label));
-    if(NULL == repository->labels)
-    {
+    if(NULL == repository->labels) {
         deleteLabelRepository(repository);
         free(repository);
         return NULL;
@@ -79,35 +74,30 @@ LabelRepository* createLabelRepository()
  * Delete label repository.
  * \param [in,out] repository Label repository.
  */
-void deleteLabelRepository(LabelRepository* repository)
-{
+void deleteLabelRepository(LabelRepository* repository) {
     repository->size  = 0;
     repository->last  = 0;
 
     repository->nameBufferLen = 0;
 
-    if(NULL != repository->labels)
-    {
+    if(NULL != repository->labels) {
         free(repository->labels);
         repository->labels = NULL;
     }
 
-    if(NULL != repository->nameBuffer)
-    {
+    if(NULL != repository->nameBuffer) {
         free(repository->nameBuffer);
         repository->nameBuffer = NULL;
     }
 }
 
 /* Set name and add it to label name buffer */
-static int setLabelName(LabelRepository* repository, Label *label, const char* name)
-{
+static int setLabelName(LabelRepository* repository, Label *label, const char* name) {
     char *tmp;
     size_t nameLen = strlen(name) + 1;
     size_t len     = repository->nameBufferLen + nameLen;
     tmp = (char*)realloc(repository->nameBuffer, len);
-    if(NULL == tmp)
-    {
+    if(NULL == tmp) {
         return 0;
     }
 
@@ -122,31 +112,26 @@ static int setLabelName(LabelRepository* repository, Label *label, const char* n
 /**
  * Add label to repository.
  * \param [in,out] repository Label repository.
- * \param [in]     name       Name.
- * \param [in]     logical    Logical address.
- * \param [in]     physical   Physical address.
+ * \param [in]     name     Name.
+ * \param [in]     logical  Logical address.
+ * \param [in]     page     Memory page.
  */
-int addLabel(LabelRepository* repository, const char* name, uint16_t logical, uint32_t physical)
-{
-    // Check if there's an entry for the given physical address
-    if(INVALID_PHYSICAL_ADDRESS != physical)
-    {
-        char *dummy;
-        if(findLabelByPhysicalAddress(repository, physical, &dummy))
-        {
-            return -1;
+int addLabel(LabelRepository* repository, const char* name, uint16_t logical, uint8_t page) {
+    char *dummy;
+    if(findLabel(repository, logical, page, &dummy)) {
+        if(strcmp(name, dummy)) {
+        //    return 0;
         }
+        return  1;
     }
 
     /* Expand arrays if necessary */
-    if(repository->last >= repository->size)
-    {
+    if(repository->last >= repository->size) {
         Label *ptr;
         repository->size += LABEL_ARRAY_INC;
         
         ptr = (Label*)realloc(repository->labels, repository->size * sizeof(Label));
-        if(NULL == ptr)
-        {
+        if(NULL == ptr) {
             deleteLabelRepository(repository);
             return 0;
         }
@@ -154,12 +139,11 @@ int addLabel(LabelRepository* repository, const char* name, uint16_t logical, ui
     }
     
     /* Push addresses */
-    repository->labels[repository->last].logical  = logical;
-    repository->labels[repository->last].physical = physical;
+    repository->labels[repository->last].logical = logical;
+    repository->labels[repository->last].page    = page;
     
     /* Push name */
-    if(0 == setLabelName(repository, &repository->labels[repository->last], name))
-    {
+    if(0 == setLabelName(repository, &repository->labels[repository->last], name)) {
         deleteLabelRepository(repository);
         return 0;
     }
@@ -169,19 +153,18 @@ int addLabel(LabelRepository* repository, const char* name, uint16_t logical, ui
 }
 
 /**
- * Find if a label is associated to the specified physical address.
+ * Find a label by its address.
  * \param [in]  repository  Label repository.
- * \param [in]  physical    Physical address.
+ * \param [in]  logical     Logical address.
+ * \param [in]  page        Memory page.
  * \param [out] name        Label name (if found).
  * \return 1 if a label was found, 0 otherwise.
  */
-int findLabelByPhysicalAddress(LabelRepository* repository, uint32_t physical, char** name)
-{
+int findLabel(LabelRepository* repository, uint16_t logical, uint8_t page, char** name) {
     size_t i;
-    for(i=0; i<repository->last; i++)
-    {
-        if(repository->labels[i].physical == physical)
-        {
+    for(i=0; i<repository->last; i++) {
+        if( (repository->labels[i].page == page) &&
+            (repository->labels[i].logical == logical) ) {
             *name = repository->nameBuffer + repository->labels[i].name;
             return 1;
         }
@@ -191,24 +174,46 @@ int findLabelByPhysicalAddress(LabelRepository* repository, uint32_t physical, c
 }
 
 /**
- * Find if a label is associated to the specified logical address.
- * \param [in]  repository  Label repository.
- * \param [in]  logical     Logical address.
- * \param [out] name        Label name (if found).
- * \return 1 if a label was found, 0 otherwise.
- * \todo How to handle multiple results ?
+ * Get the number of labels stored in the repository.
+ * \param [in] repository Label repository.
+ * \return Label count.
  */
-int findLabelByLogicalAddress(LabelRepository* repository, uint16_t logical, char** name)
-{
-    size_t i;
-    for(i=0; i<repository->last; i++)
-    {
-        if(repository->labels[i].logical == logical)
-        {
-            *name = repository->nameBuffer + repository->labels[i].name;
-            return 1;
-        }
+int getLabelCount(LabelRepository* repository) {
+    if(NULL == repository) {
+        return 0;
     }
-    *name = "";
-    return 0;
+    return repository->last;
 }
+
+/**
+ * Retrieve the label at the specified label.
+ * \param [in] repository Label repository.
+ * \param [in] index      Label index.
+ * \param [out] logical   Logical address.
+ * \param [out] page      Memory page.
+ * \param [out] name      Label name.
+ * \return 1 if a label exists for the specified index, 0 otherwise.
+ */
+int getLabel(LabelRepository* repository, int index, uint16_t* logical, uint8_t* page, char** name) {
+    *page = 0;
+    *logical  = 0;
+    *name = NULL;
+    if(NULL == repository) {
+        return 0;
+    }
+    else {
+        int end = (int)repository->last;
+        if((index < 0) || (index >= end)) {
+            return 0;
+        }
+        if(repository->labels[index].name >= repository->nameBufferLen) {
+            return 0;
+        }
+        *logical = repository->labels[index].logical;
+        *page = repository->labels[index].page;
+        *name = repository->nameBuffer + repository->labels[index].name;
+        return 1;
+    }
+}
+
+

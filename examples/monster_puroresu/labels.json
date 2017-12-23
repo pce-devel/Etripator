@@ -1,0 +1,10 @@
+{
+    "soft_reset": { "logical": "e001", "page": "00" },
+    "clear_zp_sp": { "logical": "e029", "page": "00" },
+    ".mute_channels": { "logical": "e033", "page": "00" },
+    ".loop": { "logical": "e055", "page": "00" },
+    ".vblank": { "logical": "e068", "page": "00" },
+    ".hblank": { "logical": "e07d", "page": "00" },
+    ".next_joypad": { "logical": "e4d5", "page": "00" },
+    ".read_joy_end": { "logical": "e51d", "page": "00" }
+}

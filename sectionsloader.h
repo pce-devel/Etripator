@@ -15,27 +15,20 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef SECTIONS_LOADER_H
+#define SECTIONS_LOADER_H
 
 #include "config.h"
+#include "section.h"
 
-/* Command line options */
-typedef struct
-{
-    uint8_t extractIRQ;
-    uint8_t cdrom;
-    char *cfgFileName;
-    char *romFileName;
-    char *mainFileName;
-    char *labelsFileName;
-    char *labelsOut;
-} CommandLineOptions;
+/**
+ * Load sections from file.
+ * \param [in]  filename Input filename.
+ * \param [out] out Loaded sections.
+ * \param [out] count Number of loaded sections. 
+ * \return 1 if the sections contained in the file were succesfully loaded.
+ *         0 if an error occured.
+ */
+int loadSections(const char* filename, Section **out, int *count);
 
-/* Print usage */
-void usage();
-
-/* Extract command line options */
-int getCommandLineOptions(int, char**, CommandLineOptions*);
-
-#endif // OPTIONS_H
+#endif // SECTIONS_LOADER_H

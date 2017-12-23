@@ -25,9 +25,10 @@
 /**
  * Get irq code offsets from rom.
  * \param [in]  memmcp  Memory map.
- * \param [out] section IRQ vector sections.
+ * \param [out] section Sections.
+ * \param [out] count  Section count.
  * \return 0 on error, 1 otherwise.
  */
-int getIRQSections(MemoryMap* memmap, Section *section);
+int getIRQSections(MemoryMap* memmap, Section **section, int *count);
 
 #endif /* IRQ_H */
