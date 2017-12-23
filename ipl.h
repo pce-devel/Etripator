@@ -76,6 +76,8 @@ typedef struct
  BG font data  - GRPBLN - 2 records
  */
 
+void printIPL(IPL *in);
+
 /**
  * Read IPL data from file.
  */

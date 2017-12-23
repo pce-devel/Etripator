@@ -100,7 +100,7 @@ static int readIPLHeader(IPL *out, FILE *in, const char *filename) {
     }
     nRead = fread(out->program_name, 1, 16, in);
     if(nRead != 16) {
-        ERROR_MSG("Failed to read LEGAL from %s: %s", filename, strerror(errno));
+        ERROR_MSG("Failed to read PROGRAM NAME from %s: %s", filename, strerror(errno));
         return 0;
     }
     nRead = fread(out->extra, 1, 6, in);
@@ -109,6 +109,27 @@ static int readIPLHeader(IPL *out, FILE *in, const char *filename) {
         return 0;
     }
     return 1;
+}
+
+void printIPL(IPL *in) {
+    INFO_MSG("IPLBLK: hi:%02x mid:%02x lo:%02x", in->load_start_record[0], in->load_start_record[1], in->load_start_record[2]); 
+    INFO_MSG("IPLBKN: %02x", in->load_sector_count);
+    INFO_MSG("IPLSTA: lo:%02x hi:%02x", in->load_store_address[0], in->load_store_address[1]);
+    INFO_MSG("IPLJMP: lo:%02x hi:%02x", in->load_exec_address[0], in->load_exec_address[1]);
+    INFO_MSG("IPLMPR: 2:%02x, 3:%02x, 4:%02x, 5:%02x, 6:%02x", in->mpr[0], in->mpr[1], in->mpr[2], in->mpr[3], in->mpr[4]);
+    INFO_MSG("OPENMODE: %02x", in->opening_mode);
+    INFO_MSG("GRPBLK: hi:%02x mid:%02x lo:%02x", in->opening_gfx_record[0], in->opening_gfx_record[1], in->opening_gfx_record[2]); 
+    INFO_MSG("GRPBLN: %02x", in->opening_gfx_sector_count);
+    INFO_MSG("GRPADR: lo:%02x hi:%02x", in->opening_gfx_read_address[0], in->opening_gfx_read_address[1]);
+    INFO_MSG("ADPBLK: hi:%02x mid:%02x lo:%02x", in->opening_adpcm_record[0], in->opening_adpcm_record[1], in->opening_adpcm_record[2]);
+    INFO_MSG("ADPBLN: %02x", in->opening_adpcm_sector_count);
+    INFO_MSG("ADPRATE: %02x", in->opening_adpcm_sampling_rate);
+    INFO_MSG("RESERVED: %02x%02x%02x%02x%02x%02x%02x", in->reserved[0], in->reserved[1], in->reserved[2], in->reserved[3], in->reserved[4]
+                                                     , in->reserved[5], in->reserved[6]);
+    INFO_MSG("ID STR: %.24s", in->id);
+    INFO_MSG("LEGAL: %.50s", in->legal);
+    INFO_MSG("PROGRAM NAME: %.16s", in->program_name);
+    INFO_MSG("EXTRA: %.6s", in->extra); 
 }
 
 /**
