@@ -5,6 +5,7 @@
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/6483/badge.svg)](https://scan.coverity.com/projects/blockos-etripator)
 
 ## Examples
+* [Monster Pro Wrestling tutorial](examples/monster_puroresu)
 * [System Card bank #0](examples/syscard)
 * [Gfx unpacking](examples/maerchen_maze) in Maerchen Maze.
 * [Memory Base 128 detection](examples/tadaima) in Taidama Yusha Boshuchu.
