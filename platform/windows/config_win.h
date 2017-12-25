@@ -53,6 +53,8 @@
 #else // ] _MSC_VER >= 1800 [
 #include "stdint.h"
 #endif // ]
+#include "time.h"
+#include "basename.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
