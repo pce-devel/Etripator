@@ -34,9 +34,11 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 
 #include <string.h>
 #include <fcntl.h>

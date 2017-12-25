@@ -18,7 +18,6 @@
 #include "config.h"
 #include <jansson.h>
 #include <time.h>
-#include <sys/time.h>
 
 #include "message.h"
 #include "message/console.h"

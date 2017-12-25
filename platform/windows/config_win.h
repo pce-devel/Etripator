@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <time.h>
 
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
@@ -47,7 +48,11 @@
 #endif
 
 #include "getopt_win.h"
+#if _MSC_VER >= 1800 // [
+#include <stdint.h>
+#else // ] _MSC_VER >= 1800 [
 #include "stdint.h"
+#endif // ]
 
 #include <sys/types.h>
 #include <sys/stat.h>

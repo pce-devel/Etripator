@@ -15,14 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-
-#include <unistd.h>
-#include <time.h>
-#include <sys/time.h>
-
+#include "../config.h"
 #include "console.h"
 
 /**

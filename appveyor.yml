@@ -22,7 +22,7 @@ before_build:
   - mkdir install
   - mkdir build
   - cd build 
-  - cmake --trace --debug-output -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=../install -DJANSSON_INCLUDE_DIR=../../jansson-2.10/install/include -DJANSSON_LIBRARY=../../jansson-2.10/install/lib/jansson.lib ..
+  - cmake -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=../install -DJANSSON_INCLUDE_DIR=../../jansson-2.10/install/include -DJANSSON_LIBRARY=../../jansson-2.10/install/lib/jansson.lib ..
 
 build_script:
   - cmake --build . --config Release

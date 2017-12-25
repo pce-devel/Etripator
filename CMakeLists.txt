@@ -48,8 +48,19 @@ set(etripator_SRC
     etripator.c
 )
 
+if(WIN32)
+    if(MSVC)
+set(etripator_SRC ${etripator_SRC}
+    getopt1.c
+    getopt.c
+    time.c
+)
+set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
+    endif(MSVC)
+endif(WIN32)
+
 add_executable(etripator ${etripator_SRC})
-target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS})
+target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE})
 if(CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(etripator PRIVATE -Wall -Wshadow -Wextra)
 endif(CMAKE_COMPILER_IS_GNUCXX)
