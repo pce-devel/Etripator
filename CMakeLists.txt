@@ -51,9 +51,9 @@ set(etripator_SRC
 if(WIN32)
     if(MSVC)
 set(etripator_SRC ${etripator_SRC}
-    getopt1.c
-    getopt.c
-    time.c
+    platform/windows/getopt1.c
+    platform/windows/getopt.c
+    platform/windows/time.c
 )
 set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
     endif(MSVC)
