@@ -31,7 +31,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
     unsigned __int64 tmpres = 0;
     static int tzflag;
 
-#if _MSC_VER >= 1900
+#if _MSC_VER >= 1700
     int _daylight = 0;
     long _timezone = 0;
     _get_timezone(&_timezone);
