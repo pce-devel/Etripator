@@ -30,6 +30,14 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
     unsigned __int64 tmpres = 0;
     static int tzflag;
 
+#if _MSC_VER >= 1900
+    int _daylight = 0;
+    long _timezone = 0;
+    _get_timezone(&_timezone);
+    _get_daylight(&_daylight);
+#endif
+
+
     if (NULL != tv) {
         GetSystemTimeAsFileTime(&ft);
 
