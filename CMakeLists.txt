@@ -83,4 +83,4 @@ add_custom_target(doc
 install(TARGETS etripator
         RUNTIME DESTINATION bin)
 install(DIRECTORY examples DESTINATION doc)
-
+install(FILES README.md DESTINATION doc)

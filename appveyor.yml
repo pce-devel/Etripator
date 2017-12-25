@@ -1,6 +1,6 @@
 version: 0.95.{build}
 
-os: Visual Studio 2015
+os: Visual Studio 2013
 platform: x64
 configuration: Release
 
@@ -12,7 +12,7 @@ install:
   - md install
   - md build
   - cd build
-  - cmake -DJANSSON_BUILD_DOCS=OFF -DJANSSON_WITHOUT_TESTS=ON -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=../install ..
+  - cmake -DJANSSON_BUILD_DOCS=OFF -DJANSSON_WITHOUT_TESTS=ON -G "Visual Studio 12 2013 Win64" -DCMAKE_INSTALL_PREFIX=../install ..
   - cmake --build . --config Release
   - cmake --build . --config Release --target install
   - cd ../../Etripator
@@ -22,7 +22,7 @@ before_build:
   - mkdir install
   - mkdir build
   - cd build 
-  - cmake -G "Visual Studio 14 2015 Win64" -DCMAKE_INSTALL_PREFIX=../install -DJANSSON_INCLUDE_DIR=../../jansson-2.10/install/include -DJANSSON_LIBRARY=../../jansson-2.10/install/lib/jansson.lib ..
+  - cmake -G "Visual Studio 12 2013 Win64" -DCMAKE_INSTALL_PREFIX=../install -DJANSSON_INCLUDE_DIR=../../jansson-2.10/install/include -DJANSSON_LIBRARY=../../jansson-2.10/install/lib/jansson.lib ..
 
 build_script:
   - cmake --build . --config Release
