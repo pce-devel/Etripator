@@ -1,4 +1,4 @@
-version: 0.95.{build}
+version: 0.5.{build}
 
 os: Visual Studio 2013
 platform: x64
@@ -34,4 +34,18 @@ after_build:
    
 artifacts:
   - path: etripator.zip
-    name: etripator.zip
+    name: etripator-v${appveyor_build_version}.zip
+
+deploy:
+  release: etripator-v${appveyor_build_version}
+  description: 'Etripator msvc12 win64 build'
+  provider: GitHub
+  auth_token:
+    secure: xRIravp3mvMiAgogn6KGuK1yrolmSJUsum/wPXwu82bh97O7YkuQ3B178ac+WHml
+  artifact: /etripator.*\.zip/
+  draft: false
+  prerelease: false
+  on:
+    branch: master
+    appveyor_repo_tag: true  
+  
