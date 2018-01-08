@@ -86,7 +86,7 @@ static int parseSection(const json_t *obj, Section *out) {
     /* offset */
     tmp = json_object_get(obj, "offset");
     if (tmp) {
-        if (!json_validateInt(tmp, &num)) {
+        if (!json_validateInt(tmp, &out->offset)) {
             ERROR_MSG("Invalid or missing offset value.");
             return 0;
         }
