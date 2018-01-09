@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2016 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,17 +35,17 @@ int writeLabels(const char* filename, LabelRepository* repository) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
         return 0;
     }
-    fprintf(stream, "{\n");
+    fprintf(stream, "[\n");
     for(i=0; i<count; i++) {
         uint16_t logical;
         uint8_t page;
         char* name;
         if(getLabel(repository, i, &logical, &page, &name))
         {
-            fprintf(stream, "\t\"%s\": {\"logical\":\"%04x\", \"page\":\"%02x\"}%c\n", name, logical, page, (i<(count-1)) ? ',' : ' ');
+            fprintf(stream, "\t{ \"name\":\"%s\", \"logical\":\"%04x\", \"page\":\"%02x\"}%c\n", name, logical, page, (i<(count-1)) ? ',' : ' ');
         }
     }
-    fprintf(stream, "}\n");
+    fprintf(stream, "]\n");
     fclose(stream);
     return 1;
 }

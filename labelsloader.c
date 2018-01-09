@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ int loadLabels(const char* filename, LabelRepository* repository)
     json_t* value;
     json_error_t err;
     const char* key;
+    int index;
     int num;
     uint16_t logical;
     uint8_t page;
@@ -44,17 +45,25 @@ int loadLabels(const char* filename, LabelRepository* repository)
         ERROR_MSG("Failed to parse %s: %s", filename, err.text);
         return 0;
     }
-    if(!json_is_object(root)) {
-        ERROR_MSG("Object expected.");
+    if(!json_is_array(root)) {
+        ERROR_MSG("Array expected.");
         return 0;
     }
     
-    json_object_foreach(root, key, value) {
+    json_array_foreach(root, index, value) {
         json_t* tmp;
         if(!json_is_object(value)) {
             ERROR_MSG("Expected object for %s", key);
             return 0;
         }
+        // name
+        tmp = json_object_get(value, "name");
+        if (!json_is_string(tmp)) {
+            ERROR_MSG("Missing or invalid label name.");
+            return 0;
+        }
+        key = json_string_value(tmp);
+
         // logical
         tmp = json_object_get(value, "logical");
         if(!json_validateInt(tmp, &num)) {
@@ -76,7 +85,7 @@ int loadLabels(const char* filename, LabelRepository* repository)
             ERROR_MSG("Page value out of range.");
             return 0;
         }
-	page = (uint8_t)num;
+	    page = (uint8_t)num;
 
         if(!addLabel(repository, key, logical, page)) {
             return 0;

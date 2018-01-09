@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ int findLabel(LabelRepository* repository, uint16_t logical, uint8_t page, char*
 int getLabelCount(LabelRepository* repository);
 
 /**
- * Retrieve the label at the specified label.
+ * Retrieve the label at the specified index.
  * \param [in] repository Label repository.
  * \param [in] index      Label index.
  * \param [out] logical   Logical address.
