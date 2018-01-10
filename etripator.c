@@ -107,6 +107,10 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
+    failure = 1;
+    sectionCount = 0;
+    section = NULL;
+
     /* Extract command line options */
     ret = getCommandLineOptions(argc, argv, &cmdOptions);
     if (ret <= 0) {
@@ -114,12 +118,7 @@ int main(int argc, char **argv) {
         goto error_1;
     }
 
-    failure = 1;
-
     /* Read configuration file */
-    sectionCount = 0;
-    section = NULL;
-
     if (cmdOptions.cfgFileName) {
         ret = loadSections(cmdOptions.cfgFileName, &section, &sectionCount);
         if (!ret) {
