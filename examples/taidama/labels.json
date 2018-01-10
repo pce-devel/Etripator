@@ -1,8 +1,8 @@
-{
-    "mb128_write_bit": { "logical": "7754", "page": "82" },
-    "mb128_write_byte": { "logical": "7770", "page": "82" },
-    "mb128_detect.loop": { "logical": "7828", "page": "82" },
-    "mb128_detect.retry": { "logical": "784f", "page": "82" },
-    "mb128_detect.failed": { "logical": "7858", "page": "82" },
-    "mb128_detect.bit0": { "logical": "785c", "page": "82" },
-}
+[
+    { "name": "mb128_write_bit", "logical": "7754", "page": "82" },
+    { "name": "mb128_write_byte", "logical": "7770", "page": "82" },
+    { "name": "mb128_detect.loop", "logical": "7828", "page": "82" },
+    { "name": "mb128_detect.retry", "logical": "784f", "page": "82" },
+    { "name": "mb128_detect.failed", "logical": "7858", "page": "82" },
+    { "name": "mb128_detect.bit0", "logical": "785c", "page": "82" },
+]

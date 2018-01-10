@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2017 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
     ret = getCommandLineOptions(argc, argv, &cmdOptions);
     if (ret <= 0) {
         usage();
-        return (ret < 0);
+        goto error_1;
     }
 
     failure = 1;
@@ -174,11 +174,13 @@ int main(int argc, char **argv) {
     createDecoder(&decoder);
 
     /* Load labels */
-    if (NULL != cmdOptions.labelsFileName) {
-        ret = loadLabels(cmdOptions.labelsFileName, decoder.labels);
-        if (0 == ret) {
-            ERROR_MSG("An error occured while loading labels from %s : %s", cmdOptions.labelsFileName, strerror(errno));
-            goto error_4;
+    if (NULL != cmdOptions.labelsIn) {
+        for(i=0; cmdOptions.labelsIn[i]; i++) {
+            ret = loadLabels(cmdOptions.labelsIn[i], decoder.labels);
+            if (0 == ret) {
+                ERROR_MSG("An error occured while loading labels from %s : %s", cmdOptions.labelsIn[i], strerror(errno));
+                goto error_4;
+            }
         }
     }
 
@@ -314,6 +316,11 @@ error_4:
 error_2:
     destroyMemoryMap(&memmap);
 error_1:
+    if(cmdOptions.labelsIn) {
+        free(cmdOptions.labelsIn);
+        cmdOptions.labelsIn = NULL;
+    }
+
     for (i = 0; i < sectionCount; ++i) {
         free(section[i].name);
         free(section[i].filename);

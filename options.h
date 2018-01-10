@@ -28,8 +28,8 @@ typedef struct
     char *cfgFileName;
     char *romFileName;
     char *mainFileName;
-    char *labelsFileName;
     char *labelsOut;
+    char **labelsIn;
 } CommandLineOptions;
 
 /* Print usage */

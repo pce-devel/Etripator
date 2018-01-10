@@ -48,15 +48,16 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
         { 0,           0, 0,  0 }
     };
     int idx, opt;
-
+    size_t top = 0;
+    size_t count = 2;
     /* Reset options */
-    iOptions->extractIRQ     = 0;
-    iOptions->cdrom          = 0;
-    iOptions->cfgFileName    = NULL;
-    iOptions->romFileName    = NULL;
-    iOptions->mainFileName   = "main.asm";
-    iOptions->labelsFileName = NULL;
-    iOptions->labelsOut      = NULL;
+    iOptions->extractIRQ   = 0;
+    iOptions->cdrom        = 0;
+    iOptions->cfgFileName  = NULL;
+    iOptions->romFileName  = NULL;
+    iOptions->mainFileName = "main.asm";
+    iOptions->labelsOut    = NULL;
+    iOptions->labelsIn     = NULL;
     /* Note : IRQ detection is disabled with the cdrom option */
     while ((opt = getopt_long (argc, argv, shortOptions, longOptions, &idx)) > 0)
     {
@@ -78,7 +79,17 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
                 break;
             
             case 'l':
-                iOptions->labelsFileName = optarg;
+                if((top >= count) || (NULL == iOptions->labelsIn)) {
+                    size_t capacity = count * 2;
+                    char **tmp = (char**)realloc(iOptions->labelsIn, capacity * sizeof(char*));
+                    if(NULL == tmp) {
+                        return -1;
+                    }
+                    memset(tmp+top, 0, capacity-count);
+                    iOptions->labelsIn = tmp;
+                    count = capacity;
+                }            
+                iOptions->labelsIn[top++] = optarg;
                 break;
             
             case 'h':
