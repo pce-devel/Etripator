@@ -53,7 +53,7 @@ int loadLabels(const char* filename, LabelRepository* repository)
     json_array_foreach(root, index, value) {
         json_t* tmp;
         if(!json_is_object(value)) {
-            ERROR_MSG("Expected object for %s", key);
+            ERROR_MSG("Expected object.");
             return 0;
         }
         // name
