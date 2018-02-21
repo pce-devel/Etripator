@@ -125,11 +125,6 @@ int extractLabels(Decoder *decoder) {
 
     INFO_MSG("%s:", section->name);
 
-    /* Push the section org */
-    page = getPage(decoder->memmap, logical);
-    if (0 == addLabel(repository, section->name, logical, page)) {
-        return 0;
-    }
     /* Walk along section */
     eor = 0;
     while (!eor) {

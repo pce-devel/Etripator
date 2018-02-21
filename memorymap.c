@@ -36,7 +36,7 @@ int initializeMemoryMap(MemoryMap *memmap) {
     /* Main RAM is mapped to pages 0xf8-0xfb (included). */
     /* Pages 0xf9 to 0xfb mirror page 0xf8. */
     for (i = 0xf8; i <= 0xfb; i++) {
-        memmap->page[i] = memmap->ram.main.data;
+        memmap->page[i] = &memmap->ram.main.data[(i - 0xf8) * 8192] - (i * 8192);
     }
     /* ROM and syscard RAM will be initialized later. */
 

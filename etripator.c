@@ -210,7 +210,7 @@ int main(int argc, char **argv) {
             goto error_4;
         }
 
-        if (0 != cmdOptions.cdrom) {
+        if ((0 != cmdOptions.cdrom) || (section[i].offset != ((section[i].bank << 13) | (section[i].org & 0x1fff)))) {
             /* Copy CDROM data */
             ret = loadCD(cmdOptions.romFileName, section[i].offset, section[i].size, section[i].bank, section[i].org,
                          &memmap);
