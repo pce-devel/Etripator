@@ -33,18 +33,27 @@ typedef enum {
 } SectionType;
 
 /**
+ * Data configuration.
+ */
+typedef struct {
+    int32_t element_size;      /**< element size (string=0, byte=1, word=2). **/
+    int32_t elements_per_line; /**< number of elements per line. **/
+} DataConfig;
+
+/**
  * Define a ROM area.
  * This area can contain data or code.
  */
 typedef struct {
-    SectionType type; /**< type **/
-    char *name;       /**< name **/
-    uint8_t bank;     /**< rom bank / memory page **/
-    uint16_t org;     /**< org **/
-    uint32_t offset;  /**< start address (file offset in bytes) **/
-    int32_t size;     /**< section size **/
-    char *filename;   /**< output filename **/
-    uint8_t mpr[8];   /**< mpr registers **/
+    SectionType type;/**< type **/
+    char *name;      /**< name **/
+    uint8_t bank;    /**< rom bank / memory page **/
+    uint16_t org;    /**< org **/
+    uint32_t offset; /**< start address (file offset in bytes) **/
+    int32_t size;    /**< section size (in bytes) **/
+    char *filename;  /**< output filename **/
+    uint8_t mpr[8];  /**< mpr registers **/
+    DataConfig data; /**< data configuration **/
 } Section;
 /**
  * Reset a section to its default values.

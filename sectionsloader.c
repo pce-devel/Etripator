@@ -128,6 +128,22 @@ static int parseSection(const json_t *obj, Section *out) {
         return 0;
     }
     out->filename = strdup(json_string_value(tmp));
+    /* data */
+    tmp = json_object_get(obj, "data");
+    if (tmp) {
+    printf("a\n");
+        json_t* value;
+        value = json_object_get(tmp, "element_size");
+        if (!json_validateInt(value, &out->data.element_size) || (out->data.element_size > 2)) {
+            ERROR_MSG("Invalid element size.");
+            return 0;
+        }
+        value = json_object_get(tmp, "elements_per_line");
+        if (!json_validateInt(value, &out->data.elements_per_line)) {
+            ERROR_MSG("Invalid number of elements per line.");
+            return 0;
+        }
+    }
     return 1;
 }
 
