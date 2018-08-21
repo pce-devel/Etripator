@@ -40,7 +40,7 @@ The supported fields are :
  * **org**  *(mandatory)* : program counter location. Just like **bank**', it will be used to compute file offset if there's  no **offset** field.
 
 
- * **offset**  : input file offset. This field is *mandatory* for CD-ROM disassembly.
+ * **offset** : input file offset. This field is *mandatory* for CD-ROM disassembly.
 
 
  * **size** : section size. For code section, a zero (or missing size) means that the disassembly will stop when a RTS or RTI instruction is found. This field is *mandatory* for data sections. and CD-ROM disassembly.
@@ -50,6 +50,10 @@ The supported fields are :
 
  * **mpr** : an array containing the page value for each memory page register.
  
+ * **data** *(inc_data only)* : an object with 2 entries :
+     * **element_size** *(default value: 1)* : element size in bytes. The only supported values are 1 or 2.
+     * **elements_per_line** *(default value: 16)* : number of elements per line. 
+  
 There must be only one occurence of each field per section.
 
 Example:
@@ -76,11 +80,11 @@ Example:
 
 ## Labels definition file format
 
-The labels definition file is a standard **JSON** file.
-Each section starts with the name of the label between square brackets.
-The supported fields are :
- * **logical** : Logical address of the label in hexadecimal.
- * **page** : physical page associated to the address, i.e. the value of the mpr.
+The labels definition file is a standard **JSON** file containing an array of labels.
+Each entry is an object containing the following fields:
+ * **name**: label name.
+ * **logical** : logical address of the label in hexadecimal.
+ * **page** : physical page, i.e. the value of the mpr of the logical address.
 
 Example:
 ```json
