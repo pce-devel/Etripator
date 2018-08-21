@@ -3,11 +3,12 @@
 [![Travis build Status](https://travis-ci.org/BlockoS/Etripator.svg)](https://travis-ci.org/BlockoS/Etripator) [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/github/BlockoS/etripator?svg=true)](https://ci.appveyor.com/project/BlockoS/etripator/branch/master) [![Coverity Scan Build Status](https://scan.coverity.com/projects/6483/badge.svg)](https://scan.coverity.com/projects/blockos-etripator)
 
 ## Examples
-* [Monster Pro Wrestling tutorial](examples/monster_puroresu)
-* [System Card bank #0](examples/syscard)
+* [Monster Pro Wrestling tutorial](examples/monster_puroresu).
+* [System Card bank #0](examples/syscard).
 * [Gfx unpacking](examples/maerchen_maze) in Maerchen Maze.
 * [Memory Base 128 detection](examples/tadaima) in Taidama Yusha Boshuchu.
 * [Joypad routine](examples/sf2) of Street Fighter II' Champion Edition.
+* [Games Express CD Card bank #0](examples/games_express).
 
 ## Usage
 ```
