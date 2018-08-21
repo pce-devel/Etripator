@@ -7,7 +7,7 @@
 * [System Card bank #0](examples/syscard)
 * [Gfx unpacking](examples/maerchen_maze) in Maerchen Maze.
 * [Memory Base 128 detection](examples/tadaima) in Taidama Yusha Boshuchu.
-* [Joypad routine](examples/sf2) in Street Fighter II' Champion Edition.
+* [Joypad routine](examples/sf2) of Street Fighter II' Champion Edition.
 
 ## Usage
 ```
@@ -74,7 +74,17 @@ Example:
         "org" : "e509",
         "size": "ce",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+    "irq_vectors": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org": "fff6",
+        "size": "a",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
+        "data": { "element_size": 2, "elements_per_line": 1 }
     }
+
 }
 ```
 

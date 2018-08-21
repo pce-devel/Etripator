@@ -1,7 +1,5 @@
-    .include "syscard.inc"
-   
 	.code
-	.bank 0
+	.bank $000
 	.org $e000
 cd_boot:
           jmp     irq_reset
@@ -178,31 +176,31 @@ irq_reset:
           bsr     init_mmap
           lda     #$01
           tam     #$06
-          jsr     $cb0f
+          jsr     lcb0f_00
 le109_00:
-          jsr     $c860
+          jsr     lc860_00
           tax     
           beq     le118_00
           bsr     init_mmap
           lda     #$03
           tam     #$06
-          jmp     $cf78
+          jmp     lcf78_00
 le118_00:
           jsr     cd_contnts.impl
           bsr     le14c_00
           bcc     le12c_00
           lda     #$01
           tam     #$06
-          jsr     $cb03
-          jsr     $cb54
+          jsr     lcb03_00
+          jsr     lcb54_00
           jmp     le109_00
 le12c_00:
           lda     #$04
           bsr     le13d_00
-          jmp     $4000
+          jmp     l4000_00
           lda     #$17
           bsr     le13d_00
-          jmp     $4000
+          jmp     l4000_00
 init_mmap:
           lda     $fff5
 le13d_00:
@@ -244,7 +242,7 @@ ex_joyrep.impl:
           rts     
 le176_00:
           sta     $2269
-          jsr     $cc17
+          jsr     lcc17_00
           tii     _al, recbase0_h, $0003
           tii     _al, recbase1_h, $0003
           stz     <_cl
@@ -317,7 +315,7 @@ le1fe_00:
           lda     <_cl
           ora     <_ch
           bne     le1e8_00
-          jsr     $2b26
+          jsr     l2b26_248
 le209_00:
           sec     
           rts     
@@ -742,13 +740,13 @@ unknown.0:
           ora     [$02, X]
 
 	.data
-	.bank 0
+	.bank $000
 	.org $e504
 unknown.0:
     .db $01,$02,$04,$08,$10
 
 	.code
-	.bank 0
+	.bank $000
 	.org $e509
 ex_colorcmd.impl:
           lda     color_cmd
@@ -760,7 +758,7 @@ le50f_00:
           bne     le579_00
 le515_00:
           lda     #$e3
-          sta     $2286
+          sta     l2286_248
           lda     #$04
           sta     $2289
           sta     $228a
@@ -780,7 +778,7 @@ le515_00:
           tii     bgc_ptr, $2287, $0002
           stz     color_reg_l
           stz     color_reg_h
-          jsr     $2286
+          jsr     l2286_248
 le54d_00:
           lda     sprc_len
           beq     le575_00
@@ -797,12 +795,12 @@ le54d_00:
           stz     color_reg_l
           lda     #$01
           sta     color_reg_h
-          jsr     $2286
+          jsr     l2286_248
 le575_00:
           stz     color_cmd
           rts     
 le579_00:
-          tii     unknown.1, $2286, $0003
+          tii     unknown.1, l2286_248, $0003
           lda     #$60
           sta     $228d
           lda     bgc_len
@@ -819,7 +817,7 @@ le579_00:
           tii     bgc_ptr, $2289, $0002
           stz     color_reg_l
           stz     color_reg_h
-          jsr     $2286
+          jsr     l2286_248
 le5ab_00:
           lda     sprc_len
           beq     le5d3_00
@@ -836,19 +834,19 @@ le5ab_00:
           stz     color_reg_l
           lda     #$01
           sta     color_reg_h
-          jsr     $2286
+          jsr     l2286_248
 le5d3_00:
           stz     color_cmd
           rts     
 
 	.data
-	.bank 0
+	.bank $000
 	.org $e5d7
 unknown.1:
     .db $f3,$04,$04
 
 	.code
-	.bank 0
+	.bank $000
 	.org $e5da
 ex_satclr.impl:
           lda     #$00
@@ -1012,7 +1010,7 @@ psg_drive.impl:
           tam     #$06
           lda     $22df
           beq     le6fa_00
-          jsr     $cd12
+          jsr     lcd12_00
           cmp     #$00
           bne     le6fa_00
           lda     $22de
@@ -1022,7 +1020,7 @@ le6fa_00:
           lda     $22df
           cmp     #$01
           beq     le710_00
-          jsr     $c2ef
+          jsr     lc2ef_00
           cmp     #$00
           bne     le710_00
           lda     $22de
@@ -1666,7 +1664,7 @@ lebba_00:
           pha     
           lda     #$01
           tam     #$06
-          jsr     $cc17
+          jsr     lcc17_00
           pla     
           tam     #$06
 lebc7_00:
@@ -1846,10 +1844,10 @@ led11_00:
           bne     led11_00
           sta     $228f
           lda     #$43
-          sta     $228e
+          sta     l228e_248
           lda     #$60
           sta     $2290
-          jsr     $228e
+          jsr     l228e_248
           sta     $2268
           lda     <_bl
           sta     <_dl
@@ -1889,9 +1887,9 @@ led5b_00:
           sta     <_bh
           stz     <_bl
           lda     #$53
-          sta     $228e
+          sta     l228e_248
           lda     <_dl
-          jsr     $228e
+          jsr     l228e_248
           jsr     lea79_00
           ora     #$40
           cmp     #$c8
@@ -1909,9 +1907,9 @@ led82_00:
 led91_00:
           pha     
           lda     #$53
-          sta     $228e
+          sta     l228e_248
           lda     $2268
-          jsr     $228e
+          jsr     l228e_248
           pla     
           rts     
 led9f_00:
@@ -2250,7 +2248,7 @@ lf016_00:
 lf02c_00:
           rts     
 ex_getver.impl:
-          ldx     $fec2
+          ldx     unknown.3
           ldy     $fec3
           rts     
 ex_setvec.impl:
@@ -2885,10 +2883,10 @@ lf475_00:
           bne     lf475_00
           sta     $228f
           lda     #$43
-          sta     $228e
+          sta     l228e_248
           lda     #$60
           sta     $2290
-          jsr     $228e
+          jsr     l228e_248
           sta     $2268
           lda     <_bl
           sta     <_dl
@@ -2902,9 +2900,9 @@ lf490_00:
           sta     <_bh
           stz     <_bl
           lda     #$53
-          sta     $228e
+          sta     l228e_248
           lda     <_dl
-          jsr     $228e
+          jsr     l228e_248
           ldx     #$20
           cly     
 lf4a8_00:
@@ -2930,9 +2928,9 @@ lf4b9_00:
           bra     lf490_00
 lf4cb_00:
           lda     #$53
-          sta     $228e
+          sta     l228e_248
           lda     $2268
-          jsr     $228e
+          jsr     l228e_248
           cla     
           rts     
 ad_write.impl:
@@ -3016,10 +3014,10 @@ lf55d_00:
           bne     lf55d_00
           sta     $228f
           lda     #$43
-          sta     $228e
+          sta     l228e_248
           lda     #$60
           sta     $2290
-          jsr     $228e
+          jsr     l228e_248
           sta     $2268
           lda     <_bl
           sta     <_dl
@@ -3033,9 +3031,9 @@ lf578_00:
           sta     <_bh
           stz     <_bl
           lda     #$53
-          sta     $228e
+          sta     l228e_248
           lda     <_dl
-          jsr     $228e
+          jsr     l228e_248
           ldx     #$20
           cly     
 lf590_00:
@@ -3063,9 +3061,9 @@ lf5a7_00:
           bra     lf578_00
 lf5b9_00:
           lda     #$53
-          sta     $228e
+          sta     l228e_248
           lda     $2268
-          jsr     $228e
+          jsr     l228e_248
           cla     
           rts     
 ad_play.impl:
@@ -3443,14 +3441,13 @@ lf8a6_00:
           rts     
 
 	.data
-	.bank 0
+	.bank $000
 	.org $f8a9
 unknown.2:
-    .db $48,$55,$42,$4d,$21,$42,$4d,$20
-    .db $46,$4f,$52,$4d,$41,$54,$21
+    .db $48,$55,$42,$4d,$21,$42,$4d,$20,$46,$4f,$52,$4d,$41,$54,$21
 
 	.code
-	.bank 0
+	.bank $000
 	.org $f8b8
 bm_free.impl:
           jsr     lfc32_00
@@ -4144,47 +4141,47 @@ lfdb5_00:
           rts     
 ma_mul8s.impl:
           bsr     lfda9_00
-          jsr     $cd10
+          jsr     lcd10_00
           bra     lfdb5_00
 ma_mul8u.impl:
           bsr     lfda9_00
-          jsr     $cd3a
+          jsr     lcd3a_00
           bra     lfdb5_00
 ma_mul16s.impl:
           bsr     lfda9_00
-          jsr     $cd57
+          jsr     lcd57_00
           bra     lfdb5_00
 ma_mul16u.impl:
           bsr     lfda9_00
-          jsr     $cd92
+          jsr     lcd92_00
           bra     lfdb5_00
 ma_cbasis.impl:
           bsr     lfda9_00
-          jsr     $cdc3
+          jsr     lcdc3_00
           bra     lfdb5_00
 ma_div16u.impl:
           bsr     lfda9_00
-          jsr     $cddb
+          jsr     lcddb_00
           bra     lfdb5_00
 ma_div16s.impl:
           bsr     lfda9_00
-          jsr     $ce2e
+          jsr     lce2e_00
           bra     lfdb5_00
 ma_sqrt.impl:
           bsr     lfda9_00
-          jsr     $ce75
+          jsr     lce75_00
           bra     lfdb5_00
 ma_cos.impl:
           bsr     lfda9_00
-          jsr     $cec3
+          jsr     lcec3_00
           bra     lfdb5_00
 ma_sin.impl:
           bsr     lfda9_00
-          jsr     $cec8
+          jsr     lcec8_00
           bra     lfdb5_00
 ma_atni.impl:
           bsr     lfda9_00
-          jsr     $ced2
+          jsr     lced2_00
           bra     lfdb5_00
 psg_bios.impl:
           phx     
@@ -4212,18 +4209,15 @@ lfe2a_00:
           jmp     [jump_table.0, X]
 
 	.data
-	.bank 0
+	.bank $000
 	.org $fe2d
 jump_table.0:
-    .db $00,$c0,$19,$c0,$43,$c0,$db,$c0
-    .db $e6,$c0,$f1,$c0,$fc,$c0,$07,$c1
-    .db $12,$c1,$1d,$c1,$28,$c1,$42,$c1
-    .db $51,$c1,$6c,$c1,$85,$c1,$ca,$c1
-    .db $21,$c2,$4a,$c2,$7c,$c2,$cd,$c2
-    .db $e9,$c2
+    .db $00,$c0,$19,$c0,$43,$c0,$db,$c0,$e6,$c0,$f1,$c0,$fc,$c0,$07,$c1
+    .db $12,$c1,$1d,$c1,$28,$c1,$42,$c1,$51,$c1,$6c,$c1,$85,$c1,$ca,$c1
+    .db $21,$c2,$4a,$c2,$7c,$c2,$cd,$c2,$e9,$c2
 
 	.code
-	.bank 0
+	.bank $000
 	.org $fe57
 grp_bios.impl:
           tma     #$06
@@ -4244,17 +4238,15 @@ lfe6d_00:
           jmp     [jump_table.1, X]
 
 	.data
-	.bank 0
+	.bank $000
 	.org $fe70
 jump_table.1:
-    .db $f3,$ca,$07,$cb,$ed,$cb,$b2,$ca
-    .db $29,$c5,$a8,$c1,$a2,$c2,$85,$c0
-    .db $3c,$c0,$67,$c0,$90,$c3,$48,$c4
-    .db $14,$cb,$0e,$cb,$f4,$c7,$f0,$c6
+    .db $f3,$ca,$07,$cb,$ed,$cb,$b2,$ca,$29,$c5,$a8,$c1,$a2,$c2,$85,$c0
+    .db $3c,$c0,$67,$c0,$90,$c3,$48,$c4,$14,$cb,$0e,$cb,$f4,$c7,$f0,$c6
     .db $71,$cc
 
 	.code
-	.bank 0
+	.bank $000
 	.org $fe92
 ex_memopen.impl:
           lda     $18c5
@@ -4284,50 +4276,36 @@ lfebf_00:
           clx     
           sec     
           rts     
+
 	.data
-	.bank 0
+	.bank $000
 	.org $fec2
 unknown.3:
-    .db $03,$00,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-    .db $ff,$ff,$4c,$00,$e9,$4c,$3b,$ea
-    .db $4c,$79,$ea,$4c,$be,$ea,$4c,$16
-    .db $eb,$4c,$5e,$eb,$4c,$c5,$e9,$4c
+    .db $03,$00,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+    .db $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$4c,$00,$e9,$4c,$3b,$ea
+    .db $4c,$79,$ea,$4c,$be,$ea,$4c,$16,$eb,$4c,$5e,$eb,$4c,$c5,$e9,$4c
     .db $dc,$e9,$68,$80
 
 irq_vectors:
-    .db $36,$e7,$70,$e8,$b3,$e6,$a9,$e6
-    .db $f3,$e0
+    .dw $e736
+    .dw $e870
+    .dw $e6b3
+    .dw $e6a9
+    .dw $e0f3
+

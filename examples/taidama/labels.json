@@ -4,5 +4,5 @@
     { "name": "mb128_detect.loop", "logical": "7828", "page": "82" },
     { "name": "mb128_detect.retry", "logical": "784f", "page": "82" },
     { "name": "mb128_detect.failed", "logical": "7858", "page": "82" },
-    { "name": "mb128_detect.bit0", "logical": "785c", "page": "82" },
+    { "name": "mb128_detect.bit0", "logical": "785c", "page": "82" }
 ]
