@@ -78,43 +78,61 @@ void deleteDecoder(Decoder *decoder) {
 int processDataSection(Decoder *decoder) {
 	uint8_t data[2];
 	int i;
-	uint16_t addr;
+	char *name = "";
+    uint16_t logical = decoder->logical;
+    uint8_t page = getPage(decoder->memmap, logical); 
+
 	if (IncData == decoder->current->type) {
-		int32_t j;
+		int32_t j, k;
         int32_t element_size = decoder->current->data.element_size;
-		int32_t last = decoder->current->data.elements_per_line - 1;
-        int32_t size, remaining;
+		int32_t elemets_per_line = decoder->current->data.elements_per_line;
+        int32_t size = decoder->current->size;
         const char *data_decl = (element_size > 1) ? ".dw" : ".db";
         
-        size = decoder->current->size / element_size;
-        size *= element_size;
-        remaining = decoder->current->size - size;
-
-		fprintf(decoder->out, "%s:\n", decoder->current->name);
-		for (i = size, addr = decoder->logical; i > 0;) {
-			fprintf(decoder->out, "    %s ", data_decl);
-			for (j = 0; (i > 0) && (j <= last); j++) {
-			    int32_t k;
-			    for(k=0; (k<element_size) && (i>0); k++, i--) {
-    				data[k] = readByte(decoder->memmap, addr++);
-    		    }
-    		    fputc('$', decoder->out);
-    		    while(k--) {
-    				fprintf(decoder->out, "%02x", data[k]);
-    			}
-    			fputc(((j < last) && (i > 0)) ? ',' : '\n', decoder->out);
-			}
-		}
-		if(remaining) {
-		    fprintf(decoder->out, "    .db ");
-		    for(i=remaining; i>0; i--) {
-		        data[0] = readByte(decoder->memmap, addr++);
-		        fprintf(decoder->out, "$%02x%c", data[0], (i>1) ? ',' : '\n');
-		    }
-		}
+        for(i=0, j=0, k=0; i<size; i++, logical++) {
+            if(findLabel(decoder->labels, logical, page, &name)) {
+                if(k && (k < element_size)) {
+                    fprintf(decoder->out, "\n          .db");
+                    for(j=0; j<k; j++) {
+                        fprintf(decoder->out, "%c$%02x", j ? ',' : ' ', data[j]);
+                    }
+                    k = 0;
+                }
+                if(j) {
+                    fputc('\n', decoder->out);
+                }
+                fprintf(decoder->out, "%s:", name);
+                j = 0;
+            }
+            
+            data[k++] = readByte(decoder->memmap, logical);
+            if(k >= element_size) {
+                char c;
+                if(j == 0) {
+                    fprintf(decoder->out, "\n          %s", data_decl);
+                    c = ' ';
+                }
+                else {
+                    c = ',';
+                }
+                fprintf(decoder->out, "%c$", c);
+                while(k--) {
+                    fprintf(decoder->out, "%02x", data[k]);
+                }
+                k = 0;
+                j = (j+1) % elemets_per_line;
+            }
+        }
+        fputc('\n', decoder->out);
+        if(k) {
+            fprintf(decoder->out, "          .db ");
+            for(j=0; j<k; j++) {
+                fprintf(decoder->out, "$%02x%c", data[j], ((j+1)<k) ? ',' : '\n');
+            }
+        }
 	} else {
-		for (i = decoder->current->size, addr = decoder->logical; i > 0; i--) {
-			data[0] = readByte(decoder->memmap, addr++);
+		for (i = decoder->current->size; i > 0; i--) {
+			data[0] = readByte(decoder->memmap, logical++);
 			fwrite(&data[0], 1, 1, decoder->out);
 		}
 	}
