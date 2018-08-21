@@ -1,0 +1,10 @@
+{
+    "joyread": {
+        "filename": "joypad.asm",
+        "type": "code",
+        "org": "7d98",
+        "bank": "0d",
+        "size": "f1",
+        "mpr": ["ff","f8","38","0d","40","3a","04","00"]
+    }
+}

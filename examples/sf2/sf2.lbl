@@ -1,0 +1,21 @@
+[
+	{ "name":"joyread", "logical":"7d98", "page":"0d"},
+	{ "name":"first_scan", "logical":"7da3", "page":"0d"},
+	{ "name":"second_scan", "logical":"7dde", "page":"0d"},
+	{ "name":"detect_6btn", "logical":"7e0f", "page":"0d"},
+	{ "name":"is_6btn", "logical":"7e3b", "page":"0d"},
+	{ "name":"not_6btn", "logical":"7e40", "page":"0d"},
+	{ "name":"trg_6btn", "logical":"7e2b", "page":"0d"},
+	{ "name":"trg_2btn", "logical":"7e44", "page":"0d"},
+	{ "name":"check_soft_reset", "logical":"7e59", "page":"0d"},
+	{ "name":"check_sel_run", "logical":"7e72", "page":"0d"},
+	{ "name":"next_pad", "logical":"7e80", "page":"0d"},
+	{ "name":"soft_reset", "logical":"7e86", "page":"0d"},
+	{ "name":"joypad", "logical":"2c74", "page":"f8"},  
+	{ "name":"joyold", "logical":"2c7a", "page":"f8"},  
+	{ "name":"joytrg", "logical":"2c80", "page":"f8"},
+	{ "name":"joypad_6", "logical":"2c77", "page":"f8"},  
+	{ "name":"joyold_6", "logical":"2c7d", "page":"f8"},  
+	{ "name":"joytrg_6", "logical":"2c83", "page":"f8"},
+	{ "name":"joyport", "logical":"1000", "page":"ff"}  
+]
