@@ -7,6 +7,7 @@
 * [System Card bank #0](examples/syscard)
 * [Gfx unpacking](examples/maerchen_maze) in Maerchen Maze.
 * [Memory Base 128 detection](examples/tadaima) in Taidama Yusha Boshuchu.
+* [Joypad routine](examples/sf2) in Street Fighter II' Champion Edition.
 
 ## Usage
 ```
