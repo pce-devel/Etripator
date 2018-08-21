@@ -84,17 +84,15 @@ The supported fields are :
 
 Example:
 ```json
-{
-    "cd_reset": {"logical":"e22a", "page":"00"},
-    
-	"irq_2": {"logical":"eaa3", "page":"00"},
-	"irq_1": {"logical":"eba5", "page":"00"},
-	"irq_timer": {"logical":"ea9c", "page":"00"},
-	"irq_nmi": {"logical":"ea9b", "page":"00"},
-	"irq_reset": {"logical":"eab3", "page":"00"},
-
-	"main": {"logical":"f8a4", "page":"00"}
-}
+[
+	{ "name":"cd_reset", "logical":"e22a", "page":"00"},
+	{ "name":"irq_2", "logical":"eaa3", "page":"00"},
+	{ "name":"irq_1", "logical":"eba5", "page":"00"},
+	{ "name":"irq_timer", "logical":"ea9c", "page":"00"},
+	{ "name":"irq_nmi", "logical":"ea9b", "page":"00"},
+	{ "name":"irq_reset", "logical":"eab3", "page":"00"},
+	{ "name":"main", "logical":"f8a4", "page":"00"}
+]
 ```
 
 ## Build
