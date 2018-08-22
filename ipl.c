@@ -114,13 +114,13 @@ static int readIPLHeader(IPL *out, FILE *in, const char *filename) {
 void printIPL(IPL *in) {
     INFO_MSG("IPLBLK: hi:%02x mid:%02x lo:%02x", in->load_start_record[0], in->load_start_record[1], in->load_start_record[2]); 
     INFO_MSG("IPLBKN: %02x", in->load_sector_count);
-    INFO_MSG("IPLSTA: lo:%02x hi:%02x", in->load_store_address[0], in->load_store_address[1]);
-    INFO_MSG("IPLJMP: lo:%02x hi:%02x", in->load_exec_address[0], in->load_exec_address[1]);
+    INFO_MSG("IPLSTA: hi:%02x lo:%02x", in->load_store_address[1], in->load_store_address[0]);
+    INFO_MSG("IPLJMP: hi:%02x lo:%02x", in->load_exec_address[1], in->load_exec_address[0]);
     INFO_MSG("IPLMPR: 2:%02x, 3:%02x, 4:%02x, 5:%02x, 6:%02x", in->mpr[0], in->mpr[1], in->mpr[2], in->mpr[3], in->mpr[4]);
     INFO_MSG("OPENMODE: %02x", in->opening_mode);
     INFO_MSG("GRPBLK: hi:%02x mid:%02x lo:%02x", in->opening_gfx_record[0], in->opening_gfx_record[1], in->opening_gfx_record[2]); 
     INFO_MSG("GRPBLN: %02x", in->opening_gfx_sector_count);
-    INFO_MSG("GRPADR: lo:%02x hi:%02x", in->opening_gfx_read_address[0], in->opening_gfx_read_address[1]);
+    INFO_MSG("GRPADR: hi:%02x lo:%02x", in->opening_gfx_read_address[1], in->opening_gfx_read_address[0]);
     INFO_MSG("ADPBLK: hi:%02x mid:%02x lo:%02x", in->opening_adpcm_record[0], in->opening_adpcm_record[1], in->opening_adpcm_record[2]);
     INFO_MSG("ADPBLN: %02x", in->opening_adpcm_sector_count);
     INFO_MSG("ADPRATE: %02x", in->opening_adpcm_sampling_rate);
@@ -193,8 +193,7 @@ int getIPLSections(IPL *in, Section **out, int *count) {
         for(i=0; i<5; i++) {
             section[j+k].mpr[2+i] = 0x80 + in->mpr[i];
         }
-    } 
-    
+    }
     // "CD boot"
     if(in->load_sector_count) {
         record = (in->load_start_record[0] << 16) | (in->load_start_record[1] << 8) | in->load_start_record[2];
