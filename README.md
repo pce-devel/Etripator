@@ -3,10 +3,12 @@
 [![Travis build Status](https://travis-ci.org/BlockoS/Etripator.svg)](https://travis-ci.org/BlockoS/Etripator) [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/github/BlockoS/etripator?svg=true)](https://ci.appveyor.com/project/BlockoS/etripator/branch/master) [![Coverity Scan Build Status](https://scan.coverity.com/projects/6483/badge.svg)](https://scan.coverity.com/projects/blockos-etripator)
 
 ## Examples
-* [Monster Pro Wrestling tutorial](examples/monster_puroresu)
-* [System Card bank #0](examples/syscard)
+* [Monster Pro Wrestling tutorial](examples/monster_puroresu).
+* [System Card bank #0](examples/syscard).
 * [Gfx unpacking](examples/maerchen_maze) in Maerchen Maze.
 * [Memory Base 128 detection](examples/tadaima) in Taidama Yusha Boshuchu.
+* [Joypad routine](examples/sf2) of Street Fighter II' Champion Edition.
+* [Games Express CD Card bank #0](examples/games_express).
 
 ## Usage
 ```
@@ -39,7 +41,7 @@ The supported fields are :
  * **org**  *(mandatory)* : program counter location. Just like **bank**', it will be used to compute file offset if there's  no **offset** field.
 
 
- * **offset**  : input file offset. This field is *mandatory* for CD-ROM disassembly.
+ * **offset** : input file offset. This field is *mandatory* for CD-ROM disassembly.
 
 
  * **size** : section size. For code section, a zero (or missing size) means that the disassembly will stop when a RTS or RTI instruction is found. This field is *mandatory* for data sections. and CD-ROM disassembly.
@@ -49,6 +51,10 @@ The supported fields are :
 
  * **mpr** : an array containing the page value for each memory page register.
  
+ * **data** *(inc_data only)* : an object with 2 entries :
+     * **element_size** *(default value: 1)* : element size in bytes. The only supported values are 1 or 2.
+     * **elements_per_line** *(default value: 16)* : number of elements per line. 
+  
 There must be only one occurence of each field per section.
 
 Example:
@@ -69,31 +75,39 @@ Example:
         "org" : "e509",
         "size": "ce",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+    "irq_vectors": {
+        "filename": "syscard.asm",
+        "type": "inc_data",
+        "bank": "0",
+        "org": "fff6",
+        "size": "a",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
+        "data": { "element_size": 2, "elements_per_line": 1 }
     }
+
 }
 ```
 
 ## Labels definition file format
 
-The labels definition file is a standard **JSON** file.
-Each section starts with the name of the label between square brackets.
-The supported fields are :
- * **logical** : Logical address of the label in hexadecimal.
- * **page** : physical page associated to the address, i.e. the value of the mpr.
+The labels definition file is a standard **JSON** file containing an array of labels.
+Each entry is an object containing the following fields:
+ * **name**: label name.
+ * **logical** : logical address of the label in hexadecimal.
+ * **page** : physical page, i.e. the value of the mpr of the logical address.
 
 Example:
 ```json
-{
-    "cd_reset": {"logical":"e22a", "page":"00"},
-    
-	"irq_2": {"logical":"eaa3", "page":"00"},
-	"irq_1": {"logical":"eba5", "page":"00"},
-	"irq_timer": {"logical":"ea9c", "page":"00"},
-	"irq_nmi": {"logical":"ea9b", "page":"00"},
-	"irq_reset": {"logical":"eab3", "page":"00"},
-
-	"main": {"logical":"f8a4", "page":"00"}
-}
+[
+	{ "name":"cd_reset", "logical":"e22a", "page":"00"},
+	{ "name":"irq_2", "logical":"eaa3", "page":"00"},
+	{ "name":"irq_1", "logical":"eba5", "page":"00"},
+	{ "name":"irq_timer", "logical":"ea9c", "page":"00"},
+	{ "name":"irq_nmi", "logical":"ea9b", "page":"00"},
+	{ "name":"irq_reset", "logical":"eab3", "page":"00"},
+	{ "name":"main", "logical":"f8a4", "page":"00"}
+]
 ```
 
 ## Build

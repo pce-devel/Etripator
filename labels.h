@@ -65,10 +65,18 @@ int getLabelCount(LabelRepository* repository);
  * \param [in] repository Label repository.
  * \param [in] index      Label index.
  * \param [out] logical   Logical address.
- * \param [out]  page        Memory page.
+ * \param [out]  page     Memory page.
  * \param [out] name      Label name.
  * \return 1 if a label exists for the specified index, 0 otherwise.
  */
 int getLabel(LabelRepository* repository, int index, uint16_t* logical, uint8_t* page, char** name);
+/**
+ * Delete labels
+ * \param [in]  repository  Label repository.
+ * \param [in]  first       Start of the logical address range.
+ * \param [in]  end         End of the logical address range.
+ * \param [in]  page        Memory page.
+ */
+int deleteLabels(LabelRepository* repository, uint16_t first, uint16_t end, uint8_t page);
 
 #endif // LABELS_H

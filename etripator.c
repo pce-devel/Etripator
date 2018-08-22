@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2017 Vincent Cruz.
+    copyright (c) 2009--2018 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -250,7 +250,7 @@ int main(int argc, char **argv) {
             else {
                 /* Print header */
                 fprintf(out, "\t.%s\n"
-                             "\t.bank %x\n"
+                             "\t.bank $%03x\n"
                              "\t.org $%04x\n",
                         (section[i].type == Code) ? "code" : "data", section[i].bank, section[i].org);
             }

@@ -30,6 +30,8 @@ void resetSection(Section *out) {
     out->size = 0;
     out->filename = NULL;
     memset(out->mpr, 0, 8);
+    out->data.element_size = 1;
+    out->data.elements_per_line = 16;
 }
 
 static int compareOutputFilename(const void *a, const void *b) {

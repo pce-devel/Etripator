@@ -1,0 +1,88 @@
+{
+    "le22a": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 1, 0 ],
+        "org": "e22a"
+    },
+    "le267": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 1, 0 ],
+        "org": "e267"
+    },
+    "le865_00": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 1, 0 ],
+        "org": "e865"
+    },
+    "le903_00": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 1, 0 ],
+        "org": "e903"
+    },
+    "le98c_00": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 1, 0 ],
+        "org": "e98c"
+    },
+    "irq_1": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
+        "org": "eba5"
+    },
+    "irq_2": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
+        "org": "eaa3"
+    },
+    "irq_nmi": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
+        "org": "ea9b"
+    },
+    "irq_reset": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
+        "org": "eab3"
+    },
+    "led03_00": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 1, 0 ],
+        "org": "ed03"
+    },
+    "lf8a4_00": {
+        "filename": "games_express.asm",
+        "type": "code",
+        "bank": 0,
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 1, 0 ],
+        "org": "f8a4"
+    },
+    "irq_vectors": {
+        "filename": "games_express.asm",
+        "type": "inc_data",
+        "bank": 0,
+        "org" :"fff6",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
+        "size": "a",
+        "data": { "element_size": 2, "elements_per_line": 1 }
+    }
+}
