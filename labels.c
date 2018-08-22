@@ -36,7 +36,6 @@ struct LabelRepositoryImpl {
     size_t size;          /**< Size of label repository */
     size_t last;          /**< Last element in the repository */
     Label  *labels;       /**< Labels */
-    size_t *sorted;       /**< Index of sorted labels */
     size_t nameBufferLen; /**< Label name buffer length */
     char   *nameBuffer;   /**< Label name buffer */
 };
@@ -215,5 +214,34 @@ int getLabel(LabelRepository* repository, int index, uint16_t* logical, uint8_t*
         return 1;
     }
 }
-
-
+/**
+ * Delete labels
+ * \param [in]  repository  Label repository.
+ * \param [in]  first       Start of the logical address range.
+ * \param [in]  end         End of the logical address range.
+ * \param [in]  page        Memory page.
+ */
+int deleteLabels(LabelRepository* repository, uint16_t first, uint16_t end, uint8_t page) {
+    size_t i;
+    for(i=0; i<repository->last; i++) {
+        if( (repository->labels[i].page == page) &&
+            (repository->labels[i].logical >= first) && 
+            (repository->labels[i].logical < end) ) {
+            if(repository->last) {
+                repository->last--;
+                memcpy(&repository->labels[i], &repository->labels[repository->last], sizeof(Label));
+            }
+        }
+    }
+    int ret = 1;
+    char *tmp = repository->nameBuffer;
+    repository->nameBufferLen = 0;
+    repository->nameBuffer    = NULL;
+    for(i=0; ret && (i<repository->last); i++) {
+        ret = setLabelName(repository, &repository->labels[i], tmp + repository->labels[i].name);
+    }    
+    if(tmp) {
+        free(tmp);
+    }
+    return ret;
+}
