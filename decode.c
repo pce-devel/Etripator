@@ -218,7 +218,8 @@ int extractLabels(Decoder *decoder) {
 
 		/* Search end of section */
 		if (section->size == 0) {
-			if ((inst == 0x40) || (inst == 0x60)) {
+		    /* RTI, RTS, BRK */
+			if ((inst == 0x40) || (inst == 0x60) || (inst == 0x00)) {
 				section->size = offset;
 				eor = 1;
 			}
@@ -268,9 +269,9 @@ char processOpcode(Decoder *decoder) {
 	/* Add spacing */
 	fwrite(spacing, 1, 4, decoder->out);
 
-	/* End Of Routine (eor) is set to 1 if the instruction is RTI or RTS */
-	eor = ((inst == 64) || (inst == 96));
-
+	/* End Of Routine (eor) is set to 1 if the instruction is RTI, RTS or BRK */
+	eor = ((inst == 0x40) || (inst == 0x60) || (inst == 0x00));
+	
 	/* Data */
 	if (pce_opcode[inst].size > 1) {
 		for (i = 0; i < (pce_opcode[inst].size - 1); i++) {
