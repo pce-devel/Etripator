@@ -85,7 +85,7 @@ int processDataSection(Decoder *decoder) {
 	if (IncData == decoder->current->type) {
 		int32_t j, k;
         int32_t element_size = decoder->current->data.element_size;
-		int32_t elemets_per_line = decoder->current->data.elements_per_line;
+		int32_t elements_per_line = decoder->current->data.elements_per_line;
         int32_t size = decoder->current->size;
         const char *data_decl = (element_size > 1) ? ".dw" : ".db";
         
@@ -120,7 +120,7 @@ int processDataSection(Decoder *decoder) {
                     fprintf(decoder->out, "%02x", data[k]);
                 }
                 k = 0;
-                j = (j+1) % elemets_per_line;
+                j = (j+1) % elements_per_line;
             }
         }
         fputc('\n', decoder->out);
