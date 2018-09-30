@@ -7,7 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 enable_testing()
 
 set(ETRIPATOR_MAJOR_VERSION 0)
-set(ETRIPATOR_MINOR_VERSION 5)
+set(ETRIPATOR_MINOR_VERSION 7)
 set(ETRIPATOR_PATCH_VERSION 0)
 set(ETRIPATOR_VERSION "${ETRIPATOR_MAJOR_VERSION}.${ETRIPATOR_MINOR_VERSION}.${ETRIPATOR_PATCH_VERSION}")
 
@@ -22,30 +22,26 @@ find_package(Jansson)
 
 set(CMAKE_C_STANDARDS 11)
 
-if(CMAKE_COMPILER_IS_GNUCXX)
-    add_compile_options(-Wall -Wextra -Wshadow)
-endif(CMAKE_COMPILER_IS_GNUCXX)
-
 set(etripator_SRC
-    message.c 
-    message/file.c
-    message/console.c
+#    message.c 
+#    message/file.c
+#    message/console.c
     jsonhelpers.c
-    decode.c
+#    decode.c
     section.c
-    sectionsloader.c
-    opcodes.c
-    labels.c
-    labelsloader.c
-    labelswriter.c
-    irq.c
-    memory.c
-    memorymap.c
-    rom.c
-    cd.c
-    ipl.c
-    options.c
-    etripator.c
+#    sectionsloader.c
+#    opcodes.c
+#    labels.c
+#    labelsloader.c
+#    labelswriter.c
+#    irq.c
+#    memory.c
+#    memorymap.c
+#    rom.c
+#    cd.c
+#    ipl.c
+#    options.c
+#    etripator.c
 )
 
 if(WIN32)
@@ -60,13 +56,13 @@ set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
     endif(MSVC)
 endif(WIN32)
 
-add_executable(etripator ${etripator_SRC})
-target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE})
-if(CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(etripator PRIVATE -Wall -Wshadow -Wextra)
-endif(CMAKE_COMPILER_IS_GNUCXX)
-target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
-target_link_libraries(etripator ${JANSSON_LIBRARIES})
+# add_executable(etripator ${etripator_SRC})
+# target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE})
+# if(CMAKE_COMPILER_IS_GNUCXX)
+#    target_compile_options(etripator PRIVATE -Wall -Wshadow -Wextra)
+# endif(CMAKE_COMPILER_IS_GNUCXX)
+# target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
+# target_link_libraries(etripator ${JANSSON_LIBRARIES})
 
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
 set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
@@ -80,7 +76,13 @@ add_custom_target(doc
          COMMENT "Generating API documentation with Doxygen"
          VERBATIM )
          
-install(TARGETS etripator
-        RUNTIME DESTINATION bin)
-install(DIRECTORY examples DESTINATION doc)
-install(FILES README.md DESTINATION doc)
+add_library(munit STATIC ${CMAKE_CURRENT_SOURCE_DIR}/test/munit/munit.c)
+target_include_directories(munit PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/munit>)
+set_property(TARGET munit PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/munit>)
+
+add_executable(section_tests test/section.c section.c jsonhelpers.c message.c message/file.c message/console.c)
+target_compile_options(section_tests PRIVATE -Wall -Wshadow -Wextra)
+target_link_libraries(section_tests munit ${JANSSON_LIBRARIES})
+target_include_directories(section_tests PRIVATE ${PROJECT_SOURCE_DIR})
+add_test(section_tests section_tests)
+# [todo] copy data directory

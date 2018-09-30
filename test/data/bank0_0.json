@@ -1,0 +1,37 @@
+{
+    "cdbios_functions": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "page": "0",
+        "logical" : "e000",
+        "size": "505",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.0": {
+        "filename": "syscard.asm",
+        "type": "data",
+        "page": "0",
+        "logical" : "e504",
+        "size": "5",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "ex_colorcmd.impl": {
+        "filename": "syscard.asm",
+        "type": "code",
+        "page": "0",
+        "logical" : "e509",
+        "size": "ce",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    },
+
+    "unknown.1": {
+        "filename": "syscard.asm",
+        "type": "data",
+        "page": "0",
+        "logical" : "e5d7",
+        "size": "3",
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+    }
+}

@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2017 Vincent Cruz.
+    copyright (c) 2009--2018 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,19 +21,18 @@
 #include "config.h"
 
 /**
- * Section type
+ * Section type.
  */
 typedef enum {
     UnknownSectionType = -1,
-    BinData = 0, /**< The section will be extracted from the input ROM and
-                      stored in a separate file. **/
-    IncData, /**< The section will be output as a series of .db directives. **/
+    Binary,
+    Data,
     Code,
     SectionTypeCount
 } SectionType;
 
 /**
- * Data configuration.
+ * Data section configuration.
  */
 typedef struct {
     int32_t element_size;      /**< element size (string=0, byte=1, word=2). **/
@@ -41,29 +40,60 @@ typedef struct {
 } DataConfig;
 
 /**
- * Define a ROM area.
- * This area can contain data or code.
+ * Section description.
  */
 typedef struct {
-    SectionType type;/**< type **/
-    char *name;      /**< name **/
-    uint8_t bank;    /**< rom bank / memory page **/
-    uint16_t org;    /**< org **/
-    uint32_t offset; /**< start address (file offset in bytes) **/
-    int32_t size;    /**< section size (in bytes) **/
-    char *filename;  /**< output filename **/
-    uint8_t mpr[8];  /**< mpr registers **/
-    DataConfig data; /**< data configuration **/
+    char *name;       /**< name. **/
+
+    SectionType type; /**< type. **/
+    
+    uint8_t page;     /**< memory page. **/
+    uint16_t logical; /**< logical address. **/
+    uint32_t offset;  /**< input offset. **/
+    int32_t size;     /**< size (in bytes). **/
+
+    uint8_t mpr[8];   /**< mpr registers value. **/
+    
+    char *output;     /**< output filename. **/
+    
+    DataConfig data;  /**< data configuration (only valid for *data* sections) **/
 } Section;
+
 /**
  * Reset a section to its default values.
- */
-void resetSection(Section *out);
+ **/
+void ResetSection(Section *section);
+
 /**
- * Group section per output filename and sort them in bank/org order.
+ * Group section per output filename and sort them in page/logical address order.
  * \param [in][out] sections Sections.
  * \param [in] count Number of sections to sort.
  */
-void sortSections(Section *sections, int count);
+void SortSections(Section *sections, size_t count);
+
+/**
+ * Load sections from a JSON file.
+ * \param [in]  filename Input filename.
+ * \param [out] sections Loaded sections.
+ * \param [out] count Number of loaded sections. 
+ * \return 1 if the sections contained in the file were succesfully loaded.
+ *         0 if an error occured.
+ */
+int LoadSections(const char *filename, Section **sections, int *count);
+
+/**
+ * Save sections to a JSON file.
+ * \param [in] filename Output filename.
+ * \param [in] sections Sections to be saved.
+ * \param [in] count Number of sections. 
+ * \return 1 if the sections were succesfully saved.
+ *         0 if an error occured.
+ */
+int SaveSections(const char *filename, Section *sections, int count);
+ 
+/**
+ * Delete sections.
+ */
+void DeleteSections(Section *sections, int count);
 
 #endif // _SECTION_H_
