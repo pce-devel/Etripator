@@ -45,7 +45,7 @@ after_build:
    
 artifacts:
   - path: etripator.zip
-    name: etripator-v${appveyor_build_version}.zip
+    name: etripator-${appveyor_build_version}.zip
 
 deploy:
   release: etripator-v${appveyor_build_version}
