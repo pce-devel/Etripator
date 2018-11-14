@@ -25,6 +25,11 @@ THE SOFTWARE.
 #include "../../config.h"
 #include "time.h"
 
+struct tm *localtime_r(time_t *_clock, struct tm *_result) {
+	_localtime32_s(_result, _clock);
+	return _result;
+}
+
 int gettimeofday(struct timeval *tv, struct timezone *tz)
 {
     FILETIME ft;

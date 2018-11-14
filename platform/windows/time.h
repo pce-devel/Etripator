@@ -44,6 +44,7 @@ THE SOFTWARE.
     int  tz_dsttime;     /* type of dst correction */
   };
   
+  struct tm *localtime_r(time_t *_clock, struct tm *_result);
   int gettimeofday(struct timeval *tv, struct timezone *tz);
 #endif // defined(_MSC_VER)
 

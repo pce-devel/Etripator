@@ -16,9 +16,10 @@
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "basename.h"
+#include <stdlib.h>
 
 char *basename(char *path) {
-    char *drive, dir, fname, ext;
-    _splitpath(path, drive, dir, fname, ext);
+	static char *fname[_MAX_FNAME];
+    _splitpath(path, NULL, NULL, fname, NULL);
     return fname;
 }

@@ -17,7 +17,7 @@
 */
 #include "../config.h"
 #include "console.h"
-
+#include <time.h>
 /**
  * \brief Tests if the console has support for colors and other things.
  * \param [in] impl Console message printer.
@@ -82,12 +82,12 @@ static int ConsoleMsgPrinterOutput(void* impl, MessageType type, const char* fil
     {
         ConsoleMsgPrinter* printer = (ConsoleMsgPrinter*)impl;
         struct timeval tv;
-        struct tm *now;
+        struct tm now;
         char dateString[128];
 
         gettimeofday(&tv, NULL);
-        now = localtime(&tv.tv_sec);
-        strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", now);
+        localtime_r(&tv.tv_sec, &now);
+        strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", &now);
 
         if(printer->useEscapeCode)
         {

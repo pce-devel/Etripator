@@ -52,12 +52,12 @@ int outputLabels(CommandLineOptions *options, LabelRepository *repository) {
         char *tmp;
 
         struct timeval tv;
-        struct tm *now;
+        struct tm now;
         char dateString[128];
             
         gettimeofday(&tv, NULL);
-        now = localtime(&tv.tv_sec);
-        strftime(dateString, 128, "%Y%m%d%H%M%S", now);
+        localtime_r(&tv.tv_sec, &now);
+        strftime(dateString, 128, "%Y%m%d%H%M%S", &now);
         
         tmp = basename(options->romFileName);
         snprintf(buffer, 256, "%s.%s.lbl", tmp, dateString);     
