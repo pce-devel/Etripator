@@ -28,3 +28,8 @@ addons:
     build_command_prepend: "cmake .."
     build_command: "make"
     branch_pattern: master
+
+branches:
+  only:
+    - master
+
