@@ -19,7 +19,7 @@
 #include <stdlib.h>
 
 char *basename(char *path) {
-	static char *fname[_MAX_FNAME];
+    static char fname[_MAX_FNAME];
     _splitpath(path, NULL, NULL, fname, NULL);
     return fname;
 }

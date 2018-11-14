@@ -50,17 +50,8 @@ int outputLabels(CommandLineOptions *options, LabelRepository *repository) {
     if(NULL == options->labelsOut) { 
         /* We don't want to destroy the original label file. */
         char *tmp;
-
-        struct timeval tv;
-        struct tm now;
-        char dateString[128];
-            
-        gettimeofday(&tv, NULL);
-        localtime_r(&tv.tv_sec, &now);
-        strftime(dateString, 128, "%Y%m%d%H%M%S", &now);
-        
         tmp = basename(options->romFileName);
-        snprintf(buffer, 256, "%s.%s.lbl", tmp, dateString);     
+        snprintf(buffer, 256, "%s.lbl", tmp);
         options->labelsOut = buffer;
     }
     if (!writeLabels(options->labelsOut, repository)) {
