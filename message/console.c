@@ -81,21 +81,13 @@ static int ConsoleMsgPrinterOutput(void* impl, MessageType type, const char* fil
     else 
     {
         ConsoleMsgPrinter* printer = (ConsoleMsgPrinter*)impl;
-        struct timeval tv;
-        struct tm now;
-        char dateString[128];
-
-        gettimeofday(&tv, NULL);
-        localtime_r(&tv.tv_sec, &now);
-        strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", &now);
-
         if(printer->useEscapeCode)
         {
-            fprintf(stderr, "%s%s\x1b[0m %s.%03ld \x1b[0;33m%s:%zd %s \x1b[1;37m : ", messageTypePrefix[type], messageTypeName[type], dateString, tv.tv_usec/1000, file, line, function);
+            fprintf(stderr, "%s%s\x1b[0m %s:%zd \x1b[0;33m %s \x1b[1;37m : ", messageTypePrefix[type], messageTypeName[type], file, line, function);
         }
         else
         {
-            fprintf(stderr, "%s %s.%06ld %s:%zd %s : ", messageTypeName[type], dateString, tv.tv_usec, file, line, function);
+            fprintf(stderr, "%s %s:%zd %s: ", messageTypeName[type], file, line, function);
         }
         vfprintf(stderr, format, args);
         

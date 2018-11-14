@@ -29,23 +29,21 @@ THE SOFTWARE.
 #define __TIME_H__   1
 
 #if defined(_MSC_VER)
-  #include <windows.h>
-  #include <time.h>
-  
-  #if defined(_MSC_EXTENSIONS)
-  #define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
-  #else
-  #define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
-  #endif
-  
-  // windows missed gettimeofday function
-  struct timezone {
+#   include <windows.h>
+#   include <time.h>
+#   if defined(_MSC_EXTENSIONS)
+#       define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
+#   else
+#       define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
+#   endif
+
+// windows missed gettimeofday function
+struct timezone {
     int  tz_minuteswest; /* minutes W of Greenwich */
     int  tz_dsttime;     /* type of dst correction */
-  };
-  
-  struct tm *localtime_r(time_t *_clock, struct tm *_result);
-  int gettimeofday(struct timeval *tv, struct timezone *tz);
+};
+
+int gettimeofday(struct timeval *tv, struct timezone *tz);
 #endif // defined(_MSC_VER)
 
 

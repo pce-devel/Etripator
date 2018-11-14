@@ -91,17 +91,9 @@ static int FileMsgPrinterOutput(void* impl, MessageType type, const char* file, 
     }
     else 
     {
-        struct timeval tv;
-        struct tm now;
-        char dateString[128];
-        
         FileMsgPrinter* printer = (FileMsgPrinter*)impl; 
         
-        gettimeofday(&tv, NULL);
-        localtime_r(&tv.tv_sec, &now);
-        strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", &now);
-        
-        fprintf(printer->out, "%s %s.%03ld %s:%zd %s : ", messageTypeName[type], dateString, tv.tv_usec/1000, file, line, function);
+        fprintf(printer->out, "%s %s:%zd %s : ", messageTypeName[type], file, line, function);
         vfprintf(printer->out, format, args);
         fputc('\n', printer->out);
         fflush(printer->out);

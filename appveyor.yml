@@ -4,6 +4,17 @@ os: Visual Studio 2013
 platform: x64
 configuration: Release
 
+init:
+  - ps: >-
+      if ($env:APPVEYOR_REPO_TAG -eq "true")
+      {
+        Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_TAG_NAME"
+      }
+      else
+      {
+        Update-AppveyorBuild -Version "dev-$($env:APPVEYOR_REPO_COMMIT.substring(0,7))"
+      }
+
 install:
   - cd ..
   - ps: Invoke-WebRequest "https://github.com/akheron/jansson/archive/v2.10.zip" -OutFile "jansson.zip"
@@ -45,6 +56,7 @@ deploy:
   artifact: /etripator.*\.zip/
   draft: false
   prerelease: false
+  force_update: true
   on:
     branch: master
     appveyor_repo_tag: true  
