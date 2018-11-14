@@ -46,3 +46,13 @@ void destroyMemory(mem_t *mem) {
         }
     }
 }
+/**
+ * Fill memory block bytes with a given byte value.
+ * \param [in] mem Memory block.
+ * \param [in] c Byte value.
+ */
+void mem_fill(mem_t *mem, uint8_t c) {
+    if(mem->data && mem->len) {
+        memset(mem->data, mem->len, c);
+    }
+}

@@ -38,5 +38,11 @@ int mem_create(mem_t *mem, size_t len);
  * \param [in] mem Memory block.
  */
 void mem_destroy(mem_t *mem);
+/**
+ * Fill memory block bytes with a given byte value.
+ * \param [in] mem Memory block.
+ * \param [in] c Byte value.
+ */
+void mem_fill(mem_t *mem, uint8_t c);
 
 #endif // ETRIPATOR_MEMORY_H
