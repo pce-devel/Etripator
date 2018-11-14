@@ -18,7 +18,7 @@
 #include "config.h"
 #include "message.h"
 
-static msg_printer* g_msg_printer = NULL;
+static msg_printer_t* g_msg_printer = NULL;
 
 /**
  * Setup global message printer list.
@@ -31,7 +31,7 @@ void msg_printer_init() {
  * Releases the resources used by message printers.
  */
 void msg_printer_destroy() {
-    msg_printer* printer;
+    msg_printer_t* printer;
     for(printer=g_msg_printer; NULL != printer; printer=printer->next) {
         printer->close(printer);
     }
@@ -41,7 +41,7 @@ void msg_printer_destroy() {
  * \param [in] printer Message printer to be added to the list.
  * \return 0 upon success.
  */
-int msg_printer_add(msg_printer *printer) {
+int msg_printer_add(msg_printer_t *printer) {
     if(printer->open(printer)) {
         return 1;
     }
@@ -57,8 +57,8 @@ int msg_printer_add(msg_printer *printer) {
  * \param function  Function where the print message command was issued.
  * \param format    Format string.
  */
-void print_msg(msg_type type, const char* file, size_t line, const char* function, const char* format, ...) {
-    msg_printer* printer;
+void print_msg(msg_type_t type, const char* file, size_t line, const char* function, const char* format, ...) {
+    msg_printer_t* printer;
     char* tmp = strdup(file);
     char* filename = basename(file);
     

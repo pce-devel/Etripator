@@ -1,7 +1,7 @@
 #include <errno.h>
 #include "jsonhelpers.h"
 
-int json_validateInt(const json_t* obj, int* out) {
+int json_validate_int(const json_t* obj, int* out) {
     if(json_is_string(obj)) {
         errno = 0;
         *out = strtoul(json_string_value(obj), NULL, 16);

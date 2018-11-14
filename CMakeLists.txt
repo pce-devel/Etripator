@@ -44,17 +44,15 @@ set(etripator_SRC
 #    etripator.c
 )
 
-if(WIN32)
-    if(MSVC)
-set(etripator_SRC ${etripator_SRC}
-    platform/windows/getopt1.c
-    platform/windows/getopt.c
-    platform/windows/time.c
-    platform/windows/basename.c
-)
-set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
-    endif(MSVC)
-endif(WIN32)
+if(WIN32 AND MSVC)
+    set(etripator_SRC ${etripator_SRC}
+        platform/windows/getopt1.c
+        platform/windows/getopt.c
+        platform/windows/time.c
+        platform/windows/basename.c
+    )
+    set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
+endif(WIN32 AND MSVC)
 
 # add_executable(etripator ${etripator_SRC})
 # target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE})

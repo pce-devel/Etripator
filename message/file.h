@@ -21,16 +21,16 @@
 #include "../message.h"
 
 typedef struct {
-    msg_printer super;
+    msg_printer_t super;
     FILE *out;
-} file_msg_printer;
+} file_msg_printer_t;
 
 /**
  * \brief Setups file message writer.
  * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-int file_msg_printer_init(file_msg_printer *printer);
+int file_msg_printer_init(file_msg_printer_t *printer);
 
 #endif // ETRIPATOR_MESSAGE_FILE_H
 

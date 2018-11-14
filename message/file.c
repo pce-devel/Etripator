@@ -26,7 +26,7 @@ static const char* g_log_filename = "etripator.log";
  * \return 0 upon success.
  */
 static int file_msg_printer_open(void* impl) {
-    file_msg_printer* printer = (file_msg_printer*)impl; 
+    file_msg_printer_t* printer = (file_msg_printer_t*)impl; 
     if(!printer) {
         fprintf(stderr, "Invalid file logger.\n");
         return 1;
@@ -45,7 +45,7 @@ static int file_msg_printer_open(void* impl) {
  * \return 0 upon success.
  */
 static int file_msg_printer_close(void* impl) {
-    file_msg_printer* printer = (file_msg_printer*)impl; 
+    file_msg_printer_t* printer = (file_msg_printer_t*)impl; 
     if((!printer) || (!printer->out)) {
         fprintf(stderr, "Invalid file logger.\n");
         return 1;
@@ -69,29 +69,20 @@ static int file_msg_printer_close(void* impl) {
  * \param [in] args      Argument lists.
  * \return 0 upon success.
  */
-static int file_msg_printer_output(void* impl, msg_type type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+static int file_msg_printer_output(void* impl, msg_type_t type, const char* file, size_t line, const char* function, const char* format, va_list args) {
     static const char *msg_type_name[] = {
         "[Error]",
         "[Warning]",
         "[Info]"
     };
-
     if(!impl) {
         fprintf(stderr, "Invalid file logger.\n");
         return 1;
     }
 
-    struct timeval tv;
-    struct tm *now;
-    char dateString[128];
-    
-    file_msg_printer* printer = (file_msg_printer*)impl; 
-    
-    gettimeofday(&tv, NULL);
-    now = localtime(&tv.tv_sec);
-    strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", now);
-    
-    fprintf(printer->out, "%s %s.%03ld %s:%zd %s : ", msg_type_name[type], dateString, tv.tv_usec/1000, file, line, function);
+    file_msg_printer_t* printer = (file_msg_printer_t*)impl; 
+
+    fprintf(printer->out, "%s %s:%zd %s : ", msg_type_name[type], file, line, function);
     vfprintf(printer->out, format, args);
     fputc('\n', printer->out);
     fflush(printer->out);
@@ -107,7 +98,7 @@ static int file_msg_printer_output(void* impl, msg_type type, const char* file, 
  * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-int file_msg_printer_init(file_msg_printer *printer) {
+int file_msg_printer_init(file_msg_printer_t *printer) {
     printer->super.open   = file_msg_printer_open;
     printer->super.close  = file_msg_printer_close;
     printer->super.output = file_msg_printer_output; 

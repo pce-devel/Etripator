@@ -27,21 +27,21 @@ typedef enum {
 	MSG_TYPE_ERROR=0,
 	MSG_TYPE_WARNING,
 	MSG_TYPE_INFO
-} msg_type;
+} msg_type_t;
 
 /**
  * \brief Initializes and allocates any resources necessary for the message printer.
  * \param [in] impl Message printer.
  * \return 0 upon success.
  */
-typedef int (*msg_printer_open)(void* impl);
+typedef int (*msg_printer_open_t)(void* impl);
 
 /**
  * \brief Deletes, clean up resources used by the message printer.
  * \param [in] impl Message printer.
  * \return 0 upon success.
  */
-typedef int (*msg_printer_close)(void* impl);
+typedef int (*msg_printer_close_t)(void* impl);
 
 /**
  * \brief Prints message.
@@ -54,18 +54,17 @@ typedef int (*msg_printer_close)(void* impl);
  * \param [in] args      Argument lists.
  * \return 0 upon success.
  */
-typedef int (*msg_printer_output)(void* impl, msg_type type, const char* file, size_t line, const char* function, const char* format, va_list args);
+typedef int (*msg_printer_output_t)(void* impl, msg_type_t type, const char* file, size_t line, const char* function, const char* format, va_list args);
 
 /**
  * \brief
  */
-typedef struct msg_printer_t
-{
-    msg_printer_open open;
-    msg_printer_close close;
-    msg_printer_output output;
-    struct msg_printer_t* next;
-} msg_printer;
+typedef struct msg_printer_t_ {
+    msg_printer_open_t open;
+    msg_printer_close_t close;
+    msg_printer_output_t output;
+    struct msg_printer_t_* next;
+} msg_printer_t;
 
 #define ERROR_MSG(format, ...) print_msg(MSG_TYPE_ERROR, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
 
@@ -86,7 +85,7 @@ void msg_printer_destroy();
  * \param [in] printer Message printer to be added to the list.
  * \return 0 upon success.
  */
-int msg_printer_add(msg_printer *printer);
+int msg_printer_add(msg_printer_t *printer);
 /**
  * Dispatch messages to printers.
  * \param type      Message type.
@@ -95,6 +94,6 @@ int msg_printer_add(msg_printer *printer);
  * \param function  Function where the print message command was issued.
  * \param format    Format string.
  */
-void print_msg(msg_type type, const char* file, size_t line, const char* function, const char* format, ...);
+void print_msg(msg_type_t type, const char* file, size_t line, const char* function, const char* format, ...);
 
 #endif // ETRIPATOR_MESSAGE_H
