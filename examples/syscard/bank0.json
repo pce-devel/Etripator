@@ -40,7 +40,7 @@
         "type": "code",
         "bank": "0",
         "org" : "e5da",
-        "size": "12cf",
+        "size": "26",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 

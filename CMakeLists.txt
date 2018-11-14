@@ -35,8 +35,8 @@ set(etripator_SRC
 #    labelsloader.c
 #    labelswriter.c
 #    irq.c
-#    memory.c
-#    memorymap.c
+    memory.c
+    memorymap.c
 #    rom.c
 #    cd.c
 #    ipl.c

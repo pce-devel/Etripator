@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef ETRIPATOR_CONFIG_H
+#define ETRIPATOR_CONFIG_H
 
 #if defined(_MSC_VER)
 #include "platform/windows/config_win.h"
@@ -55,4 +55,4 @@
 
 #endif
 
-#endif // CONFIG_H
+#endif // ETRIPATOR_CONFIG_H

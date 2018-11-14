@@ -15,23 +15,22 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef MESSAGE_FILE_H
-#define MESSAGE_FILE_H
+#ifndef ETRIPATOR_MESSAGE_FILE_H
+#define ETRIPATOR_MESSAGE_FILE_H
 
 #include "../message.h"
 
-typedef struct
-{
-    MsgPrinter super;
+typedef struct {
+    msg_printer super;
     FILE *out;
-} FileMsgPrinter;
+} file_msg_printer;
 
 /**
  * \brief Setups file message writer.
  * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-int SetupFileMsgPrinter(FileMsgPrinter *printer);
+int file_msg_printer_init(file_msg_printer *printer);
 
-#endif // MESSAGE_FILE_H
+#endif // ETRIPATOR_MESSAGE_FILE_H
 

@@ -144,9 +144,9 @@ static const MunitSuite section_suite = {
 };
 
 int main (int argc, char* const* argv) {
-    ConsoleMsgPrinter consolePrinter;
-    SetupMsgPrinters();
-    SetupConsoleMsgPrinter(&consolePrinter);
+    console_msg_printer console_printer;
+    msg_printer_init();
+    console_msg_printer_init(&console_printer);
 
     return munit_suite_main(&section_suite, NULL, argc, argv);
 }

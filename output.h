@@ -15,34 +15,14 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "memory.h"
-#include "message.h"
-/**
- * Create memory block.
- * \param [out] mem Memory block.
- * \param [in]  len Memory block size (in bytes).
- * \return 1 upon success, 0 if an error occured.
- */
-int mem_create(mem_t *mem, size_t len) {
-    mem->data = (uint8_t*)malloc(len);
-    if(!mem->data) {
-        ERROR_MSG("Unable to allocate memory : %s.\n", strerror(errno));
-        mem->len = 0;
-        return 0;
-    }
-    mem->len = len;
-    return 1;
-}
-/**
- * Destroy memory block.
- * \param [in] mem Memory block.
- */
-void destroyMemory(mem_t *mem) {
-    if(mem) {
-        mem->len = 0;
-        if(mem->data) {
-            free(mem->data);
-            mem->data = NULL;
-        }
-    }
-}
+#ifndef OUTPUT_H
+#define OUTPUT_H
+
+#include "config.h"
+
+typedef int (*OutputInstruction)(void* impl, const uint8_t *data, size_t size); // instruction name, addressing mode
+typedef int (*OutputLabelDecl)(void* impl, uint16_t page, uint32_t address, const char *name);
+typedef int (*OutputVariableDecl)(void* impl, uint16_t page, uint32_t address, const char *name, size_t element_count, size_t element_size);
+typedef int (*OutputData)(void* impl, uint16_t page, uint32_t address, const uint8_t *elements, size_t element_count, size_t element_size);
+typedef int (*OutputComment)(void* impl, uint16_t page, uint32_t address, const char *comment);
+#endif // OUTPUT_H

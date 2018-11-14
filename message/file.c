@@ -18,25 +18,22 @@
 #include "../config.h"
 #include "file.h"
 
-static const char* g_logFilename = "etripator.log";
+static const char* g_log_filename = "etripator.log";
 
 /**
  * \brief Opens log file.
  * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-static int FileMsgPrinterOpen(void* impl)
-{
-    FileMsgPrinter* printer = (FileMsgPrinter*)impl; 
-    if(NULL == printer)
-    {
+static int file_msg_printer_open(void* impl) {
+    file_msg_printer* printer = (file_msg_printer*)impl; 
+    if(!printer) {
         fprintf(stderr, "Invalid file logger.\n");
         return 1;
     }
-    printer->out = fopen(g_logFilename, "ab");
-    if(NULL == printer->out)
-    {
-        fprintf(stderr, "Failed to open log file %s: %s\n", g_logFilename, strerror(errno));
+    printer->out = fopen(g_log_filename, "ab");
+    if(!printer->out) {
+        fprintf(stderr, "Failed to open log file %s: %s\n", g_log_filename, strerror(errno));
         return 1;
     }
     return 0;
@@ -47,17 +44,14 @@ static int FileMsgPrinterOpen(void* impl)
  * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-static int FileMsgPrinterClose(void* impl)
-{
-    FileMsgPrinter* printer = (FileMsgPrinter*)impl; 
-    if((NULL == printer) || (NULL == printer->out))
-    {
+static int file_msg_printer_close(void* impl) {
+    file_msg_printer* printer = (file_msg_printer*)impl; 
+    if((!printer) || (!printer->out)) {
         fprintf(stderr, "Invalid file logger.\n");
         return 1;
     }
-    if(fclose(printer->out))
-    {
-        fprintf(stderr, "Failed to close log file %s : %s\n", g_logFilename, strerror(errno));
+    if(fclose(printer->out)) {
+        fprintf(stderr, "Failed to close log file %s : %s\n", g_log_filename, strerror(errno));
         return 1;
     }
     printer->out = NULL;
@@ -75,41 +69,35 @@ static int FileMsgPrinterClose(void* impl)
  * \param [in] args      Argument lists.
  * \return 0 upon success.
  */
-static int FileMsgPrinterOutput(void* impl, MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args)
-{
-    static const char *messageTypeName[] =
-    {
+static int file_msg_printer_output(void* impl, msg_type type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    static const char *msg_type_name[] = {
         "[Error]",
         "[Warning]",
         "[Info]"
     };
 
-    if(NULL == impl)
-    {
+    if(!impl) {
         fprintf(stderr, "Invalid file logger.\n");
         return 1;
     }
-    else 
-    {
-        struct timeval tv;
-        struct tm *now;
-        char dateString[128];
-        
-        FileMsgPrinter* printer = (FileMsgPrinter*)impl; 
-        
-        gettimeofday(&tv, NULL);
-        now = localtime(&tv.tv_sec);
-        strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", now);
-        
-        fprintf(printer->out, "%s %s.%03ld %s:%zd %s : ", messageTypeName[type], dateString, tv.tv_usec/1000, file, line, function);
-        vfprintf(printer->out, format, args);
-        fputc('\n', printer->out);
-        fflush(printer->out);
-        if(ferror(printer->out))
-        {
-            fprintf(stderr, "Failed to output log to %s: %s\n", g_logFilename, strerror(errno));
-            return 1;
-        }
+
+    struct timeval tv;
+    struct tm *now;
+    char dateString[128];
+    
+    file_msg_printer* printer = (file_msg_printer*)impl; 
+    
+    gettimeofday(&tv, NULL);
+    now = localtime(&tv.tv_sec);
+    strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", now);
+    
+    fprintf(printer->out, "%s %s.%03ld %s:%zd %s : ", msg_type_name[type], dateString, tv.tv_usec/1000, file, line, function);
+    vfprintf(printer->out, format, args);
+    fputc('\n', printer->out);
+    fflush(printer->out);
+    if(ferror(printer->out)) {
+        fprintf(stderr, "Failed to output log to %s: %s\n", g_log_filename, strerror(errno));
+        return 1;
     }
     return 0;
 }
@@ -119,11 +107,10 @@ static int FileMsgPrinterOutput(void* impl, MessageType type, const char* file, 
  * \param [in] impl Msg printer implementation.
  * \return 0 upon success.
  */
-int SetupFileMsgPrinter(FileMsgPrinter *printer)
-{
-    printer->super.open   = FileMsgPrinterOpen;
-    printer->super.close  = FileMsgPrinterClose;
-    printer->super.output = FileMsgPrinterOutput; 
+int file_msg_printer_init(file_msg_printer *printer) {
+    printer->super.open   = file_msg_printer_open;
+    printer->super.close  = file_msg_printer_close;
+    printer->super.output = file_msg_printer_output; 
     printer->out    = NULL;
     return 0;
 }

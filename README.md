@@ -32,13 +32,13 @@ The supported fields are :
 
  * **type** *(mandatory)* : values are **code**, **bin_data** or **inc_data**.
     * **code** indicates that the section will be disassembled and output as asm code.
-    * **inc_data** means that the section is pure data. but it will be output as code directives (.db).
-    * **bin_data** is also for data section. But the output file will contain binary data.
+    * **data** means that the section is pure data. but it will be output as code directives (.db).
+    * **binary** is also for data section. But the output file will contain binary data.
 
- * **bank** *(mandatory)* : bank of the current section. It will be used to compute the file offset of the section if the **offset** field is missing.
+ * **page** *(mandatory)* : memory page of the current section. It will be used to compute the file offset of the section if the **offset** field is missing.
 
 
- * **org**  *(mandatory)* : program counter location. Just like **bank**', it will be used to compute file offset if there's  no **offset** field.
+ * **logical**  *(mandatory)* : logical address. Just like **page**', it will be used to compute file offset if there's  no **offset** field.
 
 
  * **offset** : input file offset. This field is *mandatory* for CD-ROM disassembly.
@@ -63,24 +63,24 @@ Example:
     "cdbios_functions": {
         "filename": "syscard.asm",
         "type": "code",
-        "bank": "0",
-        "org" : "e000",
+        "page": "0",
+        "logical" : "e000",
         "size": "505",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
     "ex_colorcmd.impl": {
         "filename": "syscard.asm",
         "type": "code",
-        "bank": "0",
-        "org" : "e509",
+        "page": "0",
+        "logical" : "e509",
         "size": "ce",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
     "irq_vectors": {
         "filename": "syscard.asm",
-        "type": "inc_data",
-        "bank": "0",
-        "org": "fff6",
+        "type": "data",
+        "page": "0",
+        "logical": "fff6",
         "size": "a",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
         "data": { "element_size": 2, "elements_per_line": 1 }

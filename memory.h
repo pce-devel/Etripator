@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2018 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,31 +15,28 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef ETRIPATOR_MEMORY_H
+#define ETRIPATOR_MEMORY_H
 
 #include "config.h"
-
 /**
- * Byte array.
+ * Memory block.
  */
-typedef struct
-{
-    size_t   len;
-    uint8_t *data;
-} Memory;
-
+typedef struct {
+    size_t   len;  /**< Byte array length. **/
+    uint8_t *data; /**< Byte array. **/
+} mem_t;
 /**
- * Create memory unit.
- * \param [out] mem Memory unit.
- * \param [in]  len Memory size (in bytes).
+ * Create memory block.
+ * \param [out] mem Memory block.
+ * \param [in]  len Memory block size (in bytes).
  * \return 1 upon success, 0 if an error occured.
  */
-int createMemory(Memory *mem, size_t len);
+int mem_create(mem_t *mem, size_t len);
 /**
- * Destroy memory.
- * \param [in] mem Memory unit.
+ * Destroy memory block.
+ * \param [in] mem Memory block.
  */
-void destroyMemory(Memory *mem);
+void mem_destroy(mem_t *mem);
 
-#endif // MEMORY_H
+#endif // ETRIPATOR_MEMORY_H

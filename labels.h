@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2017 Vincent Cruz.
+    copyright (c) 2009--2018 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef LABELS_H
-#define LABELS_H
+#ifndef ETRIPATOR_LABELS_H
+#define ETRIPATOR_LABELS_H
 
 #include "config.h"
 
@@ -79,4 +79,4 @@ int getLabel(LabelRepository* repository, int index, uint16_t* logical, uint8_t*
  */
 int deleteLabels(LabelRepository* repository, uint16_t first, uint16_t end, uint8_t page);
 
-#endif // LABELS_H
+#endif // ETRIPATOR_LABELS_H

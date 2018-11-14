@@ -23,13 +23,11 @@
  * \param [in] impl Console message printer.
  * \return 0 upon success.
  */
-static int ConsoleMsgPrinterOpen(void* impl)
-{
-    ConsoleMsgPrinter* printer = (ConsoleMsgPrinter*)impl;
+static int console_msg_printer_open(void* impl) {
+    console_msg_printer* printer = (console_msg_printer*)impl;
     
-    printer->useEscapeCode = isatty(fileno(stdout)) ? 1 : 0;
-    if(!printer->useEscapeCode)
-    {
+    printer->use_escape_code = isatty(fileno(stdout)) ? 1 : 0;
+    if(!printer->use_escape_code) {
         fprintf(stderr, "Escape code disabled.\n");
     }
     return 0;
@@ -40,8 +38,7 @@ static int ConsoleMsgPrinterOpen(void* impl)
  * \param [in] impl Console message printer.
  * \return 0 upon success.
  */
-static int ConsoleMsgPrinterClose(void* impl)
-{
+static int console_msg_printer_close(void* impl) {
     (void)impl; // Unused atm.
     return 0;
 }
@@ -58,58 +55,48 @@ static int ConsoleMsgPrinterClose(void* impl)
  * \param [in] args      Argument lists.
  * \return 0 upon success.
  */
-static int ConsoleMsgPrinterOutput(void* impl, MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args)
-{
-    static const char *messageTypeName[] =
-    {
+static int console_msg_printer_output(void* impl, msg_type type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    static const char *msg_type_name[] = {
         "[Error]",
         "[Warning]",
         "[Info]"
     };
-    static const char *messageTypePrefix[] =
-    {
+    static const char *msg_type_prefix[] = {
         "\x1b[1;31m",
         "\x1b[1;33m",
         "\x1b[1;32m"
     };
 
-    if(NULL == impl)
-    {
+    if(!impl) {
         fprintf(stderr, "Invalid console logger.\n");
         return 1;
     }
-    else 
-    {
-        ConsoleMsgPrinter* printer = (ConsoleMsgPrinter*)impl;
-        struct timeval tv;
-        struct tm *now;
-        char dateString[128];
 
-        gettimeofday(&tv, NULL);
-        now = localtime(&tv.tv_sec);
-        strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", now);
+    console_msg_printer* printer = (console_msg_printer*)impl;
+    struct timeval tv;
+    struct tm *now;
+    char dateString[128];
 
-        if(printer->useEscapeCode)
-        {
-            fprintf(stderr, "%s%s\x1b[0m %s.%03ld \x1b[0;33m%s:%zd %s \x1b[1;37m : ", messageTypePrefix[type], messageTypeName[type], dateString, tv.tv_usec/1000, file, line, function);
-        }
-        else
-        {
-            fprintf(stderr, "%s %s.%06ld %s:%zd %s : ", messageTypeName[type], dateString, tv.tv_usec, file, line, function);
-        }
-        vfprintf(stderr, format, args);
-        
-        if(printer->useEscapeCode)
-        {
-            fprintf(stderr, "\x1b[0m\n");
-        }
-        else 
-        {
-            fputc('\n', stderr);
-        }
-        fflush(stderr);
-        return 0;
+    gettimeofday(&tv, NULL);
+    now = localtime(&tv.tv_sec);
+    strftime(dateString, 128, "%Y-%m-%d %H:%M:%S", now);
+
+    if(printer->use_escape_code) {
+        fprintf(stderr, "%s%s\x1b[0m %s.%03ld \x1b[0;33m%s:%zd %s \x1b[1;37m : ", msg_type_prefix[type], msg_type_name[type], dateString, tv.tv_usec/1000, file, line, function);
     }
+    else {
+        fprintf(stderr, "%s %s.%06ld %s:%zd %s : ", msg_type_name[type], dateString, tv.tv_usec, file, line, function);
+    }
+    vfprintf(stderr, format, args);
+    
+    if(printer->use_escape_code) {
+        fprintf(stderr, "\x1b[0m\n");
+    }
+    else {
+        fputc('\n', stderr);
+    }
+    fflush(stderr);
+    return 0;
 }
 
 /**
@@ -117,12 +104,11 @@ static int ConsoleMsgPrinterOutput(void* impl, MessageType type, const char* fil
  * \param [in] printer Console message printer.
  * \return 0 upon success.
  */
-int SetupConsoleMsgPrinter(ConsoleMsgPrinter *printer)
-{
-    printer->super.open   = ConsoleMsgPrinterOpen;
-    printer->super.close  = ConsoleMsgPrinterClose;
-    printer->super.output = ConsoleMsgPrinterOutput; 
-    printer->useEscapeCode = 0;
+int console_msg_printer_init(console_msg_printer *printer) {
+    printer->super.open   = console_msg_printer_open;
+    printer->super.close  = console_msg_printer_close;
+    printer->super.output = console_msg_printer_output; 
+    printer->use_escape_code = 0;
     return 0;
 }
 

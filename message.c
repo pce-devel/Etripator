@@ -18,24 +18,21 @@
 #include "config.h"
 #include "message.h"
 
-static MsgPrinter* g_MsgPrinter = NULL;
+static msg_printer* g_msg_printer = NULL;
 
 /**
  * Setup global message printer list.
  */
-void SetupMsgPrinters()
-{
-    g_MsgPrinter = NULL;
+void msg_printer_init() {
+    g_msg_printer = NULL;
     // nothing much atm...
 }
 /**
  * Releases the resources used by message printers.
  */
-void DestroyMsgPrinters()
-{
-    MsgPrinter* printer;
-    for(printer=g_MsgPrinter; NULL != printer; printer=printer->next)
-    {
+void msg_printer_destroy() {
+    msg_printer* printer;
+    for(printer=g_msg_printer; NULL != printer; printer=printer->next) {
         printer->close(printer);
     }
 }
@@ -44,14 +41,12 @@ void DestroyMsgPrinters()
  * \param [in] printer Message printer to be added to the list.
  * \return 0 upon success.
  */
-int AddMsgPrinter(MsgPrinter *printer)
-{
-    if(printer->open(printer))
-    {
+int msg_printer_add(msg_printer *printer) {
+    if(printer->open(printer)) {
         return 1;
     }
-    printer->next = g_MsgPrinter;
-    g_MsgPrinter = printer;
+    printer->next = g_msg_printer;
+    g_msg_printer = printer;
     return 0;
 }
 /**
@@ -62,16 +57,13 @@ int AddMsgPrinter(MsgPrinter *printer)
  * \param function  Function where the print message command was issued.
  * \param format    Format string.
  */
-void PrintMsg(MessageType type, const char* file, size_t line, const char* function, const char* format, ...)
-{
-    MsgPrinter* printer;
+void print_msg(msg_type type, const char* file, size_t line, const char* function, const char* format, ...) {
+    msg_printer* printer;
     char* tmp = strdup(file);
     char* filename = basename(file);
     
-    for(printer=g_MsgPrinter; NULL != printer; printer=printer->next)
-    {
-        if(printer->output)
-        {
+    for(printer=g_msg_printer; NULL != printer; printer=printer->next) {
+        if(printer->output) {
             va_list args; 
             va_start(args, format);
             printer->output(printer, type, filename, line, function, format, args);
@@ -80,5 +72,4 @@ void PrintMsg(MessageType type, const char* file, size_t line, const char* funct
     }
     free(tmp);
 }
-
 

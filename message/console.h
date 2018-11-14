@@ -15,23 +15,22 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef MESSAGE_CONSOLE_H
-#define MESSAGE_CONSOLE_H
+#ifndef ETRIPATOR_MESSAGE_CONSOLE_H
+#define ETRIPATOR_MESSAGE_CONSOLE_H
 
 #include "../message.h"
 
-typedef struct
-{
-    MsgPrinter super;
-    int useEscapeCode; 
-} ConsoleMsgPrinter;
+typedef struct {
+    msg_printer super;
+    int use_escape_code; 
+} console_msg_printer;
 
 /**
  * \brief Setups console message writer.
  * \param [in] printer Console message printer.
  * \return 0 upon success.
  */
-int SetupConsoleMsgPrinter(ConsoleMsgPrinter *printer);
+int console_msg_printer_init(console_msg_printer *printer);
 
-#endif // MESSAGE_FILE_H
+#endif // ETRIPATOR_MESSAGE_FILE_H
 

@@ -15,18 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef ROM_H
-#define ROM_H
+#ifndef ETRIPATOR_ROM_H
+#define ETRIPATOR_ROM_H
 
-#include <stdint.h>
+#include "config.h"
 #include "memorymap.h"
 
 /**
  * Load ROM from file.
  * \param [in]  filename ROM filename.
- * \param [out] memmap   Memory map.
+ * \param [out] map      Memory map.
  * \return 1 upon success, 0 if an error occured.
  */
-int loadROM(const char* filename, MemoryMap* memmap);
+int load_rom(const char* filename, memmap_t* map);
 
-#endif // ROM_H
+#endif // ETRIPATOR_ROM_H
