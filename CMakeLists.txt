@@ -31,7 +31,7 @@ set(etripator_SRC
     section.c
 #    sectionsloader.c
 #    opcodes.c
-#    labels.c
+    labels.c
 #    labelsloader.c
 #    labelswriter.c
     irq.c

@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2018 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,19 +20,19 @@
 
 #include "config.h"
 
-typedef struct LabelRepositoryImpl LabelRepository;
+typedef struct label_repository_impl label_repository_t;
 
 /**
  * Create label repository.
  * \return A pointer to a label repository or NULL if an error occured.
  */
-LabelRepository* createLabelRepository();
+label_repository_t* label_repository_create();
 
 /**
  * Release label repository resources.
  * \param [in,out] repository Label repository.
  */
-void deleteLabelRepository(LabelRepository* repository);
+void label_repository_destroy(label_repository_t* repository);
 
 /**
  * Add label to repository.
@@ -41,7 +41,7 @@ void deleteLabelRepository(LabelRepository* repository);
  * \param [in]     logical    Logical address.
  * \param [in]     page       Memory page.
  */
-int addLabel(LabelRepository* repository, const char* name, uint16_t logical, uint8_t page);
+int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page);
 
 /**
  * Find a label by its address.
@@ -51,14 +51,14 @@ int addLabel(LabelRepository* repository, const char* name, uint16_t logical, ui
  * \param [out] name        Label name (if found).
  * \return 1 if a label was found, 0 otherwise.
  */
-int findLabel(LabelRepository* repository, uint16_t logical, uint8_t page, char** name);
+int label_repository_find(label_repository_t* repository, uint16_t logical, uint8_t page, char** name);
 
 /**
  * Get the number of labels stored in the repository.
  * \param [in] repository Label repository.
  * \return Label count.
  */
-int getLabelCount(LabelRepository* repository);
+int label_repository_size(label_repository_t* repository);
 
 /**
  * Retrieve the label at the specified index.
@@ -69,7 +69,8 @@ int getLabelCount(LabelRepository* repository);
  * \param [out] name      Label name.
  * \return 1 if a label exists for the specified index, 0 otherwise.
  */
-int getLabel(LabelRepository* repository, int index, uint16_t* logical, uint8_t* page, char** name);
+int label_repository_get(label_repository_t* repository, int index, uint16_t* logical, uint8_t* page, char** name);
+
 /**
  * Delete labels
  * \param [in]  repository  Label repository.
@@ -77,6 +78,6 @@ int getLabel(LabelRepository* repository, int index, uint16_t* logical, uint8_t*
  * \param [in]  end         End of the logical address range.
  * \param [in]  page        Memory page.
  */
-int deleteLabels(LabelRepository* repository, uint16_t first, uint16_t end, uint8_t page);
+int label_repository_delete(label_repository_t* repository, uint16_t first, uint16_t end, uint8_t page);
 
 #endif // ETRIPATOR_LABELS_H
