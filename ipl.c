@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 
 #define IPL_DATA_SIZE 0xb2
 
-static int readIPLHeader(IPL *out, FILE *in, const char *filename) {
+static int ipl_read_header(ipl_t *out, FILE *in, const char *filename) {
     size_t nRead;
     nRead = fread(out->load_start_record, 1, 3, in);
     if(nRead != 3) {
@@ -111,7 +111,7 @@ static int readIPLHeader(IPL *out, FILE *in, const char *filename) {
     return 1;
 }
 
-void printIPL(IPL *in) {
+void ipl_print(ipl_t *in) {
     INFO_MSG("IPLBLK: hi:%02x mid:%02x lo:%02x", in->load_start_record[0], in->load_start_record[1], in->load_start_record[2]); 
     INFO_MSG("IPLBKN: %02x", in->load_sector_count);
     INFO_MSG("IPLSTA: hi:%02x lo:%02x", in->load_store_address[1], in->load_store_address[0]);
@@ -138,18 +138,18 @@ void printIPL(IPL *in) {
  * \param [in] filename Input filename.
  * \return 0 on error, 1 otherwise.
  */
-int readIPL(IPL *out, const char *filename) {
+int ipt_read(ipl_t *out, const char *filename) {
     FILE *in = fopen(filename, "rb");
-    if(NULL == in) {
+    if(in == NULL) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
         return 0;
     }
 
     int ret = 0;
     fseek(in, 0x800, SEEK_SET);
-    ret = readIPLHeader(out, in, filename);
+    ret = ipl_read_header(out, in, filename);
     if(ret) {
-        printIPL(out);
+        ipl_print(out);
     }
     fclose(in);
     return ret;
@@ -162,9 +162,9 @@ int readIPL(IPL *out, const char *filename) {
  * \param [out] count  Section count.
  * \return 0 on error, 1 otherwise.
  */
-int getIPLSections(IPL *in, Section **out, int *count) {
+int ipl_sections(ipl_t *in, section_t **out, int *count) {
     int i, j, k, extra;
-    Section *section;
+    section_t *section;
     static const char *section_name[2] = { "cd_start", "gfx_start" };
     static const char *section_filename[2] = { "cd_start.asm", "gfx_start.bin" };
     uint32_t record;
@@ -178,7 +178,7 @@ int getIPLSections(IPL *in, Section **out, int *count) {
     }
         
     j = *count;
-    section = (Section*)realloc(*out, (j+extra) * sizeof(Section));
+    section = (section_t*)realloc(*out, (j+extra) * sizeof(section_t));
     if(NULL == section) {
         ERROR_MSG("Failed to add extra sections.");
         return 0;
@@ -197,25 +197,25 @@ int getIPLSections(IPL *in, Section **out, int *count) {
     // "CD boot"
     if(in->load_sector_count) {
         record = (in->load_start_record[0] << 16) | (in->load_start_record[1] << 8) | in->load_start_record[2];
-        section[j].name     = strdup(section_name[0]);
-        section[j].type     = Code;
-        section[j].bank     = section[j].mpr[in->load_exec_address[1]>>5];
-        section[j].org      = (in->load_exec_address[1] << 8) | in->load_exec_address[0];
-        section[j].offset   = record * 2048;
-        section[j].size     = in->load_sector_count * 2048;
-        section[j].filename = strdup(section_filename[0]);
+        section[j].name    = strdup(section_name[0]);
+        section[j].type    = Code;
+        section[j].page    = section[j].mpr[in->load_exec_address[1]>>5];
+        section[j].logical = (in->load_exec_address[1] << 8) | in->load_exec_address[0];
+        section[j].offset  = record * 2048;
+        section[j].size    = in->load_sector_count * 2048;
+        section[j].output  = strdup(section_filename[0]);
         j++;
     }
     // "GFX"
     if(in->opening_gfx_sector_count) {
         record = (in->opening_gfx_record[0] << 16) | (in->opening_gfx_record[1] << 8) | in->opening_gfx_record[2];
-        section[j].name     = strdup(section_name[1]);
-        section[j].type     = BinData;
-        section[j].bank     = section[j].mpr[in->opening_gfx_read_address[1]>>5];
-        section[j].org      = (in->opening_gfx_read_address[1] << 8) | in->opening_gfx_read_address[0];
-        section[j].offset   = record * 2048;
-        section[j].size     = in->opening_gfx_sector_count * 2048;
-        section[j].filename = strdup(section_filename[1]);
+        section[j].name    = strdup(section_name[1]);
+        section[j].type    = Binary;
+        section[j].page    = section[j].mpr[in->opening_gfx_read_address[1]>>5];
+        section[j].logical = (in->opening_gfx_read_address[1] << 8) | in->opening_gfx_read_address[0];
+        section[j].offset  = record * 2048;
+        section[j].size    = in->opening_gfx_sector_count * 2048;
+        section[j].output  = strdup(section_filename[1]);
         j++;
     }
     return 1;

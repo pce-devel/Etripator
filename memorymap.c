@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2018 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,16 +26,17 @@ int memmap_init(memmap_t *map) {
     int i, ret;
     memset(map, 0, sizeof(memmap_t));
     /* Allocate main (or work) RAM */
-    ret = mem_create(&map->ram.main, 8192);
+    ret = mem_create(&map->mem[PCE_MEM_BASE_RAM], 8192);
     if (!ret) {
         ERROR_MSG("Failed to allocate main memory!\n");
         return ret;
     }
     /* Main RAM is mapped to pages 0xf8-0xfb (included). */
     /* Pages 0xf9 to 0xfb mirror page 0xf8. */
-    for (i = 0xf8; i <= 0xfb; i++) {
-        map->page[i] = &map->ram.main.data[(i - 0xf8) * 8192] - (i * 8192);
+    for(i=0xf8; i<=0xfb; i++) {
+        map->page[i] = &(map->mem[PCE_MEM_BASE_RAM].data[0]);
     }
+    
     /* ROM and syscard RAM will be initialized later. */
 
     /* Clear mprs. */
@@ -45,46 +46,15 @@ int memmap_init(memmap_t *map) {
     return ret;
 }
 /**
- * Adds CD RAM to memory map.
- * \param map Memory map.
- * \return 1 upon success, 0 if an error occured.
- */
-int memmap_add_cd(memmap_t *map) {
-    int i, ret;
-    /* Allocate CD RAM */
-    ret = mem_create(&map->ram.cd, 8 * 8192);
-    if (!ret) {
-        ERROR_MSG("Failed to allocate cd memory!\n");
-        mem_destroy(map);
-        return ret;
-    }
-    /* CD RAM is mapped to pages 0x80-0x88 (included). */
-    for (i = 0x80; i <= 0x88; i++) {
-        memmap->page[i] = &memmap->ram.cd.data[(i - 0x80) * 8192] - (i * 8192);
-    }
-    /* Allocate System Card RAM */
-    ret = createMemory(&memmap->ram.syscard, 24 * 8192);
-    if (!ret) {
-        ERROR_MSG("Failed to allocate system card memory!\n");
-        mem_destroy(map);
-        return ret;
-    }
-    /* System Card RAM is mapped to pages 0x68-0x80. */
-    for (i = 0x68; i < 0x80; i++) {
-        map->page[i] = &map->ram.syscard.data[(i - 0x68) * 8192] - (i * 8192);
-    }
-    return ret;
-}
-/**
  * Releases resources used by the memory map.
  * \param map Memory map.
  */
 void memmap_destroy(memmap_t *map) {
-    mem_destroy(&map->rom);
-    mem_destroy(&map->ram.main);
-    mem_destroy(&map->ram.cd);
-    mem_destroy(&map->ram.syscard);
-    memset(map, 0, sizeof(memorymap_t));
+    int i;
+    for(i=0; i<PCE_MEM_COUNT; i++) {
+        mem_destroy(&map->mem[i]);
+    }
+    memset(map, 0, sizeof(memmap_t));
 }
 /**
  * Get the memory page associated to a logical address.
@@ -104,18 +74,14 @@ uint8_t memmap_page(memmap_t* map, uint16_t logical) {
  */
 uint8_t memmap_read(memmap_t *map, size_t logical) {
     uint8_t i = memmap_page(map, logical);
-    uint32_t physical = (i << 13) | (logical & 0x1fff);
-    if (map->page[i]) {
-        return map->page[i][physical];
-    }
-    return 0xff;
+    return (map->page[i]) ? map->page[i][logical & 0x1fff] : 0xff;
 }
 /**
  * Update mprs.
  * \param [in][out] map Memory map.
  * \param [in]      mpr Memory page registers.
  */
-void memmap_mpr(memmap_t *map, const uint8_t *mpr) #
+void memmap_mpr(memmap_t *map, const uint8_t *mpr) {
     memcpy(map->mpr, mpr, 8);
 }
 

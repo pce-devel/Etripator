@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef IRQ_H
-#define IRQ_H
+#ifndef ETRIPATOR_IRQ_H
+#define ETRIPATOR_IRQ_H
 
 #include "config.h"
 #include "section.h"
@@ -24,11 +24,11 @@
 
 /**
  * Get irq code offsets from rom.
- * \param [in]  memmcp  Memory map.
+ * \param [in]  map Memory map.
  * \param [out] section Sections.
  * \param [out] count  Section count.
  * \return 0 on error, 1 otherwise.
  */
-int getIRQSections(MemoryMap* memmap, Section **section, int *count);
+int irq_read(memmap_t* map, section_t **section, int *count);
 
-#endif /* IRQ_H */
+#endif // ETRIPATOR_IRQ_H

@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2018 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,6 +26,6 @@
  * \param [out] map      Memory map.
  * \return 1 upon success, 0 if an error occured.
  */
-int load_rom(const char* filename, memmap_t* map);
+int rom_load(const char* filename, memmap_t* map);
 
 #endif // ETRIPATOR_ROM_H

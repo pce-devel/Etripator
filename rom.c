@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * \param [out] memmap   Memory map.
  * \return 1 upon success, 0 if an error occured.
  */
-int load_rom(const char* filename, memmap_t* map) {
+int rom_load(const char* filename, memmap_t* map) {
     FILE   *in;
     int i;
     size_t size;
@@ -55,49 +55,46 @@ int load_rom(const char* filename, memmap_t* map) {
         }
     }
     /* Allocate rom storage */
-    if(!mem_create(&map->rom, (size + 0x1fff) & ~0x1fff)) {
+    if(!mem_create(&map->mem[PCE_MEM_ROM], (size + 0x1fff) & ~0x1fff)) {
         ERROR_MSG("Failed to allocate ROM storage : %s", strerror(errno));
         goto err_0;
     }
     /* Fill rom with 0xff */
-    memset(map->rom.data, 0xff, map->rom.len);
+    memset(map->mem[PCE_MEM_ROM].data, 0xff, map->mem[PCE_MEM_ROM].len);
     /* Read ROM data */
-    count = (size < map->rom.len) ? size : map->rom.len;
-    nread = fread(map->rom.data, 1, count, in);
+    count = (size < map->mem[PCE_MEM_ROM].len) ? size : map->mem[PCE_MEM_ROM].len;
+    nread = fread(map->mem[PCE_MEM_ROM].data, 1, count, in);
     if(nread != count) {
         ERROR_MSG("Failed to read ROM data from %s : %s", filename, strerror(errno));
         goto err_1;
     }
     fclose(in);
-    /* Initialize ROM pages (from mednafen source code). */
-    /* Note : the decrement by (i*8192) is a trick to avoid doing a 
-     *        bitwise with the address when reading a byte from that
-     *        page. */
-    if(map->rom.len == 0x60000) {
+    /* Initialize ROM pages. */
+    if(map->mem[PCE_MEM_ROM].len == 0x60000) {
         for(i=0; i<64; i++) {
-            map->page[i] = &map->rom.data[(i & 0x1f) * 8192] - (i*8192);
+            map->page[i] = &map->mem[PCE_MEM_ROM].data[(i & 0x1f) * 8192];
         }
         for(i=64; i<128; i++) {
-            map->page[i] = &map->rom.data[((i & 0x0f) + 32) * 8192] - (i*8192);
+            map->page[i] = &map->mem[PCE_MEM_ROM].data[((i & 0x0f) + 32) * 8192];
         }
     }
-    else if(map->rom.len == 0x80000) {
+    else if(map->mem[PCE_MEM_ROM].len == 0x80000) {
         for(i=0; i<64; i++) {
-            map->page[i] = &map->rom.data[(i & 0x3f) * 8192] - (i*8192);
+            map->page[i] = &map->mem[PCE_MEM_ROM].data[(i & 0x3f) * 8192];
         }
         for(i=64; i<128; i++) {
-            map->page[i] = &map->rom.data[((i & 0x1f) + 32) * 8192] - (i*8192);
+            map->page[i] = &map->mem[PCE_MEM_ROM].data[((i & 0x1f) + 32) * 8192];
         }
     }
     else {
         for(i=0; i<128; i++) {
-            uint8_t bank = i % (memmap->rom.len / 8192);
-            memmap->page[i] = &memmap->rom.data[bank * 8192] - (i*8192);
+            uint8_t bank = i % (map->mem[PCE_MEM_ROM].len / 8192);
+            map->page[i] = &map->mem[PCE_MEM_ROM].data[bank * 8192];
         }
     }
     return 1;
 err_1:
-    mem_destroy(&map->rom);
+    mem_destroy(&map->mem[PCE_MEM_ROM]);
 err_0:
     fclose(in);
     return 0;

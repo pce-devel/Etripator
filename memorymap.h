@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2018 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,30 +21,31 @@
 #include "memory.h"
 
 /**
+ * PC Engine memory 
+ */
+enum {
+    PCE_MEM_ROM = 0,
+    PCE_MEM_BASE_RAM,
+    PCE_MEM_CD_RAM,
+    PCE_MEM_SYSCARD_RAM,
+    PCE_MEM_COUNT
+};
+
+/**
  * PC Engine memory map.
  */
 typedef struct {
-    mem_t rom;
-    struct {
-        mem_t main;
-        mem_t cd;
-        mem_t syscard;
-    } ram;
+    mem_t mem[PCE_MEM_COUNT];
     uint8_t *page[0x100];
     uint8_t mpr[8];
 } memmap_t;
+
 /**
  * Initializes memory map.
  * \param map Memory map.
  * \return 1 upon success, 0 if an error occured.
  */
 int memmap_init(memmap_t *map);
-/**
- * Adds CD RAM to memory map.
- * \param map Memory map.
- * \return 1 upon success, 0 if an error occured.
- */
-int memmap_add_cd(memmap_t *map);
 /**
  * Releases resources used by the memory map.
  * \param map Memory map.

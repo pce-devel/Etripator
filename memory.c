@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2018 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ int mem_create(mem_t *mem, size_t len) {
  * Destroy memory block.
  * \param [in] mem Memory block.
  */
-void destroyMemory(mem_t *mem) {
+void mem_destroy(mem_t *mem) {
     if(mem) {
         mem->len = 0;
         if(mem->data) {

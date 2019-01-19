@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2017 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,8 +24,7 @@
 /**
  * IPL Information block data format
  */
-typedef struct
-{
+typedef struct {
     /** IPLBLK - load start record no. of CD (3 bytes high/medium/low) 
      *           this is where the program is stored. **/
     uint8_t load_start_record[3];
@@ -69,7 +68,7 @@ typedef struct
     uint8_t program_name[16];
     /** EXTRA - (6 bytes) **/
     uint8_t extra[6];
-} IPL;
+} ipl_t;
 /*
  IPL graphic block
  color palette - 1 record
@@ -81,7 +80,7 @@ typedef struct
  * Display IPL infos.
  * \param [in] in IPL infos.
  */
-void printIPL(IPL *in);
+void ipl_print(ipl_t *in);
 
 /**
  * Read IPL data from file.
@@ -89,7 +88,7 @@ void printIPL(IPL *in);
  * \param [in] filename Input filename.
  * \return 0 on error, 1 otherwise.
  */
-int readIPL(IPL *out, const char *filename);
+int ipl_read(ipl_t *out, const char *filename);
 
 /**
  * Get irq code offsets from IPL.
@@ -98,6 +97,6 @@ int readIPL(IPL *out, const char *filename);
  * \param [out] count  Section count.
  * \return 0 on error, 1 otherwise.
  */
-int getIPLSections(IPL *in, Section **out, int *count);
+int ipl_sections(ipl_t *in, section_t **out, int *count);
 
 #endif // IPL_H
