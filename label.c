@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "labels.h"
+#include "label.h"
 #include "message.h"
 
 #define LABEL_ARRAY_INC 16
@@ -119,6 +119,7 @@ static int label_set(label_repository_t* repository, label_t *label, const char*
  */
 int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page) {
     char *dummy;
+
     if(label_repository_find(repository, logical, page, &dummy)) {
         if(strcmp(name, dummy)) {
         //    return 0;
@@ -224,7 +225,7 @@ int label_repository_get(label_repository_t* repository, int index, uint16_t* lo
  * \param [in]  page        Memory page.
  */
 int label_repository_delete(label_repository_t* repository, uint16_t first, uint16_t end, uint8_t page) {
-    size_t i;
+    size_t i;        
     for(i=0; i<repository->last; i++) {
         if( (repository->labels[i].page == page) &&
             (repository->labels[i].logical >= first) && 
@@ -232,6 +233,7 @@ int label_repository_delete(label_repository_t* repository, uint16_t first, uint
             if(repository->last) {
                 repository->last--;
                 memcpy(&repository->labels[i], &repository->labels[repository->last], sizeof(label_t));
+                i--;
             }
         }
     }

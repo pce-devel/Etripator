@@ -31,9 +31,9 @@ set(etripator_SRC
     section.c
 #    sectionsloader.c
 #    opcodes.c
-    labels.c
-#    labelsloader.c
-#    labelswriter.c
+    label.c
+#    label/loader.c
+#    label/writer.c
     irq.c
     memory.c
     memorymap.c
@@ -75,7 +75,6 @@ add_custom_target(doc
          COMMENT "Generating API documentation with Doxygen"
          VERBATIM )
          
-# [todo] move to test/CMakeLists.txt
 add_library(munit STATIC ${CMAKE_CURRENT_SOURCE_DIR}/test/munit/munit.c)
 target_include_directories(munit PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/munit>)
 set_property(TARGET munit PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/munit>)
@@ -85,4 +84,10 @@ target_compile_options(section_tests PRIVATE -Wall -Wshadow -Wextra)
 target_link_libraries(section_tests munit ${JANSSON_LIBRARIES})
 target_include_directories(section_tests PRIVATE ${PROJECT_SOURCE_DIR})
 add_test(section_tests section_tests)
+
+add_executable(label_tests test/label.c label.c message.c message/file.c message/console.c)
+target_compile_options(label_tests PRIVATE -Wall -Wshadow -Wextra)
+target_link_libraries(label_tests munit ${JANSSON_LIBRARIES})
+target_include_directories(label_tests PRIVATE ${PROJECT_SOURCE_DIR})
+add_test(label_tests label_tests)
 # [todo] copy data directory

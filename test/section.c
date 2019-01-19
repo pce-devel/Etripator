@@ -3,7 +3,25 @@
 #include "message.h"
 #include "message/console.h"
 
-MunitResult SortSectionTest(const MunitParameter params[], void* fixture) {
+void* setup(const MunitParameter params[], void* user_data) {
+    (void) params;
+    (void) user_data;
+    
+    console_msg_printer_t *printer = (console_msg_printer_t*)malloc(sizeof(console_msg_printer_t));
+    
+    msg_printer_init();    
+    console_msg_printer_init(printer);
+    msg_printer_add((msg_printer_t*)printer);
+
+    return (void*)printer;
+}
+
+void tear_down(void* fixture) {
+    msg_printer_destroy();
+    free(fixture);
+}
+
+MunitResult section_sort_test(const MunitParameter params[], void* fixture) {
     (void)params;
     (void)fixture;
     
@@ -57,7 +75,7 @@ MunitResult SortSectionTest(const MunitParameter params[], void* fixture) {
     return MUNIT_OK;
 }
 
-MunitResult LoadSectionTest(const MunitParameter params[], void* fixture) {
+MunitResult section_load_test(const MunitParameter params[], void* fixture) {
     (void)params;
     (void)fixture;
 
@@ -134,8 +152,8 @@ MunitResult LoadSectionTest(const MunitParameter params[], void* fixture) {
 }
 
 static MunitTest section_tests[] = {
-    { "/sort", SortSectionTest, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
-    { "/load", LoadSectionTest, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/sort", section_sort_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/load", section_load_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
@@ -144,9 +162,5 @@ static const MunitSuite section_suite = {
 };
 
 int main (int argc, char* const* argv) {
-    console_msg_printer_t console_printer;
-    msg_printer_init();
-    console_msg_printer_init(&console_printer);
-
     return munit_suite_main(&section_suite, NULL, argc, argv);
 }

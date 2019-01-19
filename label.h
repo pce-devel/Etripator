@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef ETRIPATOR_LABELS_H
-#define ETRIPATOR_LABELS_H
+#ifndef ETRIPATOR_LABEL_H
+#define ETRIPATOR_LABEL_H
 
 #include "config.h"
 
@@ -80,4 +80,4 @@ int label_repository_get(label_repository_t* repository, int index, uint16_t* lo
  */
 int label_repository_delete(label_repository_t* repository, uint16_t first, uint16_t end, uint8_t page);
 
-#endif // ETRIPATOR_LABELS_H
+#endif // ETRIPATOR_LABEL_H
