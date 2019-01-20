@@ -32,8 +32,8 @@ set(etripator_SRC
 #    sectionsloader.c
 #    opcodes.c
     label.c
-    label/loader.c
-    label/writer.c
+    label/load.c
+    label/save.c
     irq.c
     memory.c
     memorymap.c
@@ -50,11 +50,12 @@ set(etripator_HDR
     jsonhelpers.h
 #    decode.h
     section.h
-#    sectionsloader.h
-#    opcodes.h
+#    section/load.h
+#    section/save.h
+    opcodes.h
     label.h
-    label/loader.h
-    label/writer.h
+    label/load.h
+    label/save.h
     irq.h
     memory.h
     memorymap.h

@@ -15,18 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef ETRIPATOR_LABEL_WRITER_H
-#define ETRIPATOR_LABEL_WRITER_H
+#ifndef ETRIPATOR_LABEL_LOAD_H
+#define ETRIPATOR_LABEL_LOAD_H
 
 #include "../label.h"
 
 /**
- * Write labels to file.
- * \param [in] filename Configuration file.
- * \param [in] reposity Label repository.
- * \return 1 if the labels in the repository were succesfully written to the file.
+ * Load labels from file.
+ * \param [in]  filename Input filename.
+ * \param [out] repository Label repository.
+ * \return 1 if the labels contained in the file was succesfully added to the repository.
  *         0 if an error occured.
  */
-int label_repository_write(const char* filename, label_repository_t* repository);
+int label_repository_load(const char* filename, label_repository_t* repository);
 
-#endif // ETRIPATOR_LABEL_WRITER_H
+#endif // ETRIPATOR_LABEL_LOAD_H

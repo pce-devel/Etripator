@@ -18,7 +18,7 @@
 #include <jansson.h>
 #include "../message.h"
 #include "../jsonhelpers.h"
-#include "loader.h"
+#include "load.h"
 
 #define MAX_LABEL_NAME 128
 

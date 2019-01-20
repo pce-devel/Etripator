@@ -15,36 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include <errno.h>
-#include <string.h>
+#ifndef ETRIPATOR_LABEL_SAVE_H
+#define ETRIPATOR_LABEL_SAVE_H
 
-#include "writer.h"
-#include "../message.h"
+#include "../label.h"
 
 /**
- * Write labels to file.
+ * Save labels to file.
  * \param [in] filename Configuration file.
  * \param [in] reposity Label repository.
  * \return 1 if the labels in the repository were succesfully written to the file.
  *         0 if an error occured.
  */
-int label_repository_write(const char* filename, label_repository_t* repository) {
-    FILE *stream = fopen(filename, "wb");
-    int i, count = label_repository_size(repository);
-    if(stream == NULL) {
-        ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    fprintf(stream, "[\n");
-    for(i=0; i<count; i++) {
-        uint16_t logical;
-        uint8_t page;
-        char* name;
-        if(label_repository_get(repository, i, &logical, &page, &name)) {
-            fprintf(stream, "\t{ \"name\":\"%s\", \"logical\":\"%04x\", \"page\":\"%02x\"}%c\n", name, logical, page, (i<(count-1)) ? ',' : ' ');
-        }
-    }
-    fprintf(stream, "]\n");
-    fclose(stream);
-    return 1;
-}
+int label_repository_save(const char* filename, label_repository_t* repository);
+
+#endif // ETRIPATOR_LABEL_SAVE_H
