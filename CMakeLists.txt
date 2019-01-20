@@ -29,7 +29,8 @@ set(etripator_SRC
     jsonhelpers.c
 #    decode.c
     section.c
-#    sectionsloader.c
+    section/load.c
+    section/save.c
 #    opcodes.c
     label.c
     label/load.c
@@ -50,8 +51,8 @@ set(etripator_HDR
     jsonhelpers.h
 #    decode.h
     section.h
-#    section/load.h
-#    section/save.h
+    section/load.h
+    section/save.h
     opcodes.h
     label.h
     label/load.h

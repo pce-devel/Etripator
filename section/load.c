@@ -15,12 +15,14 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "load.h"
+
 #include "../jsonhelpers.h"
 #include "../message.h"
-#include "load.h"
 #include <jansson.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 
 static section_type_t json_validate_type(const char *str) {
     int i;

@@ -16,6 +16,7 @@
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "save.h"
+
 #include "../jsonhelpers.h"
 #include "../message.h"
 #include <jansson.h>
