@@ -2,7 +2,7 @@ add_library(munit STATIC ${CMAKE_CURRENT_LIST_DIR}/munit/munit.c)
 target_include_directories(munit PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/munit>)
 set_property(TARGET munit PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/munit>)
 
-add_executable(section_tests section.c ../section.c ../jsonhelpers.c ../message.c ../message/file.c ../message/console.c)
+add_executable(section_tests section.c ../section.c ../section/load.c ../section/save.c ../jsonhelpers.c ../message.c ../message/file.c ../message/console.c)
 target_compile_options(section_tests PRIVATE -Wall -Wshadow -Wextra)
 target_link_libraries(section_tests munit ${JANSSON_LIBRARIES})
 target_include_directories(section_tests PRIVATE ${PROJECT_SOURCE_DIR})
