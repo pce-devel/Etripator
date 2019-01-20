@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2017 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,11 +16,11 @@
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <jansson.h>
-#include "message.h"
-#include "jsonhelpers.h"
-#include "labelsloader.h"
+#include "../message.h"
+#include "../jsonhelpers.h"
+#include "loader.h"
 
-#define MAX_LABEL_NAME 64
+#define MAX_LABEL_NAME 128
 
 /**
  * Load labels from file.
@@ -29,8 +29,7 @@
  * \return 1 if the labels contained in the file were succesfully added to the repository.
  *         0 if an error occured.
  */
-int loadLabels(const char* filename, LabelRepository* repository)
-{
+int label_repository_load(const char* filename, label_repository_t* repository) {
     json_t* root;
     json_t* value;
     json_error_t err;
@@ -66,7 +65,7 @@ int loadLabels(const char* filename, LabelRepository* repository)
 
         // logical
         tmp = json_object_get(value, "logical");
-        if(!json_validateInt(tmp, &num)) {
+        if(!json_validate_int(tmp, &num)) {
             ERROR_MSG("Invalid or missing logical address.");
             return 0;
         }
@@ -77,7 +76,7 @@ int loadLabels(const char* filename, LabelRepository* repository)
         logical = (uint16_t)num;
         // page
         tmp = json_object_get(value, "page");
-        if(!json_validateInt(tmp, &num)) {
+        if(!json_validate_int(tmp, &num)) {
             ERROR_MSG("Invalid or missing page.");
             return 0;
         }
@@ -87,7 +86,7 @@ int loadLabels(const char* filename, LabelRepository* repository)
         }
 	    page = (uint8_t)num;
 
-        if(!addLabel(repository, key, logical, page)) {
+        if(!label_repository_add(repository, key, logical, page)) {
             return 0;
         }
     }

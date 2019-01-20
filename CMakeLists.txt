@@ -32,30 +32,55 @@ set(etripator_SRC
 #    sectionsloader.c
 #    opcodes.c
     label.c
-#    label/loader.c
-#    label/writer.c
+    label/loader.c
+    label/writer.c
     irq.c
     memory.c
     memorymap.c
     rom.c
     cd.c
     ipl.c
-#    options.c
-#    etripator.c
+)
+
+set(etripator_HDR
+    config.h
+    message.h
+    message/file.h
+    message/console.h
+    jsonhelpers.h
+#    decode.h
+    section.h
+#    sectionsloader.h
+#    opcodes.h
+    label.h
+    label/loader.h
+    label/writer.h
+    irq.h
+    memory.h
+    memorymap.h
+    rom.h
+    cd.h
+    ipl.h
 )
 
 if(WIN32 AND MSVC)
-    set(etripator_SRC ${etripator_SRC}
-        platform/windows/getopt1.c
-        platform/windows/getopt.c
+    list(APPEND
         platform/windows/time.c
         platform/windows/basename.c
+        etripator_SRC
+    )
+    list(APPEND
+        platform/windows/time.h
+        platform/windows/basename.h
+        platform/windows/stdint.h
+        platform/windows/inttypes.h
+        platform/windows/config_win.h
+        etripator_HDR
     )
     set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
 endif(WIN32 AND MSVC)
 
-#add_executable(etripator ${etripator_SRC})
-add_library(etripator STATIC ${etripator_SRC})
+add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
 target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE})
 if(CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(etripator PRIVATE -Wall -Wshadow -Wextra)
@@ -74,20 +99,5 @@ add_custom_target(doc
          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
          COMMENT "Generating API documentation with Doxygen"
          VERBATIM )
-         
-add_library(munit STATIC ${CMAKE_CURRENT_SOURCE_DIR}/test/munit/munit.c)
-target_include_directories(munit PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/munit>)
-set_property(TARGET munit PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test/munit>)
 
-add_executable(section_tests test/section.c section.c jsonhelpers.c message.c message/file.c message/console.c)
-target_compile_options(section_tests PRIVATE -Wall -Wshadow -Wextra)
-target_link_libraries(section_tests munit ${JANSSON_LIBRARIES})
-target_include_directories(section_tests PRIVATE ${PROJECT_SOURCE_DIR})
-add_test(section_tests section_tests)
-
-add_executable(label_tests test/label.c label.c message.c message/file.c message/console.c)
-target_compile_options(label_tests PRIVATE -Wall -Wshadow -Wextra)
-target_link_libraries(label_tests munit ${JANSSON_LIBRARIES})
-target_include_directories(label_tests PRIVATE ${PROJECT_SOURCE_DIR})
-add_test(label_tests label_tests)
-# [todo] copy data directory
+add_subdirectory(test)

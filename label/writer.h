@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2017 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,18 +15,18 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef LABELS_LOADER_H
-#define LABELS_LOADER_H
+#ifndef ETRIPATOR_LABEL_WRITER_H
+#define ETRIPATOR_LABEL_WRITER_H
 
-#include "labels.h"
+#include "../label.h"
 
 /**
- * Load labels from file.
- * \param [in]  filename Input filename.
- * \param [out] repository Label repository.
- * \return 1 if the labels contained in the file was succesfully added to the repository.
+ * Write labels to file.
+ * \param [in] filename Configuration file.
+ * \param [in] reposity Label repository.
+ * \return 1 if the labels in the repository were succesfully written to the file.
  *         0 if an error occured.
  */
-int loadLabels(const char* filename, LabelRepository* repository);
+int label_repository_write(const char* filename, label_repository_t* repository);
 
-#endif // LABELS_LOADER_H
+#endif // ETRIPATOR_LABEL_WRITER_H

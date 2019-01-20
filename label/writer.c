@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2017 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,8 +18,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include "labelswriter.h"
-#include "message.h"
+#include "writer.h"
+#include "../message.h"
 
 /**
  * Write labels to file.
@@ -28,10 +28,10 @@
  * \return 1 if the labels in the repository were succesfully written to the file.
  *         0 if an error occured.
  */
-int writeLabels(const char* filename, LabelRepository* repository) {
+int label_repository_write(const char* filename, label_repository_t* repository) {
     FILE *stream = fopen(filename, "wb");
-    int i, count = getLabelCount(repository);
-    if(NULL == stream) {
+    int i, count = label_repository_size(repository);
+    if(stream == NULL) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
         return 0;
     }
@@ -40,8 +40,7 @@ int writeLabels(const char* filename, LabelRepository* repository) {
         uint16_t logical;
         uint8_t page;
         char* name;
-        if(getLabel(repository, i, &logical, &page, &name))
-        {
+        if(label_repository_get(repository, i, &logical, &page, &name)) {
             fprintf(stream, "\t{ \"name\":\"%s\", \"logical\":\"%04x\", \"page\":\"%02x\"}%c\n", name, logical, page, (i<(count-1)) ? ',' : ' ');
         }
     }
