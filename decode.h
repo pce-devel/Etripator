@@ -19,7 +19,7 @@
 #define ETRIPATOR_DECODE_H
 
 #include "config.h"
-#include "labels.h"
+#include "label.h"
 #include "section.h"
 #include "memorymap.h"
 
@@ -33,6 +33,9 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
  */
 int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository);
 
-// [todo] output : int data_extract(section_t *section, memmap_t *map, label_repository_t *repository);
+/**
+ *
+ */
+int code_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository);
 
 #endif // ETRIPATOR_DECODE_H

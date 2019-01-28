@@ -30,6 +30,8 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 	uint16_t logical;
 	uint8_t page;
 
+    const opcode_t *opcode;
+
 	if (section->type != Code) {
 		return 1;
 	}
@@ -43,8 +45,9 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 	for(eor = 0; !eor; ) {
 		/* Read instruction */
 		inst = memmap_read(map, logical);
+		opcode = opcode_get(inst);
 		/* Read data (if any) */
-		for (i = 0; i < (pce_opcode[inst].size - 1); i++) {
+		for (i = 0; i < (opcode->size - 1); i++) {
 			data[i] = memmap_read(map, logical + i + 1);
 		}
 
@@ -59,9 +62,9 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 			} else {
 				delta = data[i];
 			}
-			delta += pce_opcode[inst].size;
+			delta += opcode->size;
 			jump = logical + delta;
-			page = memmap_page(decoder->memmap, jump);
+			page = memmap_page(map, jump);
 			/* Create label name */
 			snprintf(buffer, 32, "l%04x_%02d", jump, page);
 
@@ -72,7 +75,7 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 			INFO_MSG("%04x short jump to %04x (%02x)", logical, jump, page);
 		} else if (opcode_is_far_jump(inst)) {
 				uint16_t jump = data[0] | (data[1] << 8);
-				page = memmap_page(decoder->memmap, jump);
+				page = memmap_page(map, jump);
 				/* Create label name */
 				snprintf(buffer, 32, "l%04x_%02d", jump, page);
 				/* Insert offset to repository */
@@ -83,8 +86,7 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 				INFO_MSG("%04x long jump to %04x (%02x)", logical, jump, page);
 		}
 
-		logical += pce_opcode[inst].size;
-		offset += pce_opcode[inst].size;
+		logical += opcode->size;
 
 		/* Search end of section */
 		if (section->size == 0) {
@@ -114,12 +116,13 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
 	int32_t i, j, k;
     uint16_t logical;
     uint8_t data[2];
-    int32_t element_size = section->current->data.element_size;
+    int32_t element_size = section->data.element_size;
 	int32_t elements_per_line = section->data.elements_per_line;
     const char *data_decl = (element_size > 1) ? ".dw" : ".db";
     char *name = "";
     
     for(i=0, j=0, k=0, logical=section->logical; i<section->size; i++, logical++) {
+        uint8_t page = memmap_page(map, logical);
         if(label_repository_find(repository, logical, page, &name)) {
             if(k && (k < element_size)) {
                 fprintf(out, "\n          .db");
@@ -172,6 +175,7 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
     for(i=0, j=0, k=0, c=0, logical=section->logical; i<section->size; i++, logical++) {
         uint8_t data;
         char c;
+        uint8_t page = memmap_page(map, logical);
         if(label_repository_find(repository, logical, page, &name)) {
             if(j) {
                 fputc('\n', out);
@@ -193,16 +197,16 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
                 c = 1;
             }
             if(data == '"') {
-                fputc('\', out);
+                fputc('\\', out);
             }
             fputc(data, out);
         }
         else {
             if(c) {
-               fprintf("\",", out);
+               fprintf(out, "\",");
                c = 0;
             }
-            fprintf("$%02x", data);
+            fprintf(out, "$%02x", data);
         }
         fputc(c, out);
         j = (j+1) % elements_per_line;
@@ -222,69 +226,69 @@ int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_
     return 0;
 }
 
-#if 0
 static const char *spacing = "          ";
 
-/*
- * Process opcode
+/**
+ *
  */
-char processOpcode(Decoder *decoder) {
+int code_extract_single(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository) {
 	int i, delta;
-	uint8_t inst, data[6], isJump;
+	uint8_t inst, data[6], is_jump;
 	char eor, *name;
 	uint8_t page;
 	uint32_t offset;
-	uint16_t logical, nextLogical;
+	uint16_t next_logical;
+
+    const opcode_t *opcode;
 
 	eor = 0;
 
 	memset(data, 0, 6);
-	logical = decoder->logical + decoder->offset;
-	page = getPage(decoder->memmap, logical); 
+	page = memmap_page(map, *logical); 
 
 	/* Opcode */
-	inst = readByte(decoder->memmap, logical);
-
-	nextLogical = logical + pce_opcode[inst].size;
+	inst = memmap_read(map, *logical);
+    opcode = opcode_get(inst);
+    
+	next_logical = *logical + opcode->size;
 
 	/* Is there a label ? */
-	if (findLabel(decoder->labels, logical, page, &name)) {
+	if (label_repository_find(repository, *logical, page, &name)) {
 		/* Print label*/
-		fprintf(decoder->out, "%s:\n", name);
+		fprintf(out, "%s:\n", name);
 	}
 
 	/* Front spacing */
-	fwrite(spacing, 1, 10, decoder->out);
+	fwrite(spacing, 1, 10, out);
 
 	/* Print opcode sting */
-	fwrite(pce_opcode[inst].name, 1, 4, decoder->out);
+	fwrite(opcode->name, 1, 4, out);
 
 	/* Add spacing */
-	fwrite(spacing, 1, 4, decoder->out);
+	fwrite(spacing, 1, 4, out);
 
 	/* End Of Routine (eor) is set to 1 if the instruction is RTI, RTS or BRK */
 	eor = ((inst == 0x40) || (inst == 0x60) || (inst == 0x00));
 	
 	/* Data */
-	if (pce_opcode[inst].size > 1) {
-		for (i = 0; i < (pce_opcode[inst].size - 1); i++) {
-			data[i] = readByte(decoder->memmap, logical + i + 1);
+	if (opcode->size > 1) {
+		for (i = 0; i < (opcode->size - 1); i++) {
+			data[i] = memmap_read(map, *logical + i + 1);
 		}
 	}
 
-	decoder->offset += pce_opcode[inst].size;
-	logical = nextLogical;
+	*logical = next_logical;
 
 	/* Swap LSB and MSB for words */
-	if (pce_opcode[inst].size > 2) {
+	if (opcode->size > 2) {
 		uint8_t swap;
 		/* Special case : TST, BBR*, BBS*. The first byte is zp var */
-		i = ((pce_opcode[inst].type == 3) || (pce_opcode[inst].type == 4) || (pce_opcode[inst].type == 5) ||
-			 (pce_opcode[inst].type == 6) || (pce_opcode[inst].type == 13) || (pce_opcode[inst].type == 20))
+		i = ((opcode->type == 3) || (opcode->type ==  4) || (opcode->type ==  5) ||
+			 (opcode->type == 6) || (opcode->type == 13) || (opcode->type == 20))
 				? 1
 				: 0;
 
-		for (; i < (pce_opcode[inst].size - 2); i += 2) {
+		for (; i < (opcode->size - 2); i += 2) {
 			swap = data[i];
 			data[i] = data[i + 1];
 			data[i + 1] = swap;
@@ -292,9 +296,9 @@ char processOpcode(Decoder *decoder) {
 	}
 
 	/* Handle special cases (jumps, tam/tma and unsupported opcodes ) */
-	isJump = 0;
-	if (isLocalJump(inst)) {
-		isJump = 1;
+	is_jump = 0;
+	if (opcode_is_local_jump(inst)) {
+		is_jump = 1;
 
 		i = (((inst)&0x0F) == 0x0F) ? 1 : 0;
 
@@ -304,11 +308,11 @@ char processOpcode(Decoder *decoder) {
 		else
 			delta = data[i];
 
-		offset = logical + delta;
+		offset = *logical + delta;
 		data[i] = offset >> 8;
 		data[i + 1] = offset & 0xff;
-	} else if (isFarJump(inst)) {
-		isJump = 1;
+	} else if (opcode_is_far_jump(inst)) {
+		is_jump = 1;
 		/* Build offset */
 		offset = (data[0] << 8) | data[1];
 	} else {
@@ -316,29 +320,29 @@ char processOpcode(Decoder *decoder) {
 		/* Unknown instructions are output as raw data
 		 * (ie) .db XX
 		 */
-		if (pce_opcode[inst].type == 22) {
+		if (opcode->type == 22) {
 			data[0] = inst;
 		}
 	}
 
-	if (pce_opcode[inst].type == 1) {
-		fputc('A', decoder->out);
-	} else if (isJump) {
+	if (opcode->type == 1) {
+		fputc('A', out);
+	} else if (is_jump) {
 		/* BBR* and BBS* */
 		if ((inst & 0x0F) == 0x0F) {
 			uint16_t zp_offset = 0x2000 + data[0];
-			page = getPage(decoder->memmap, zp_offset);
-			if (findLabel(decoder->labels, zp_offset, page, &name)) {
-				fprintf(decoder->out, "<%s, ", name);
+			page = memmap_page(map, zp_offset);
+			if (label_repository_find(repository, zp_offset, page, &name)) {
+				fprintf(out, "<%s, ", name);
 			} else {
-				fprintf(decoder->out, "<$%02x, ", data[0]);
+				fprintf(out, "<$%02x, ", data[0]);
 			}
 		}
-		page = getPage(decoder->memmap, offset);
-		findLabel(decoder->labels, offset, page, &name);
-		fwrite(name, 1, strlen(name), decoder->out);
+		page = memmap_page(map, offset);
+		label_repository_find(repository, offset, page, &name);
+		fwrite(name, 1, strlen(name), out);
 	} else {
-		int hasLabel = 0;
+		int has_label = 0;
 		if ((inst == 0x43) || (inst == 0x53)) {
 			/* tam and tma */
 			/* Compute log base 2 of data */
@@ -348,29 +352,29 @@ char processOpcode(Decoder *decoder) {
 		}
 
 		/* Print data */
-		if (pce_opcode[inst].type) {
+		if (opcode->type) {
 			/* [todo] this is ugly... */
 			const char *none = "";
 			const char *extra = none;
-			switch (pce_opcode[inst].type) {
+			switch (opcode->type) {
 			case 4: /* #$aa, <$zp, X */
 				extra = ", X";
 			case 3: /* #$aa, <$zp */
 				offset = 0x2000 + data[1];
-				page = getPage(decoder->memmap, offset);
-				hasLabel = findLabel(decoder->labels, offset, page, &name);
-				if (hasLabel) {
-					fprintf(decoder->out, "#$%02x, <%s%s", data[0], name, extra);
+				page = memmap_page(map, offset);
+				has_label = label_repository_find(repository, offset, page, &name);
+				if (has_label) {
+					fprintf(out, "#$%02x, <%s%s", data[0], name, extra);
 				}
 				break;
 			case 6: /* #$aa, $hhll, X */
 				extra = ", X";
 			case 5: /* #$aa, $hhll */
 				offset = (data[0] << 8) + data[1];
-				page = getPage(decoder->memmap, offset);
-				hasLabel = findLabel(decoder->labels, offset, page, &name);
-				if (hasLabel) {
-					fprintf(decoder->out, "#$%02x, %s%s", data[0], name, extra);
+				page = memmap_page(map, offset);
+				has_label = label_repository_find(repository, offset, page, &name);
+				if (has_label) {
+					fprintf(out, "#$%02x, %s%s", data[0], name, extra);
 				}
 				break;
 
@@ -382,10 +386,10 @@ char processOpcode(Decoder *decoder) {
 				}
 			case 7: /* <zp    */
 				offset = 0x2000 + data[0];
-				page = getPage(decoder->memmap, offset);
-				hasLabel = findLabel(decoder->labels, offset, page, &name);
-				if (hasLabel) {
-					fprintf(decoder->out, "<%s%s", name, extra);
+				page = memmap_page(map, offset);
+				has_label = label_repository_find(repository, offset, page, &name);
+				if (has_label) {
+					fprintf(out, "<%s%s", name, extra);
 				}
 				break;
 
@@ -400,10 +404,10 @@ char processOpcode(Decoder *decoder) {
 					extra = "]";
 				}
 				offset = 0x2000 + data[0];
-				page = getPage(decoder->memmap, offset);
-				hasLabel = findLabel(decoder->labels, offset, page, &name);
-				if (hasLabel) {
-					fprintf(decoder->out, "[%s%s", name, extra);
+				page = memmap_page(map, offset);
+				has_label = label_repository_find(repository, offset, page, &name);
+				if (has_label) {
+					fprintf(out, "[%s%s", name, extra);
 				}
 				break;
 
@@ -414,10 +418,10 @@ char processOpcode(Decoder *decoder) {
 					extra = "]";
 				}
 				offset = (data[0] << 8) | data[1];
-				page = getPage(decoder->memmap, offset);
-				hasLabel = findLabel(decoder->labels, offset, page, &name);
-				if (hasLabel) {
-					fprintf(decoder->out, "[%s%s", name, extra);
+				page = memmap_page(map, offset);
+				has_label = label_repository_find(repository, offset, page, &name);
+				if (has_label) {
+					fprintf(out, "[%s%s", name, extra);
 				}
 				break;
 
@@ -429,63 +433,63 @@ char processOpcode(Decoder *decoder) {
 				}
 			case 14: /* hhll */
 				offset = (data[0] << 8) | data[1];
-				page = getPage(decoder->memmap, offset);
-				hasLabel = findLabel(decoder->labels, offset, page, &name);
-				if (hasLabel) {
-					fprintf(decoder->out, "%s%s", name, extra);
+				page = memmap_page(map, offset);
+				has_label = label_repository_find(repository, offset, page, &name);
+				if (has_label) {
+					fprintf(out, "%s%s", name, extra);
 				}
 				break;
 
 			case 13: /* <zp, $hhll */
 				offset = 0x2000 + data[0];
-				page = getPage(decoder->memmap, offset);
-				hasLabel = findLabel(decoder->labels, offset, page, &name);
-				if (hasLabel) {
-					fprintf(decoder->out, "<%s, ", name);
+				page = memmap_page(map, offset);
+				has_label = label_repository_find(repository, offset, page, &name);
+				if (has_label) {
+					fprintf(out, "<%s, ", name);
 				} else {
-					fprintf(decoder->out, "<%02x, ", data[0]);
+					fprintf(out, "<%02x, ", data[0]);
 				}
 				offset = (data[1] << 8) | data[2];
-				page = getPage(decoder->memmap, offset);
-				hasLabel = findLabel(decoder->labels, offset, page, &name);
-				if (hasLabel) {
-					fprintf(decoder->out, "%s", name);
+				page = memmap_page(map, offset);
+				has_label = label_repository_find(repository, offset, page, &name);
+				if (has_label) {
+					fprintf(out, "%s", name);
 				} else {
-					fprintf(decoder->out, "$%04x", offset);
+					fprintf(out, "$%04x", offset);
 				}
-				hasLabel = 1;
+				has_label = 1;
 				break;
 
 			case 18: /* shsl, dhdl, sz */
 				/* Source and destination */
 				for (i = 0; i < 4; i += 2) {
 					offset = (data[i] << 8) | data[i + 1];
-					page = getPage(decoder->memmap, offset);
-					hasLabel = findLabel(decoder->labels, offset, page, &name);
-					if (hasLabel) {
-						fprintf(decoder->out, "%s, ", name);
+					page = memmap_page(map, offset);
+					has_label = label_repository_find(repository, offset, page, &name);
+					if (has_label) {
+						fprintf(out, "%s, ", name);
 					} else {
-						fprintf(decoder->out, "$%04x, ", offset);
+						fprintf(out, "$%04x, ", offset);
 					}
 				}
 				/* Size */
-				fprintf(decoder->out, "$%02x%02x", data[4], data[5]);
-				hasLabel = 1;
+				fprintf(out, "$%02x%02x", data[4], data[5]);
+				has_label = 1;
 				break;
 
 			default:
-				hasLabel = 0;
+				has_label = 0;
 				break;
 			}
-
-			if (!hasLabel) {
+/* [todo]
+			if (!has_label) {
 				for (i = 0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i) {
-					fprintf(decoder->out, pce_opstring[pce_opcode[inst].type][i], data[i]);
+					fprintf(out, pce_opstring[pce_opcode[inst].type][i], data[i]);
 				}
 			}
+*/
 		}
 	}
-	fputc('\n', decoder->out);
+	fputc('\n', out);
 	return eor;
 }
-#endif

@@ -27,7 +27,7 @@ set(etripator_SRC
     message/file.c
     message/console.c
     jsonhelpers.c
-#    decode.c
+    decode.c
     section.c
     section/load.c
     section/save.c
@@ -49,7 +49,7 @@ set(etripator_HDR
     message/file.h
     message/console.h
     jsonhelpers.h
-#    decode.h
+    decode.h
     section.h
     section/load.h
     section/save.h
