@@ -1,6 +1,6 @@
 /*
 	This file is part of Etripator,
-	copyright (c) 2009--2015 Vincent Cruz.
+	copyright (c) 2009--2019 Vincent Cruz.
 
 	Etripator is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -19,131 +19,8 @@
 #include "message.h"
 #include "opcodes.h"
 
-/**
- * Initialize decoder
- * \return 1 upon success, 0 otherwise.
- */
-int createDecoder(Decoder *decoder) {
-	decoder->current = NULL;
-	decoder->memmap = NULL;
-	decoder->out = NULL;
 
-	decoder->logical = 0;
-
-	decoder->offset = 0;
-
-	decoder->buffer = NULL;
-
-	decoder->labels = createLabelRepository();
-	if (NULL == decoder->labels) {
-		ERROR_MSG("Failed to create label repository");
-		return 0;
-	}
-	return 1;
-}
-
-/*
- * Reset section processor
- */
-void resetDecoder(MemoryMap *memmap, FILE *out, Section *current, Decoder *decoder) {
-	decoder->current = current;
-	decoder->memmap = memmap;
-	decoder->out = out;
-	decoder->offset = 0;
-	decoder->logical = current->org;
-	memmap->mpr[(current->org >> 13) & 0x07] = current->bank;
-	decoder->offset = 0;
-
-	updateMPRs(memmap, current->mpr);
-}
-
-/**
- * Delete decoder
- */
-void deleteDecoder(Decoder *decoder) {
-	if (NULL != decoder->buffer) {
-		free(decoder->buffer);
-		decoder->buffer = NULL;
-	}
-	if (NULL != decoder->labels) {
-		deleteLabelRepository(decoder->labels);
-		free(decoder->labels);
-		decoder->labels = NULL;
-	}
-}
-
-/*
- * Process data section
- */
-int processDataSection(Decoder *decoder) {
-	uint8_t data[2];
-	int i;
-	char *name = "";
-    uint16_t logical = decoder->logical;
-    uint8_t page = getPage(decoder->memmap, logical); 
-
-	if (IncData == decoder->current->type) {
-		int32_t j, k;
-        int32_t element_size = decoder->current->data.element_size;
-		int32_t elements_per_line = decoder->current->data.elements_per_line;
-        int32_t size = decoder->current->size;
-        const char *data_decl = (element_size > 1) ? ".dw" : ".db";
-        
-        for(i=0, j=0, k=0; i<size; i++, logical++) {
-            if(findLabel(decoder->labels, logical, page, &name)) {
-                if(k && (k < element_size)) {
-                    fprintf(decoder->out, "\n          .db");
-                    for(j=0; j<k; j++) {
-                        fprintf(decoder->out, "%c$%02x", j ? ',' : ' ', data[j]);
-                    }
-                    k = 0;
-                }
-                if(j) {
-                    fputc('\n', decoder->out);
-                }
-                fprintf(decoder->out, "%s:", name);
-                j = 0;
-            }
-            
-            data[k++] = readByte(decoder->memmap, logical);
-            if(k >= element_size) {
-                char c;
-                if(j == 0) {
-                    fprintf(decoder->out, "\n          %s", data_decl);
-                    c = ' ';
-                }
-                else {
-                    c = ',';
-                }
-                fprintf(decoder->out, "%c$", c);
-                while(k--) {
-                    fprintf(decoder->out, "%02x", data[k]);
-                }
-                k = 0;
-                j = (j+1) % elements_per_line;
-            }
-        }
-        fputc('\n', decoder->out);
-        if(k) {
-            fprintf(decoder->out, "          .db ");
-            for(j=0; j<k; j++) {
-                fprintf(decoder->out, "$%02x%c", data[j], ((j+1)<k) ? ',' : '\n');
-            }
-        }
-	} else {
-		for (i = decoder->current->size; i > 0; i--) {
-			data[0] = readByte(decoder->memmap, logical++);
-			fwrite(&data[0], 1, 1, decoder->out);
-		}
-	}
-	return 1;
-}
-
-/**
- * Parse section to identify potential labels
- * \return 1 upon success, 0 if an error occured.
- */
-int extractLabels(Decoder *decoder) {
+int label_extract(section_t *section, memmap_t *map, label_repository_t *repository) {
 	int eor, i;
 	uint8_t inst;
 	uint8_t data[6];
@@ -153,29 +30,25 @@ int extractLabels(Decoder *decoder) {
 	uint16_t logical;
 	uint8_t page;
 
-	LabelRepository *repository = decoder->labels;
-	Section *section = decoder->current;
-
-	if (Code != section->type) {
+	if (section->type != Code) {
 		return 1;
 	}
 
 	offset = 0;
-	logical = decoder->logical;
-
+    logical = section->logical;
+    
 	INFO_MSG("%s:", section->name);
 
 	/* Walk along section */
-	eor = 0;
-	while (!eor) {
+	for(eor = 0; !eor; ) {
 		/* Read instruction */
-		inst = readByte(decoder->memmap, logical);
+		inst = memmap_read(map, logical);
 		/* Read data (if any) */
 		for (i = 0; i < (pce_opcode[inst].size - 1); i++) {
-			data[i] = readByte(decoder->memmap, logical + i + 1);
+			data[i] = memmap_read(map, logical + i + 1);
 		}
 
-		if (isLocalJump(inst)) {
+		if (opcode_is_local_jump(inst)) {
 			uint16_t jump;
 			int delta;
 			/* For BBR* and BBS* displacement is stored in the 2nd byte */
@@ -188,29 +61,26 @@ int extractLabels(Decoder *decoder) {
 			}
 			delta += pce_opcode[inst].size;
 			jump = logical + delta;
-			page = getPage(decoder->memmap, jump);
+			page = memmap_page(decoder->memmap, jump);
 			/* Create label name */
 			snprintf(buffer, 32, "l%04x_%02d", jump, page);
 
 			/* Insert offset to repository */
-			if (0 == addLabel(repository, buffer, jump, page)) {
+			if (!label_repository_add(repository, buffer, jump, page)) {
 				return 0;
 			}
-
 			INFO_MSG("%04x short jump to %04x (%02x)", logical, jump, page);
-		} else {
-			if (isFarJump(inst)) {
+		} else if (opcode_is_far_jump(inst)) {
 				uint16_t jump = data[0] | (data[1] << 8);
-				page = getPage(decoder->memmap, jump);
+				page = memmap_page(decoder->memmap, jump);
 				/* Create label name */
 				snprintf(buffer, 32, "l%04x_%02d", jump, page);
 				/* Insert offset to repository */
-				if (0 == addLabel(repository, buffer, jump, page)) {
+				if (!label_repository_add(repository, buffer, jump, page)) {
 					return 0;
 				}
 
 				INFO_MSG("%04x long jump to %04x (%02x)", logical, jump, page);
-			}
 		}
 
 		logical += pce_opcode[inst].size;
@@ -230,6 +100,129 @@ int extractLabels(Decoder *decoder) {
 	return 1;
 }
 
+static int data_extract_binary(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository) {
+    uint16_t logical;
+    int32_t i;
+    for (i = section->size, logical=section->logical; i > 0; i--, logical++) {
+        uint8_t data = memmap_read(map, logical++);
+        fwrite(&data, 1, 1, out);
+    }
+    return 1;
+}
+
+static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository) {
+	int32_t i, j, k;
+    uint16_t logical;
+    uint8_t data[2];
+    int32_t element_size = section->current->data.element_size;
+	int32_t elements_per_line = section->data.elements_per_line;
+    const char *data_decl = (element_size > 1) ? ".dw" : ".db";
+    char *name = "";
+    
+    for(i=0, j=0, k=0, logical=section->logical; i<section->size; i++, logical++) {
+        if(label_repository_find(repository, logical, page, &name)) {
+            if(k && (k < element_size)) {
+                fprintf(out, "\n          .db");
+                for(j=0; j<k; j++) {
+                    fprintf(out, "%c$%02x", j ? ',' : ' ', data[j]);
+                }
+                k = 0;
+            }
+            if(j) {
+                fputc('\n', out);
+            }
+            fprintf(out, "%s:", name);
+            j = 0;
+        }
+        data[k++] = memmap_read(map, logical);
+        if(k >= element_size) {
+            char c;
+            if(j == 0) {
+                fprintf(out, "\n          %s", data_decl);
+                c = ' ';
+            }
+            else {
+                c = ',';
+            }
+            fprintf(out, "%c$", c);
+            while(k--) {
+                fprintf(out, "%02x", data[k]);
+            }
+            k = 0;
+            j = (j+1) % elements_per_line;
+        }
+    }
+    fputc('\n', out);
+    if(k) {
+        fprintf(out, "          .db ");
+        for(j=0; j<k; j++) {
+            fprintf(out, "$%02x%c", data[j], ((j+1)<k) ? ',' : '\n');
+        }
+    }
+    return 1;
+}
+
+static int data_extract_string(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository) {
+	int32_t i, j, k;
+    uint16_t logical;
+	int32_t elements_per_line = section->data.elements_per_line;
+    char *name = "";
+    char c;
+    
+    for(i=0, j=0, k=0, c=0, logical=section->logical; i<section->size; i++, logical++) {
+        uint8_t data;
+        char c;
+        if(label_repository_find(repository, logical, page, &name)) {
+            if(j) {
+                fputc('\n', out);
+            }
+            fprintf(out, "%s:", name);
+            j = 0;
+        }
+        data = memmap_read(map, logical);
+        if(j == 0) {
+            fprintf(out, "\n          db");
+            c = ' ';
+        }
+        else {
+            c = ',';
+        }
+        if((data >= 0x20) && (data < 0x7f)) {
+            if(c == 0) {
+                fputc('"', out);
+                c = 1;
+            }
+            if(data == '"') {
+                fputc('\', out);
+            }
+            fputc(data, out);
+        }
+        else {
+            if(c) {
+               fprintf("\",", out);
+               c = 0;
+            }
+            fprintf("$%02x", data);
+        }
+        fputc(c, out);
+        j = (j+1) % elements_per_line;
+    }
+    return 1;
+}
+
+int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository) {
+    switch(section->data.type) {
+        case Binary:
+            return data_extract_binary(out, section, map, repository);
+        case Hex:
+            return data_extract_hex(out, section, map, repository);
+        case String:
+            return data_extract_string(out, section, map, repository);
+    }
+    return 0;
+}
+
+#if 0
 static const char *spacing = "          ";
 
 /*
@@ -495,3 +488,4 @@ char processOpcode(Decoder *decoder) {
 	fputc('\n', decoder->out);
 	return eor;
 }
+#endif

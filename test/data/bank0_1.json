@@ -78,6 +78,6 @@
         "logical": "fff6",
         "size": "a",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
-        "data": { "element_size": 2, "elements_per_line": 1 }
+        "data": { "type": "hex", "element_size": 2, "elements_per_line": 1 }
     }
 }

@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static section_type_t json_validate_type(const char *str) {
+static section_type_t json_validate_section_type(const char *str) {
     int i;
     for (i = 0; i < SectionTypeCount; i++) {
         if (strncmp(section_type_name(i), str, strlen(section_type_name(i))) == 0) {
@@ -32,6 +32,16 @@ static section_type_t json_validate_type(const char *str) {
         }
     }
     return UnknownSectionType;
+}
+
+static data_type_t json_validate_data_type(const char *str) {
+    int i;
+    for (i = 0; i < DataTypeCount; i++) {
+        if (strncmp(data_type_name(i), str, strlen(data_type_name(i))) == 0) {
+            return (data_type_t)i;
+        }
+    }
+    return UnknownDataType;
 }
 
 /**
@@ -54,7 +64,7 @@ static int section_parse(const json_t *obj, section_t *out) {
         ERROR_MSG("Invalid data for section type.");
         return 0;
     }
-    out->type = json_validate_type(json_string_value(tmp));     
+    out->type = json_validate_section_type(json_string_value(tmp));     
     if (out->type == UnknownSectionType) {
         ERROR_MSG("Invalid section type.");
         return 0;
@@ -134,6 +144,16 @@ static int section_parse(const json_t *obj, section_t *out) {
     tmp = json_object_get(obj, "data");
     if (tmp) {
         json_t* value;
+        value = json_object_get(tmp, "type");
+        if (!json_is_string(value)) {
+            ERROR_MSG("Invalid data for data type.");
+            return 0;
+        }
+        out->data.type = json_validate_data_type(json_string_value(value));     
+        if (out->data.type == UnknownDataType) {
+            ERROR_MSG("Invalid data type.");
+            return 0;
+        }        
         value = json_object_get(tmp, "element_size");
         if (!json_validate_int(value, &out->data.element_size) || (out->data.element_size > 2)) {
             ERROR_MSG("Invalid element size.");

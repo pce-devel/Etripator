@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,10 +15,40 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "config.h"
 #include "opcodes.h"
 
-char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {
+#define PCE_TYPE_COUNT 23
+#define PCE_ARG_COUNT 7
+
+/*
+  Opcode type : 
+
+  00: OPC 
+  01: OPC A
+  02: OPC #nn
+  03: OPC #nn, ZZ
+  04: OPC #nn, ZZ, X
+  05: OPC #nn, hhll
+  06: OPC #nn, hhll, X
+  07: OPC ZZ
+  08: OPC ZZ, X
+  09: OPC ZZ, Y
+  10: OPC (ZZ)
+  11: OPC (ZZ, X)
+  12: OPC (ZZ), Y
+  13: OPC ZZ, hhll   
+  14: OPC hhll
+  15: OPC (hhll)
+  16: OPC hhll, X
+  17: OPC hhll, Y
+  18: OPC shsl,dhdl,hhll 
+  19: OPC l_hhll (label)
+  20: OPC ZZ, l_hhll (label)
+  21: OPC [hhll, X] 
+  22: .db OPC (unsupported opcode output as raw binary data)
+*/
+/* Opcode output. */
+static char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {
   {  NULL,         NULL,       NULL,     NULL,     NULL,    NULL,  NULL },
   {  NULL,         NULL,       NULL,     NULL,     NULL,    NULL,  NULL },
   { "#$%02x",      NULL,       NULL,     NULL,     NULL,    NULL,  NULL },
@@ -44,7 +74,8 @@ char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {
   { "$%02x",       NULL,       NULL,     NULL,     NULL,    NULL,  NULL }
 };
 
-Opcode pce_opcode[256] = {
+/* PC engine opcodes */
+static opcode_t pce_opcode[256] = {
   /* 00 */  { "brk ", 1 ,  0 },  /* BRK                 */  
   /* 01 */  { "ora ", 2 , 11 },  /* ORA  (ZZ, X)        */
   /* 02 */  { "sxy ", 1 ,  0 },  /* SXY                 */
@@ -302,3 +333,37 @@ Opcode pce_opcode[256] = {
   /* FE */  { "inc ", 3 , 16 },  /* INC  hhll, X        */
   /* FF */  { "bbs7", 3 , 20 }   /* BBS7 ZZ, lhhll      */
 };
+
+/**
+ * Get opcode description.
+ */
+const opcode_t* opcode_get(uint8_t op) {
+    return &pce_opcode[op];
+}
+
+/**
+ * Is the instruction a local jump ?
+ */
+int opcode_is_local_jump(uint8_t op) {
+    return 
+	    ((op & 0x0F) == 0x0F) || /* BBR* and BBS* */
+	    (op          == 0x90) || /* BCC           */
+	    (op          == 0xB0) || /* BCS           */
+	    (op          == 0x80) || /* BRA           */
+	    (op          == 0xF0) || /* BEQ           */
+	    (op          == 0x30) || /* BMI           */
+	    (op          == 0xD0) || /* BNE           */
+	    (op          == 0x10) || /* BPL           */
+	    (op          == 0x44) || /* BSR           */
+	    (op          == 0x50) || /* BVC           */
+	    (op          == 0x70);   /* BVS           */
+}
+
+/**
+ * Is the instruction a "far" jump ?
+ */
+int opcode_is_far_jump(uint8_t op) {
+    return
+	    (op == 0x4C) || /* JMP */
+	    (op == 0x20);   /* JSR */
+}

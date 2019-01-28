@@ -55,7 +55,11 @@ int section_save(const char *filename, section_t *ptr, int n) {
         fprintf(out, "\n");
         fprintf(out, "        \"output\": \"%s\"", ptr[i].output);
         if(ptr[i].type == Data) {
-            fprintf(out, ",\n        \"data\": { \"element_size\": %d, \"elements_per_line\": %d }", ptr[i].data.element_size, ptr[i].data.elements_per_line);
+            fprintf(out, ",\n        \"data\": {\n");
+            fprintf(out, "               \"type\": \"%s\",\n", data_type_name(ptr[i].data.type));
+            fprintf(out, "               \"element_size\": %d,\n", ptr[i].data.element_size);
+            fprintf(out, "               \"elements_per_line\": %d\n", ptr[i].data.elements_per_line);
+            fprintf(out, "            }\n");
         }
         fprintf(out, "\n}\n");
     }

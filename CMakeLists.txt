@@ -31,7 +31,7 @@ set(etripator_SRC
     section.c
     section/load.c
     section/save.c
-#    opcodes.c
+    opcodes.c
     label.c
     label/load.c
     label/save.c

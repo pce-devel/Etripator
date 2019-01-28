@@ -82,22 +82,22 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
     (void)fixture;
 
     static section_t bank0_0[4] = {
-        { "cdbios_functions", Code, 0, 0xe000, 0x0000, 0x505, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } }, 
-        { "unknown.0", Data, 0, 0xe504, 0x0504, 0x05, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } },
-        { "ex_colorcmd.impl", Code, 0, 0xe509, 0x0509, 0xce, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } },
-        { "unknown.1", Data, 0, 0xe5d7, 0x05d7, 0x03, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } }
+        { "cdbios_functions", Code, 0, 0xe000, 0x0000, 0x505, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } }, 
+        { "unknown.0", Data, 0, 0xe504, 0x0504, 0x05, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
+        { "ex_colorcmd.impl", Code, 0, 0xe509, 0x0509, 0xce, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
+        { "unknown.1", Data, 0, 0xe5d7, 0x05d7, 0x03, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } }
     };
 
     static section_t bank0_1[9] = {
-        { "ex_satclr.impl", Code, 0, 0xe5da, 0x05da, 0x26, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } }, 
-        { "unknown.2", Data, 0, 0xf8a9, 0x18a9, 0x0f, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } },
-        { "bm_free.impl", Code, 0, 0xf8b8, 0x18b8, 0x575, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } },
-        { "jump_table.0", Data, 0, 0xfe2d, 0x1e2d, 0x2a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } },
-        { "grp_bios.impl", Code, 0, 0xfe57, 0x1e57, 0x18, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } },
-        { "jump_table.1", Data, 0, 0xfe70, 0x1e70, 0x22, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } },
-        { "ex_memopen.impl", Code, 0, 0xfe92, 0x1e92, 0x30, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } },
-        { "unknown.3", Data, 0, 0xfec2, 0x1ec2, 0x134, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 8, 16 } },
-        { "irq_vectors", Data, 0, 0xfff6, 0x1ff6, 0x0a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { 2, 1 } }
+        { "ex_satclr.impl", Code, 0, 0xe5da, 0x05da, 0x26, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } }, 
+        { "unknown.2", Data, 0, 0xf8a9, 0x18a9, 0x0f, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
+        { "bm_free.impl", Code, 0, 0xf8b8, 0x18b8, 0x575, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
+        { "jump_table.0", Data, 0, 0xfe2d, 0x1e2d, 0x2a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
+        { "grp_bios.impl", Code, 0, 0xfe57, 0x1e57, 0x18, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
+        { "jump_table.1", Data, 0, 0xfe70, 0x1e70, 0x22, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
+        { "ex_memopen.impl", Code, 0, 0xfe92, 0x1e92, 0x30, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
+        { "unknown.3", Data, 0, 0xfec2, 0x1ec2, 0x134, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
+        { "irq_vectors", Data, 0, 0xfff6, 0x1ff6, 0x0a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { Hex, 2, 1 } }
     };
 
     static const section_t* bank0[2] = { bank0_0, bank0_1 };

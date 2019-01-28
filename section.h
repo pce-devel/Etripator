@@ -25,7 +25,6 @@
  */
 typedef enum {
     UnknownSectionType = -1,
-    Binary,
     Data,
     Code,
     SectionTypeCount
@@ -37,9 +36,26 @@ typedef enum {
 const char* section_type_name(section_type_t type);
 
 /**
+ * Retrieves data type name.
+ */
+typedef enum {
+    UnknownDataType = -1,
+    Binary,
+    Hex,
+    String,
+    DataTypeCount
+} data_type_t;
+
+/**
+ * Retrieves data type name.
+ */
+const char* data_type_name(data_type_t type);
+
+/**
  * Data section configuration.
  */
 typedef struct {
+    data_type_t type;          /**< type. **/
     int32_t element_size;      /**< element size (string=0, byte=1, word=2). **/
     int32_t elements_per_line; /**< number of elements per line. **/
 } data_config_t;

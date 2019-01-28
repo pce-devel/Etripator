@@ -25,10 +25,15 @@
 static const int32_t g_default_element_size = 8;
 static const int32_t g_default_elements_per_line = 16;
 
-static const char *g_supported_types[SectionTypeCount] = {
-    "binary", 
+static const char *g_supported_section_types[SectionTypeCount] = {
     "data",
     "code"
+};
+
+static const char *g_supported_data_types[DataTypeCount] = {
+    "binary",
+    "hex",
+    "string"
 };
 
 /**
@@ -38,7 +43,17 @@ const char* section_type_name(section_type_t type) {
     if((type <= UnknownSectionType) || (type >= SectionTypeCount)) {
         return "unknown";
     }
-    return g_supported_types[type];
+    return g_supported_section_types[type];
+}
+
+/**
+ * Retrieves data type name.
+ */
+const char* data_type_name(data_type_t type) {
+    if((type <= UnknownDataType) || (type >= DataTypeCount)) {
+        return "unknown";
+    }
+    return g_supported_data_types[type];
 }
 
 /**
@@ -52,6 +67,7 @@ void section_reset(section_t *s) {
     s->size = -1;
     memset(s->mpr, 0, 8*sizeof(uint8_t));
     s->output = NULL;
+    s->data.type = UnknownDataType;
     s->data.element_size = g_default_element_size;
     s->data.elements_per_line = g_default_elements_per_line;
 }

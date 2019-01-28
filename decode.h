@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2018 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef DECODE_H
-#define DECODE_H
+#ifndef ETRIPATOR_DECODE_H
+#define ETRIPATOR_DECODE_H
 
 #include "config.h"
 #include "labels.h"
@@ -24,52 +24,15 @@
 #include "memorymap.h"
 
 /**
- * Decoder
+ *
  */
-typedef struct
-{
-    Section   *current; /* Section being processed */
-    MemoryMap *memmap;  /* Memory map */
-    FILE      *out;     /* Output */
+int label_extract(section_t *section, memmap_t *map, label_repository_t *repository);
 
-    uint16_t logical;  /* Logical address. */
-    int32_t offset; /* Current section offset */
-
-    LabelRepository *labels; /* label repository */
-
-    /* Used for raw binary data output */
-    uint8_t *buffer; /* Data buffer */
-} Decoder;
-
-/*
- * Initializes decoder
- * \return 1 upon success, 0 otherwise.
+/**
+ *
  */
-int createDecoder(Decoder* decoder);
+int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository);
 
-/*
- * Reset decoder
- */
-void resetDecoder(MemoryMap *memmap, FILE *out, Section *section, Decoder *decoder);
-  
-/*
- * Release decoder resources
- */
-void deleteDecoder(Decoder *decoder);
+// [todo] output : int data_extract(section_t *section, memmap_t *map, label_repository_t *repository);
 
-/*
- * Process data section
- */
-int processDataSection(Decoder *decoder);
-
-/* 
- * Parse section to identify potential labels 
- */
-int extractLabels(Decoder *decoder);
-
-/*
- * Process opcode
- */
-char processOpcode(Decoder *decoder);
-
-#endif // DECODE_H
+#endif // ETRIPATOR_DECODE_H
