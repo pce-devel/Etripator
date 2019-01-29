@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2015 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,10 +35,10 @@ void usage()
 }
 
 /* Extract command line options */
-int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
+int get_cli_opt(int argc, char** argv, cli_opt_t* option)
 {
-    char *shortOptions = "icho:l:";
-    struct option longOptions[] = {
+    char *short_opt = "icho:l:";
+    struct option long_opt[] = {
         {"irq-detect", 0, 0, 'i'},
         {"cd",         0, 0, 'c'},
         {"help",       0, 0, 'h'},
@@ -51,45 +51,40 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
     size_t top = 0;
     size_t count = 2;
     /* Reset options */
-    iOptions->extractIRQ   = 0;
-    iOptions->cdrom        = 0;
-    iOptions->cfgFileName  = NULL;
-    iOptions->romFileName  = NULL;
-    iOptions->mainFileName = "main.asm";
-    iOptions->labelsOut    = NULL;
-    iOptions->labelsIn     = NULL;
+    option->extract_irq   = 0;
+    option->cdrom         = 0;
+    option->cfg_filename  = NULL;
+    option->rom_filename  = NULL;
+    option->main_filename = "main.asm";
+    option->labels_out    = NULL;
+    option->labels_in     = NULL;
     /* Note : IRQ detection is disabled with the cdrom option */
-    while ((opt = getopt_long (argc, argv, shortOptions, longOptions, &idx)) > 0)
-    {
-        switch(opt)
-        {
+    while ((opt = getopt_long (argc, argv, short_opt, long_opt, &idx)) > 0) {
+        switch(opt) {
             case 1:
-                iOptions->labelsOut = optarg;
+                option->labels_out = optarg;
                 break;
             case 'i':
-                iOptions->extractIRQ = 1;
+                option->extract_irq = 1;
                 break;
-
             case 'c':
-                iOptions->cdrom      = 1;
+                option->cdrom = 1;
                 break;
-
             case 'o':
-                iOptions->mainFileName = optarg;
+                option->main_filename = optarg;
                 break;
-            
             case 'l':
-                if((top >= count) || (NULL == iOptions->labelsIn)) {
+                if((top >= count) || (NULL == option->labels_in)) {
                     size_t capacity = count * 2;
-                    char **tmp = (char**)realloc(iOptions->labelsIn, capacity * sizeof(char*));
+                    char **tmp = (char**)realloc(option->labels_in, capacity * sizeof(char*));
                     if(NULL == tmp) {
                         return -1;
                     }
                     memset(tmp+top, 0, capacity-count);
-                    iOptions->labelsIn = tmp;
+                    option->labels_in = tmp;
                     count = capacity;
                 }            
-                iOptions->labelsIn[top++] = optarg;
+                option->labels_in[top++] = optarg;
                 break;
             
             case 'h':
@@ -103,23 +98,23 @@ int getCommandLineOptions(int argc, char** argv, CommandLineOptions* iOptions)
     /* Retrieve config file and rom file. */
     if((argc - optind) != 2)
     {
-        if((iOptions->extractIRQ) && ((argc - optind) == 1))
+        if((option->extract_irq) && ((argc - optind) == 1))
         {
             /* Config file is optional with automatic irq vector extraction. */
-            iOptions->cfgFileName =  NULL;
-            iOptions->romFileName = argv[optind];
+            option->cfg_filename =  NULL;
+            option->rom_filename = argv[optind];
         }
         else
         {
             /* Not enough parameters!. */
-            iOptions->cfgFileName  = iOptions->romFileName = NULL;
+            option->cfg_filename  = option->rom_filename = NULL;
             return -1;
         }
     }
     else
     {
-        iOptions->cfgFileName = argv[optind];
-        iOptions->romFileName = argv[optind+1];
+        option->cfg_filename = argv[optind];
+        option->rom_filename = argv[optind+1];
     }
     return 1;
 }

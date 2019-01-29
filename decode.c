@@ -87,7 +87,8 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 		}
 
 		logical += opcode->size;
-
+        offset += opcode->size;
+        
 		/* Search end of section */
 		if (section->size == 0) {
 		    /* RTI, RTS, BRK */
@@ -174,23 +175,29 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
     
     for(i=0, j=0, k=0, c=0, logical=section->logical; i<section->size; i++, logical++) {
         uint8_t data;
-        char c;
         uint8_t page = memmap_page(map, logical);
         if(label_repository_find(repository, logical, page, &name)) {
             if(j) {
+                if(c) {
+                    fputc('"', out);
+                }
                 fputc('\n', out);
             }
             fprintf(out, "%s:", name);
             j = 0;
+            c = 0;
         }
         data = memmap_read(map, logical);
         if(j == 0) {
-            fprintf(out, "\n          db");
-            c = ' ';
+            if(c) {
+                fputc('"', out);
+            }
+            fprintf(out, "\n          db ");
+            c = 0;
         }
-        else {
-            c = ',';
-        }
+        
+        j = (j+1) % elements_per_line;
+        
         if((data >= 0x20) && (data < 0x7f)) {
             if(c == 0) {
                 fputc('"', out);
@@ -206,11 +213,14 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
                fprintf(out, "\",");
                c = 0;
             }
-            fprintf(out, "$%02x", data);
+            fprintf(out, "$%02x%c", data, j ? ',' : ' ');
         }
-        fputc(c, out);
-        j = (j+1) % elements_per_line;
     }
+    if((j || (i >= section->size)) && c) {
+        fputc('"', out);
+        fputc('\n', out);
+    }
+
     return 1;
 }
 
@@ -231,7 +241,7 @@ static const char *spacing = "          ";
 /**
  *
  */
-int code_extract_single(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository) {
+int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository) {
 	int i, delta;
 	uint8_t inst, data[6], is_jump;
 	char eor, *name;
@@ -481,13 +491,15 @@ int code_extract_single(FILE *out, uint16_t *logical, section_t *section, memmap
 				has_label = 0;
 				break;
 			}
-/* [todo]
+
 			if (!has_label) {
-				for (i = 0; pce_opstring[pce_opcode[inst].type][i] != NULL; ++i) {
-					fprintf(out, pce_opstring[pce_opcode[inst].type][i], data[i]);
+			    const char *format;
+			    i = 0;
+				while(format = opcode_format(opcode, i)) {
+					fprintf(out, format, data[i]);
+					i++;
 				}
 			}
-*/
 		}
 	}
 	fputc('\n', out);

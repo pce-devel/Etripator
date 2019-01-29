@@ -342,6 +342,16 @@ const opcode_t* opcode_get(uint8_t op) {
 }
 
 /**
+ *
+ */
+const char* opcode_format(const opcode_t *op, int i) {
+    if((i < 0) || (i >= PCE_ARG_COUNT)) {
+        return NULL;
+    }
+    return pce_opstring[op->type][i];
+}
+
+/**
  * Is the instruction a local jump ?
  */
 int opcode_is_local_jump(uint8_t op) {

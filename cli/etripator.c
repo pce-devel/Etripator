@@ -15,39 +15,42 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "config.h"
+#include <config.h>
+
 #include <jansson.h>
 #include <time.h>
 
-#include "message.h"
-#include "message/console.h"
-#include "message/file.h"
+#include <message.h>
+#include <message/console.h>
+#include <message/file.h>
 
-#include "cd.h"
-#include "decode.h"
-#include "irq.h"
-#include "labelsloader.h"
-#include "labelswriter.h"
-#include "memorymap.h"
-#include "opcodes.h"
+#include <cd.h>
+#include <decode.h>
+#include <irq.h>
+#include <label.h>
+#include <label/load.h>
+#include <label/save.h>
+#include <memorymap.h>
+#include <opcodes.h>
+#include <rom.h>
+#include <ipl.h>
+#include <section.h>
+#include <section/load.h>
+
 #include "options.h"
-#include "rom.h"
-#include "ipl.h"
-#include "section.h"
-#include "sectionsloader.h"
 
 /*
   exit callback
  */
-void exit_callback(void) { DestroyMsgPrinters(); }
+void exit_callback(void) { msg_printer_destroy(); }
 
 /*
   output labels
 */
-int outputLabels(CommandLineOptions *options, LabelRepository *repository) {
+int label_output(cli_opt_t *option, label_repository_t *repository) {
     char buffer[256];
 
-    if(NULL == options->labelsOut) { 
+    if(NULL == option->labels_out) { 
         /* We don't want to destroy the original label file. */
         char *tmp;
 
@@ -59,106 +62,103 @@ int outputLabels(CommandLineOptions *options, LabelRepository *repository) {
         now = localtime(&tv.tv_sec);
         strftime(dateString, 128, "%Y%m%d%H%M%S", now);
         
-        tmp = basename(options->romFileName);
+        tmp = basename(option->rom_filename);
         snprintf(buffer, 256, "%s.%s.lbl", tmp, dateString);     
-        options->labelsOut = buffer;
+        option->labels_out = buffer;
     }
-    if (!writeLabels(options->labelsOut, repository)) {
-        ERROR_MSG("Failed to write/update label file: %s", options->labelsOut);
+    if (!label_repository_save(option->labels_out, repository)) {
+        ERROR_MSG("Failed to write/update label file: %s", option->labels_out);
         return 0;
     }
     return 1;
 }
 
-// [todo] fix
-FileMsgPrinter filePrinter;
-ConsoleMsgPrinter consolePrinter;
-
-/* Main */
+/* ---------------------------------------------------------------- */
 int main(int argc, char **argv) {
+    cli_opt_t option;
+
     FILE *out;
-    FILE *mainFile;
+    FILE *main_file;
 
     int i;
     int ret, failure;
 
-    CommandLineOptions cmdOptions;
+    console_msg_printer_t console_printer;
+    file_msg_printer_t file_printer;
 
-    Section *section;
-    int sectionCount;
+    memmap_t map;
 
-    Decoder decoder;
-
-    MemoryMap memmap;
+    section_t *section;
+    int section_count;
 
     atexit(exit_callback);
 
-    SetupMsgPrinters();
+    msg_printer_init();
 
-    SetupFileMsgPrinter(&filePrinter);
-    SetupConsoleMsgPrinter(&consolePrinter);
+    file_msg_printer_init(&file_printer);
+    console_msg_printer_init(&console_printer);
 
-    if (AddMsgPrinter(&filePrinter.super)) {
+    if (msg_printer_add(&file_printer.super)) {
         fprintf(stderr, "Failed to setup file printer.\n");
         return EXIT_FAILURE;
     }
-    if (AddMsgPrinter(&consolePrinter.super)) {
+    if (msg_printer_add(&console_printer.super)) {
         fprintf(stderr, "Failed to setup console printer.\n");
         return EXIT_FAILURE;
     }
 
     failure = 1;
-    sectionCount = 0;
+    section_count = 0;
     section = NULL;
 
     /* Extract command line options */
-    ret = getCommandLineOptions(argc, argv, &cmdOptions);
+    ret = get_cli_opt(argc, argv, &option);
     if (ret <= 0) {
         usage();
         goto error_1;
     }
 
     /* Read configuration file */
-    if (cmdOptions.cfgFileName) {
-        ret = loadSections(cmdOptions.cfgFileName, &section, &sectionCount);
+    if (option.cfg_filename) {
+        ret = section_load(option.cfg_filename, &section, &section_count);
         if (!ret) {
-            ERROR_MSG("Unable to read %s", cmdOptions.cfgFileName);
+            ERROR_MSG("Unable to read %s", option.cfg_filename);
             goto error_1;
         }
     }
 
     /* Initialize memory map */
-    ret = initializeMemoryMap(&memmap);
-    if (0 == ret) {
+    ret = memmap_init(&map);
+    if (!ret) {
         goto error_1;
     }
 
     /* Read ROM */
-    if (0 == cmdOptions.cdrom) {
-        ret = loadROM(cmdOptions.romFileName, &memmap);
-        if (0 == ret) {
+    if (!option.cdrom) {
+        ret = rom_load(option.rom_filename, &map);
+        if (!ret) {
             goto error_2;
         }
 
         /* Get irq offsets */
-        if (cmdOptions.extractIRQ) {
-            ret = getIRQSections(&memmap, &section, &sectionCount);
-            if (0 == ret) {
+        if (option.extract_irq) {
+            ret = irq_read(&map, &section, &section_count);
+            if (!ret) {
                 ERROR_MSG("An error occured while reading irq vector offsets");
                 goto error_2;
             }
         }
     } else {
-        ret = addCDRAMMemoryMap(&memmap);
-        if (0 == ret) {
+        ret = cd_memmap(&map);
+        if (!ret) {
             goto error_2;
         }
 
-        if (cmdOptions.extractIRQ) {
-            IPL ipl;
-            ret = readIPL(&ipl, cmdOptions.romFileName);
-            ret = ret && getIPLSections(&ipl, &section, &sectionCount);
-            if (0 == ret) {
+        if (option.extract_irq) {
+            ipl_t ipl;
+            ret = ipl_read(&ipl, option.rom_filename);
+            ret = ret && ipl_sections(&ipl, &section, &section_count);
+            if (!ret) {
                 ERROR_MSG("An error occured while setting up sections from IPL data.");
                 goto error_2;
             }
@@ -167,162 +167,158 @@ int main(int argc, char **argv) {
     }
 
     /**/
-    sortSections(section, sectionCount);
+    section_sort(section, section_count);
 
-    /* Initialize decoder */
-    createDecoder(&decoder);
-
+    label_repository_t *repository = label_repository_create();
+    
     /* Load labels */
-    if (NULL != cmdOptions.labelsIn) {
-        for(i=0; cmdOptions.labelsIn[i]; i++) {
-            ret = loadLabels(cmdOptions.labelsIn[i], decoder.labels);
-            if (0 == ret) {
-                ERROR_MSG("An error occured while loading labels from %s : %s", cmdOptions.labelsIn[i], strerror(errno));
+    if (NULL != option.labels_in) {
+        for(i=0; option.labels_in[i]; i++) {
+            ret = label_repository_load(option.labels_in[i], repository);
+            if (!ret) {
+                ERROR_MSG("An error occured while loading labels from %s : %s", option.labels_in[i], strerror(errno));
                 goto error_4;
             }
         }
     }
 
     /* For each section reset every existing files */
-    for (i = 0; i < sectionCount; ++i) {
-        out = fopen(section[i].filename, "wb");
+    for (i = 0; i < section_count; ++i) {
+        out = fopen(section[i].output, "wb");
         if (NULL == out) {
-            ERROR_MSG("Can't open %s : %s", section[i].filename, strerror(errno));
+            ERROR_MSG("Can't open %s : %s", section[i].output, strerror(errno));
             goto error_4;
         }
         fclose(out);
     }
 
     /* Add section name to label repository. */
-    for (i = 0; i < sectionCount; ++i) {
-        ret = addLabel(decoder.labels, section[i].name, section[i].org, section[i].bank);
-        if (0 == ret) {
+    for (i = 0; i < section_count; ++i) {
+        ret = label_repository_add(repository, section[i].name, section[i].logical, section[i].page);
+        if (!ret) {
             ERROR_MSG("Failed to add section name (%s) to labels", section[i].name);
             goto error_4;
         }
     }
 
     /* Disassemble and output */
-    for (i = 0; i < sectionCount; ++i) {
-        out = fopen(section[i].filename, "ab");
-        if (NULL == out) {
-            ERROR_MSG("Can't open %s : %s", section[i].filename, strerror(errno));
+    for (i = 0; i < section_count; ++i) {
+        out = fopen(section[i].output, "ab");
+        if (!out) {
+            ERROR_MSG("Can't open %s : %s", section[i].output, strerror(errno));
             goto error_4;
         }
 
-        if ((0 != cmdOptions.cdrom) || (section[i].offset != ((section[i].bank << 13) | (section[i].org & 0x1fff)))) {
+        if ((0 != option.cdrom) || (section[i].offset != ((section[i].page << 13) | (section[i].logical & 0x1fff)))) {
             /* Copy CDROM data */
-            ret = loadCD(cmdOptions.romFileName, section[i].offset, section[i].size, section[i].bank, section[i].org,
-                         &memmap);
+            ret = cd_load(option.rom_filename, section[i].offset, section[i].size, section[i].page, section[i].logical, &map);
             if (0 == ret) {
                 ERROR_MSG("Failed to load CD data (section %d)", i);
                 goto error_4;
             }
         }
 
-        if (section[i].type != BinData) {
-            if((i > 0) && (0 == strcmp(section[i].filename, section[i-1].filename))
-                       && (section[i].type == section[i-1].type)
-                       && (section[i].bank == section[i-1].bank)
-                       && (section[i].org <= (section[i-1].org + section[i-1].size))) {
-                // "Merge" sections and adjust size if necessary.
-                if(section[i].size > 0) {
-                    uint32_t end0 = section[i-1].org + section[i-1].size;
-                    uint32_t end1 = section[i].org + section[i].size;
-                    if(end1 > end0) {
-                        section[i].size = end1 - end0;
-                        section[i].org = end0;
-                        INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
-                    }
-                    else {
-                        // The previous section overlaps the current one.
-                        // We skip it as it has already been processed.
-                        fclose(out);
-                        out = NULL;
-                        continue;
-                    }
+        if((i > 0) && (0 == strcmp(section[i].output, section[i-1].output))
+                   && (section[i].type == section[i-1].type)
+                   && (section[i].page == section[i-1].page)
+                   && (section[i].logical <= (section[i-1].logical + section[i-1].size))) {
+            // "Merge" sections and adjust size if necessary.
+            if(section[i].size > 0) {
+                uint32_t end0 = section[i-1].logical + section[i-1].size;
+                uint32_t end1 = section[i].logical + section[i].size;
+                if(end1 > end0) {
+                    section[i].size = end1 - end0;
+                    section[i].logical = end0;
+                    INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
                 }
                 else {
-                    section[i].org = section[i-1].org + section[i-1].size;
-                    INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
+                    // The previous section overlaps the current one.
+                    // We skip it as it has already been processed.
+                    fclose(out);
+                    out = NULL;
+                    continue;
                 }
             }
             else {
-                /* Print header */
-                fprintf(out, "\t.%s\n"
-                             "\t.bank $%03x\n"
-                             "\t.org $%04x\n",
-                        (section[i].type == Code) ? "code" : "data", section[i].bank, section[i].org);
+                section[i].logical = section[i-1].logical + section[i-1].size;
+                INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
             }
         }
+        else {
+            /* Print header */
+            fprintf(out, "\t.%s\n"
+                         "\t.bank $%03x\n"
+                         "\t.org $%04x\n",
+                    (section[i].type == Code) ? "code" : "data", section[i].page, section[i].logical);
+        }
 
-        /* Reset decoder */
-        resetDecoder(&memmap, out, &section[i], &decoder);
-
-        if (Code == section[i].type) {
+        memmap_mpr(&map, section[i].mpr);
+       
+        if (section[i].type == Code) {
             char eor;
 
             /* Extract labels */
-            ret = extractLabels(&decoder);
-            if (0 == ret) {
+            ret = label_extract(&section[i], &map, repository);
+            if (!ret) {
                 goto error_4;
             }
             /* Process opcodes */
+            uint16_t logical = section[i].logical;
             do {
-                eor = processOpcode(&decoder);
-                if (!cmdOptions.extractIRQ) {
-                    if (decoder.offset >= decoder.current->size)
+                eor = decode(out, &logical, &section[i], &map, repository);
+                if (!option.extract_irq) {
+                    if (logical >= (section[i].logical+section[i].size))
                         eor = 1;
                     else
                         eor = 0;
                 }
             } while (!eor);
         } else {
-            ret = processDataSection(&decoder);
-            if (0 == ret) {
+            ret = data_extract(out, &section[i], &map, repository);
+            if (!ret) {
             }
         }
-        fputc('\n', decoder.out);
+        fputc('\n', out);
 
         fclose(out);
         out = NULL;
     }
 
     /* Open main asm file */
-    mainFile = fopen(cmdOptions.mainFileName, "w");
-    if (NULL == mainFile) {
-        ERROR_MSG("Unable to open %s : %s", cmdOptions.mainFileName, strerror(errno));
+    main_file = fopen(option.main_filename, "w");
+    if (!main_file) {
+        ERROR_MSG("Unable to open %s : %s", option.main_filename, strerror(errno));
         goto error_4;
     }
 
-    if (!cmdOptions.cdrom && cmdOptions.extractIRQ) {
-        fprintf(mainFile, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
+    if (!option.cdrom && option.extract_irq) {
+        fprintf(main_file, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
         for (i = 0; i < 5; ++i) {
-            fprintf(mainFile, "\t.dw $%04x\n", section[i].org);
+            fprintf(main_file, "\t.dw $%04x\n", section[i].logical);
         }
     }
 
-    fclose(mainFile);
+    fclose(main_file);
 
     /* Output labels  */
-    if (!outputLabels(&cmdOptions, decoder.labels)) {
+    if (!label_output(&option, repository)) {
         goto error_4;
     }
     failure = 0;
 
 error_4:
-    deleteDecoder(&decoder);
+    label_repository_destroy(repository);
 error_2:
-    destroyMemoryMap(&memmap);
+    memmap_destroy(&map);
 error_1:
-    if(cmdOptions.labelsIn) {
-        free(cmdOptions.labelsIn);
-        cmdOptions.labelsIn = NULL;
+    if(option.labels_in) {
+        free(option.labels_in);
+        option.labels_in = NULL;
     }
 
-    for (i = 0; i < sectionCount; ++i) {
+    for (i = 0; i < section_count; ++i) {
         free(section[i].name);
-        free(section[i].filename);
+        free(section[i].output);
         section[i].name = NULL;
     }
     free(section);

@@ -34,7 +34,10 @@ typedef struct {
  */
 const opcode_t* opcode_get(uint8_t op);
 
-// [todo] format/opstring
+/**
+ *
+ */
+const char* opcode_format(const opcode_t *op, int i);
 
 /**
  * Is the instruction a local jump ?

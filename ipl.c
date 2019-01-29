@@ -138,7 +138,7 @@ void ipl_print(ipl_t *in) {
  * \param [in] filename Input filename.
  * \return 0 on error, 1 otherwise.
  */
-int ipt_read(ipl_t *out, const char *filename) {
+int ipl_read(ipl_t *out, const char *filename) {
     FILE *in = fopen(filename, "rb");
     if(in == NULL) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));

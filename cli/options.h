@@ -1,6 +1,6 @@
 /*
     This file is part of Etripator,
-    copyright (c) 2009--2017 Vincent Cruz.
+    copyright (c) 2009--2019 Vincent Cruz.
 
     Etripator is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,27 +15,26 @@
     You should have received a copy of the GNU General Public License
     along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef ETRIPATOR_OPTIONS_H
+#define ETRIPATOR_OPTIONS_H
 
-#include "config.h"
+#include <config.h>
 
 /* Command line options */
-typedef struct
-{
-    uint8_t extractIRQ;
+typedef struct {
+    uint8_t extract_irq;
     uint8_t cdrom;
-    char *cfgFileName;
-    char *romFileName;
-    char *mainFileName;
-    char *labelsOut;
-    char **labelsIn;
-} CommandLineOptions;
+    char *cfg_filename;
+    char *rom_filename;
+    char *main_filename;
+    char *labels_out;
+    char **labels_in;
+} cli_opt_t;
 
 /* Print usage */
 void usage();
 
 /* Extract command line options */
-int getCommandLineOptions(int, char**, CommandLineOptions*);
+int get_cli_opt(int, char**, cli_opt_t*);
 
-#endif // OPTIONS_H
+#endif // ETRIPATOR_OPTIONS_H

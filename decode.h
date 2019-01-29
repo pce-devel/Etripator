@@ -24,18 +24,18 @@
 #include "memorymap.h"
 
 /**
- *
+ * [todo] comments
  */
 int label_extract(section_t *section, memmap_t *map, label_repository_t *repository);
 
 /**
- *
+ * [todo] comments
  */
 int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository);
 
 /**
- *
+ * [todo] comments
  */
-int code_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository);
+int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository);
 
 #endif // ETRIPATOR_DECODE_H

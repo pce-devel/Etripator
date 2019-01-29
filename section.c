@@ -64,7 +64,7 @@ void section_reset(section_t *s) {
     s->type = UnknownSectionType;
     s->page = 0;
     s->logical = 0;
-    s->size = -1;
+    s->size = 0;
     memset(s->mpr, 0, 8*sizeof(uint8_t));
     s->output = NULL;
     s->data.type = UnknownDataType;
