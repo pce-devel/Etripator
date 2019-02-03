@@ -60,7 +60,7 @@ int msg_printer_add(msg_printer_t *printer) {
 void print_msg(msg_type_t type, const char* file, size_t line, const char* function, const char* format, ...) {
     msg_printer_t* printer;
     char* tmp = strdup(file);
-    char* filename = basename(file);
+    char* filename = basename(tmp);
     
     for(printer=g_msg_printer; NULL != printer; printer=printer->next) {
         if(printer->output) {

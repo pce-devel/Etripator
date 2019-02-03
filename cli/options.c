@@ -80,7 +80,7 @@ int get_cli_opt(int argc, char** argv, cli_opt_t* option)
                     if(NULL == tmp) {
                         return -1;
                     }
-                    memset(tmp+top, 0, capacity-count);
+                    memset(tmp+top, 0, (capacity-count) * sizeof(char*));
                     option->labels_in = tmp;
                     count = capacity;
                 }            
