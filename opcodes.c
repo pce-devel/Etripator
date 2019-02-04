@@ -300,11 +300,11 @@ static opcode_t pce_opcode[256] = {
   /* DD */  { "cmp ", 3 , 16 },  /* CMP  hhll, X        */
   /* DE */  { "dec ", 3 , 16 },  /* DEC  hhll, X        */
   /* DF */  { "bbs5", 3 , 20 },  /* BBS5 ZZ, lhhll      */
-  /* E0 */  { "cpy ", 2 ,  2 },  /* CPX  #nn            */
+  /* E0 */  { "cpx ", 2 ,  2 },  /* CPX  #nn            */
   /* E1 */  { "sbc ", 2 , 11 },  /* SBC  (ZZ,X)         */
   /* E2 */  { ".db ", 1 , 22 },  /* UNUSED              */
   /* E3 */  { "tia ", 7 , 18 },  /* TIA  shsl,dhdl,lhlh */
-  /* E4 */  { "cpy ", 2 ,  7 },  /* CPX  ZZ             */
+  /* E4 */  { "cpx ", 2 ,  7 },  /* CPX  ZZ             */
   /* E5 */  { "sbc ", 2 ,  7 },  /* SBC  ZZ             */
   /* E6 */  { "inc ", 2 ,  7 },  /* INC  ZZ             */
   /* E7 */  { "smb6", 2 ,  7 },  /* SMB6 ZZ             */
@@ -312,7 +312,7 @@ static opcode_t pce_opcode[256] = {
   /* E9 */  { "sbc ", 2 ,  2 },  /* SBC  #nn            */
   /* EA */  { "nop ", 1 ,  0 },  /* NOP                 */
   /* EB */  { ".db ", 1 , 22 },  /* UNUSED              */
-  /* EC */  { "cpy ", 3 , 14 },  /* CPX  hhll           */
+  /* EC */  { "cpx ", 3 , 14 },  /* CPX  hhll           */
   /* ED */  { "sbc ", 3 , 14 },  /* SBC  hhll           */
   /* EE */  { "inc ", 3 , 14 },  /* INC  hhll           */
   /* EF */  { "bbs6", 3 , 20 },  /* BBS6 ZZ, lhhll      */  
