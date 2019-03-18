@@ -89,6 +89,7 @@ target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
 target_link_libraries(etripator ${JANSSON_LIBRARIES})
 
 add_executable(etripator_cli cli/etripator.c cli/options.c)
+set_target_properties(etripator_cli PROPERTIES OUTPUT_NAME etripator)
 target_include_directories(etripator_cli PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(etripator_cli etripator)
 
@@ -105,3 +106,5 @@ add_custom_target(doc
          VERBATIM )
 
 add_subdirectory(test)
+
+install(TARGETS etripator_cli DESTINATION bin)
