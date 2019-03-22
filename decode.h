@@ -26,6 +26,11 @@
 /**
  * [todo] comments
  */
+int32_t compute_eor(section_t *section, memmap_t *map);
+
+/**
+ * [todo] comments
+ */
 int label_extract(section_t *section, memmap_t *map, label_repository_t *repository);
 
 /**
@@ -37,5 +42,10 @@ int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_
  * [todo] comments
  */
 int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository);
+
+/**
+ * [todo] comments
+ */
+int32_t compute_size(section_t *section, memmap_t *map);
 
 #endif // ETRIPATOR_DECODE_H

@@ -79,7 +79,6 @@ int main(int argc, char **argv) {
 
     FILE *out;
     FILE *main_file;
-
     int i;
     int ret, failure;
 
@@ -166,7 +165,6 @@ int main(int argc, char **argv) {
         /*  Data will be loaded during section disassembly */
     }
 
-    /**/
     section_sort(section, section_count);
 
     label_repository_t *repository = label_repository_create();
@@ -255,7 +253,9 @@ int main(int argc, char **argv) {
         memmap_mpr(&map, section[i].mpr);
        
         if (section[i].type == Code) {
-            char eor;
+            if(section[i].size <= 0) {
+                section[i].size = compute_size(&section[i], &map);
+            }
 
             /* Extract labels */
             ret = label_extract(&section[i], &map, repository);
@@ -265,14 +265,8 @@ int main(int argc, char **argv) {
             /* Process opcodes */
             uint16_t logical = section[i].logical;
             do {
-                eor = decode(out, &logical, &section[i], &map, repository);
-                if (!option.extract_irq) {
-                    if (logical >= (section[i].logical+section[i].size))
-                        eor = 1;
-                    else
-                        eor = 0;
-                }
-            } while (!eor);
+                (void)decode(out, &logical, &section[i], &map, repository);
+            } while (logical < (section[i].logical+section[i].size));
         } else {
             ret = data_extract(out, &section[i], &map, repository);
             if (!ret) {

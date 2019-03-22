@@ -19,14 +19,12 @@
 #include "message.h"
 #include "opcodes.h"
 
-
 int label_extract(section_t *section, memmap_t *map, label_repository_t *repository) {
-	int eor, i;
+	int i;
 	uint8_t inst;
 	uint8_t data[6];
 	char buffer[32];
 
-	int offset;
 	uint16_t logical;
 	uint8_t page;
 
@@ -36,13 +34,10 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 		return 1;
 	}
 
-	offset = 0;
-    logical = section->logical;
-    
 	INFO_MSG("%s:", section->name);
 
 	/* Walk along section */
-	for(eor = 0; !eor; ) {
+    for(logical = section->logical; logical < (section->logical + section->size); logical += opcode->size) {
 		/* Read instruction */
 		inst = memmap_read(map, logical);
 		opcode = opcode_get(inst);
@@ -84,20 +79,6 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 				}
 
 				INFO_MSG("%04x long jump to %04x (%02x)", logical, jump, page);
-		}
-
-		logical += opcode->size;
-        offset += opcode->size;
-        
-		/* Search end of section */
-		if (section->size == 0) {
-		    /* RTI, RTS, BRK */
-			if ((inst == 0x40) || (inst == 0x60) || (inst == 0x00)) {
-				section->size = offset;
-				eor = 1;
-			}
-		} else if (offset >= section->size) {
-			eor = 1;
 		}
 	}
 	return 1;
@@ -407,7 +388,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				extra = "], Y";
 			case 11: /* [zp, X] */
 				if (none == extra) {
-					extra = ", X]";
+					extra = ", X";
 				}
 			case 10: /* [zp] */
 				if (none == extra) {
@@ -505,3 +486,62 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 	fputc('\n', out);
 	return eor;
 }
+
+/**
+ * [todo] comments
+ */
+int32_t compute_size(section_t *section, memmap_t *map) {
+    uint8_t i;
+    uint8_t data[6];
+    uint32_t start = section->logical;
+    uint32_t logical = start;
+
+    for(int eor=0; !eor; ) {
+        uint8_t page = memmap_page(map, logical);
+    	data[0] = memmap_read(map, logical);
+        const opcode_t *opcode = opcode_get(data[0]);
+        for (i = 1; i < opcode->size; i++) {
+    		data[i] = memmap_read(map, logical + i);
+    	}
+        logical += opcode->size;
+        if(opcode_is_far_jump(data[0])) {
+            uint32_t jump = data[1] | (data[2] << 8);
+            if(data[0] == 0x4c) {   // jmp hhll
+                uint8_t jump_page = memmap_page(map, jump);
+                if(page == jump_page) {
+                    if(jump < logical) {
+                        eor = 1;
+                    }
+                    else {
+                        logical = jump; 
+                    }
+                }
+            }
+        }
+        else if(opcode_is_local_jump(data[0])) {
+            uint32_t jump = 0;
+            int32_t delta = 0;
+			/* For BBR* and BBS* displacement is stored in the 2nd byte */
+    		i = ((data[0]&0x0F) == 0x0F) ? 2 : 1;
+    		if (data[i] & 128)
+    			delta = -((data[i] - 1) ^ 0xff);
+    		else
+    			delta = data[i];
+    		jump = logical + delta;
+            if(data[0] == 0x80) {      // bra offset
+                if(jump < logical) {
+                    eor = 1;
+                }
+            }
+            else if(jump > logical) {
+                logical = jump;
+            }
+        }
+        else if((data[0] == 0x40) || (data[0] == 0x60)) { // rts or rti
+            eor = 1;
+        }
+    }
+    return (logical - start);
+}
+
+
