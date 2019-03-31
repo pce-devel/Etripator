@@ -19,4 +19,5 @@ target_include_directories(label_tests PRIVATE ${PROJECT_SOURCE_DIR})
 add_test(NAME label_tests 
          COMMAND $<TARGET_FILE:label_tests>)
 
-# [todo] copy data directory
+add_custom_command(TARGET section_tests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/data $<TARGET_FILE_DIR:section_tests>/data)
