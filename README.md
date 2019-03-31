@@ -30,10 +30,9 @@ The configuration file is a standard **JSON** file.
 The supported fields are :
  * **filename** *(mandatory)* : name of the output file. If multiple sections have the same output filename, their output will be appended to that file. On the other hand, note that the output file will be overwritten at each session.
 
- * **type** *(mandatory)* : values are **code**, **bin_data** or **inc_data**.
+ * **type** *(mandatory)* : values are **code** or **data**.
     * **code** indicates that the section will be disassembled and output as asm code.
-    * **data** means that the section is pure data. but it will be output as code directives (.db).
-    * **binary** is also for data section. But the output file will contain binary data.
+    * **data** means that the section contains data, but it will be output as code directives (.db or .dw) or binary according to the **data** configuration.
 
  * **page** *(mandatory)* : memory page of the current section. It will be used to compute the file offset of the section if the **offset** field is missing.
 
@@ -51,7 +50,8 @@ The supported fields are :
 
  * **mpr** : an array containing the page value for each memory page register.
  
- * **data** *(inc_data only)* : an object with 2 entries :
+ * **data** : an object with 2 entries :
+     * **type** : **binary**, **hex** or **string**.
      * **element_size** *(default value: 1)* : element size in bytes. The only supported values are 1 or 2.
      * **elements_per_line** *(default value: 16)* : number of elements per line. 
   
@@ -83,7 +83,7 @@ Example:
         "logical": "fff6",
         "size": "a",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
-        "data": { "element_size": 2, "elements_per_line": 1 }
+        "data": { "type": "hex", "element_size": 2, "elements_per_line": 1 }
     }
 
 }
