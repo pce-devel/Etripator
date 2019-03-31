@@ -32,7 +32,7 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 	uint8_t data[6];
 	char buffer[32];
 
-	int16_t logical;
+	uint16_t logical;
 	uint8_t page;
 
     const opcode_t *opcode;
@@ -40,8 +40,6 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 	if (section->type != Code) {
 		return 1;
 	}
-
-	INFO_MSG("%s:", section->name);
 
 	/* Walk along section */
     for(logical = section->logical; logical < (section->logical + section->size); logical += opcode->size) {
@@ -516,7 +514,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
  */
 int32_t compute_size(section_t *section, memmap_t *map) {
     uint8_t i;
-    uint8_t data[6];
+    uint8_t data[7];
     uint32_t start = section->logical;
     uint32_t logical = start;
 
@@ -561,7 +559,7 @@ int32_t compute_size(section_t *section, memmap_t *map) {
                 logical = jump;
             }
         }
-        else if((data[0] == 0x40) || (data[0] == 0x60)) { // rts or rti
+        else if((data[0] == 0x40) || (data[0] == 0x60) || (data[0] == 0x00)) { // rts, rti or brk
             eor = 1;
         }
     }
