@@ -19,13 +19,20 @@
 #include "message.h"
 #include "opcodes.h"
 
+/**
+ * Finds any jump address from the current section.
+ * @param [in] section Current section.
+ * @param [in] map Memory map.
+ * @param [in out] repository Label repository.
+ * @return 1 upon success, 0 otherwise.
+ */
 int label_extract(section_t *section, memmap_t *map, label_repository_t *repository) {
 	int i;
 	uint8_t inst;
 	uint8_t data[6];
 	char buffer[32];
 
-	uint16_t logical;
+	int16_t logical;
 	uint8_t page;
 
     const opcode_t *opcode;
@@ -205,6 +212,14 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
     return 1;
 }
 
+/**
+ * Process data section. The result will be output has a binary file or an asm file containing hex values or strings.
+ * @param [out] out File output.
+ * @param [in] section Current section.
+ * @param [in] map Memory map.
+ * @param [in] repository Label repository.
+ * @return 1 upon success, 0 otherwise.
+ */
 int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository) {
     switch(section->data.type) {
         case Binary:
@@ -220,7 +235,13 @@ int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_
 static const char *spacing = "          ";
 
 /**
- *
+ * Process code section.
+ * @param [out] out File output.
+ * @param [in out] logical Current logical address.
+ * @param [in] section Current section.
+ * @param [in] map Memory map.
+ * @param [in] repository Label repository.
+ * @return 1 if rts, rti or brk instruction was decoded, 0 otherwise.
  */
 int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository) {
 	int i, delta;
@@ -488,7 +509,10 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 }
 
 /**
- * [todo] comments
+ * Computes section size.
+ * @param [in] section Current section.
+ * @param [in] map Memory map.
+ * @return Section size. 
  */
 int32_t compute_size(section_t *section, memmap_t *map) {
     uint8_t i;
