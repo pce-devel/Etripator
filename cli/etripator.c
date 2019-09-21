@@ -216,8 +216,12 @@ int main(int argc, char **argv) {
             }
         }
 
+        if((i > 0) && (section[i].logical < (section[i-1].logical + section[i-1].size)) 
+                   && (section[i].type != section[i-1].type)) {
+            WARNING_MSG("Section %s and %s overlaps!", section[i].name, section[i-1].name);
+        }
+
         if((i > 0) && (0 == strcmp(section[i].output, section[i-1].output))
-                   && (section[i].type == section[i-1].type)
                    && (section[i].page == section[i-1].page)
                    && (section[i].logical <= (section[i-1].logical + section[i-1].size))) {
             // "Merge" sections and adjust size if necessary.
