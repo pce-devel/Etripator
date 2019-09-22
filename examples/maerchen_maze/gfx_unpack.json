@@ -2,8 +2,8 @@
     "gfx_unpack": {
         "filename": "gfx.asm",
         "type": "code",
-        "bank": "0",
-        "org": "f71c",
+        "page": "0",
+        "logical": "f71c",
         "size": "1ac",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     }

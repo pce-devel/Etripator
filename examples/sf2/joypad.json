@@ -2,16 +2,16 @@
     "joydetect": {
         "filename": "joypad.asm",
         "type": "code",
-        "org": "6c80",
-        "bank": "15",
+        "logical": "6c80",
+        "page": "15",
         "size": "f4",
         "mpr": ["ff","f8","38","15","3c","3a","04","00"]
     },
     "joyread": {
         "filename": "joypad.asm",
         "type": "code",
-        "org": "7d98",
-        "bank": "0d",
+        "logical": "7d98",
+        "page": "0d",
         "size": "f1",
         "mpr": ["ff","f8","38","0d","40","3a","04","00"]
     }

@@ -2,8 +2,8 @@
     "irq_reset": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "e000",
+        "page": "0",
+        "logical": "e000",
         "size": "58",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
@@ -11,8 +11,8 @@
     "irq_1": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "e058",
+        "page": "0",
+        "logical": "e058",
         "size": "55",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
@@ -20,8 +20,8 @@
     "unknown0": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "e138",
+        "page": "0",
+        "logical": "e138",
         "size": "1d",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
@@ -29,64 +29,64 @@
     "update_satb": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "e0cc",
+        "page": "0",
+        "logical": "e0cc",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
     "set_vdc_ctrl": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "e4b5",
+        "page": "0",
+        "logical": "e4b5",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
     "update_scroll": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "e0ad",
+        "page": "0",
+        "logical": "e0ad",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
     "read_joy": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "e4ca",
+        "page": "0",
+        "logical": "e4ca",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
     "update_sound": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "fbc2",
+        "page": "0",
+        "logical": "fbc2",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
     "update_channel": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "fcac",
+        "page": "0",
+        "logical": "fcac",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
     "unknown7": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "fd36",
+        "page": "0",
+        "logical": "fd36",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
     "unknown8": {
-        "filename": "bank2.asm",
+        "filename": "page2.asm",
         "type": "code",
-        "bank": "2",
-        "org": "a0b6",
+        "page": "2",
+        "logical": "a0b6",
         "size": "27",
         "mpr": ["ff", "f8", 0, 0, 0, 2, 0, 0 ]
     },
@@ -94,17 +94,18 @@
     "irq_dummy": {
         "filename": "startup.asm",
         "type": "code",
-        "bank": "0",
-        "org": "fff0",
+        "page": "0",
+        "logical": "fff0",
         "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
     },
 
     "irq_vectors": {
         "filename": "startup.asm",
-        "type": "inc_data",
-        "bank": "0",
-        "org": "fff6",
+        "type": "data",
+        "page": "0",
+        "logical": "fff6",
         "size": "a",
-        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
+        "data": { "type":"hex", "element_size": 2, "elements_per_line": 1 }
     }
 }

@@ -2,8 +2,8 @@
     "mb128_detect": {
         "filename": "mb128.asm",
         "type": "code",
-        "bank": "82",
-        "org" : "76e4",
+        "page": "82",
+        "logical" : "76e4",
         "offset": "4ee4",
         "size": "330",
         "mpr": ["ff", "f8", 0, "82", 0, 0, 0, 0 ]
