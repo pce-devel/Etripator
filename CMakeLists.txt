@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.1)
+cmake_minimum_required (VERSION 3.12)
 
 project(etripator
     VERSION 0.7.0
@@ -65,6 +65,9 @@ set(etripator_HDR
 if(WIN32 AND MSVC)
     list(APPEND etripator_SRC
         platform/windows/time.c
+        platform/windows/getopt1.c
+        platform/windows/getopt.c
+        platform/windows/time.c
         platform/windows/basename.c
     )
     list(APPEND etripator_HDR
@@ -73,20 +76,22 @@ if(WIN32 AND MSVC)
         platform/windows/stdint.h
         platform/windows/inttypes.h
         platform/windows/config_win.h
+        platform/windows/getopt_win.h
     )
     set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
 endif(WIN32 AND MSVC)
 
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
-set_property(TARGET etripator PROPERTY C_STANDARD 99)
+target_compile_features(etripator PUBLIC c_std_99)
 target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE})
-if(CMAKE_COMPILER_IS_GNUCXX)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     target_compile_options(etripator PRIVATE -Wall -Wshadow -Wextra)
-endif(CMAKE_COMPILER_IS_GNUCXX)
+endif()
 target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
 target_link_libraries(etripator ${JANSSON_LIBRARIES})
 
 add_executable(etripator_cli cli/etripator.c cli/options.c)
+target_compile_features(etripator_cli PUBLIC c_std_99)
 set_target_properties(etripator_cli PROPERTIES OUTPUT_NAME etripator)
 target_include_directories(etripator_cli PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(etripator_cli etripator)
