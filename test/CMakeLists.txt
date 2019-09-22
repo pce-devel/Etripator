@@ -3,8 +3,10 @@ target_include_directories(munit PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_D
 set_property(TARGET munit PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/munit>)
 
 add_executable(section_tests section.c ../section.c ../section/load.c ../section/save.c ../jsonhelpers.c ../message.c ../message/file.c ../message/console.c)
-set_property(TARGET section_tests PROPERTY C_STANDARD 99)
-target_compile_options(section_tests PRIVATE -Wall -Wshadow -Wextra)
+target_compile_features(section_tests PUBLIC c_std_99)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    target_compile_options(section_tests PRIVATE -Wall -Wshadow -Wextra)
+endif()
 target_link_libraries(section_tests munit ${JANSSON_LIBRARIES})
 target_include_directories(section_tests PRIVATE ${PROJECT_SOURCE_DIR})
 add_test(NAME section_tests 
@@ -12,8 +14,10 @@ add_test(NAME section_tests
          WORKING_DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)
 
 add_executable(label_tests label.c ../label.c ../message.c ../message/file.c ../message/console.c)
-set_property(TARGET label_tests PROPERTY C_STANDARD 99)
-target_compile_options(label_tests PRIVATE -Wall -Wshadow -Wextra)
+target_compile_features(label_tests PUBLIC c_std_99)
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    target_compile_options(label_tests PRIVATE -Wall -Wshadow -Wextra)
+endif()
 target_link_libraries(label_tests munit ${JANSSON_LIBRARIES})
 target_include_directories(label_tests PRIVATE ${PROJECT_SOURCE_DIR})
 add_test(NAME label_tests 
