@@ -88,7 +88,7 @@ int rom_load(const char* filename, memmap_t* map) {
     }
     else {
         for(i=0; i<128; i++) {
-            uint8_t bank = i % (map->mem[PCE_MEM_ROM].len / 8192);
+            uint8_t bank = (uint8_t)(i % (map->mem[PCE_MEM_ROM].len / 8192));
             map->page[i] = &map->mem[PCE_MEM_ROM].data[bank * 8192];
         }
     }

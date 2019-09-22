@@ -184,7 +184,7 @@ int label_repository_size(label_repository_t* repository) {
     if(repository == NULL) {
         return 0;
     }
-    return repository->last;
+    return (int)repository->last;
 }
 
 /**

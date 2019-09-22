@@ -72,7 +72,7 @@ int cd_load(const char* filename, size_t start, size_t len, uint8_t page, size_t
         return 0;
     }
 
-    ret = fseek(in, start, SEEK_SET);
+    ret = fseek(in, (long int)start, SEEK_SET);
     if(ret) {
         ERROR_MSG("Offset out of bound : %s", strerror(errno));
         fclose(in);

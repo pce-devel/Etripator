@@ -63,18 +63,16 @@ set(etripator_HDR
 )
 
 if(WIN32 AND MSVC)
-    list(APPEND
+    list(APPEND etripator_SRC
         platform/windows/time.c
         platform/windows/basename.c
-        etripator_SRC
     )
-    list(APPEND
+    list(APPEND etripator_HDR
         platform/windows/time.h
         platform/windows/basename.h
         platform/windows/stdint.h
         platform/windows/inttypes.h
         platform/windows/config_win.h
-        etripator_HDR
     )
     set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
 endif(WIN32 AND MSVC)

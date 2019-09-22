@@ -202,7 +202,7 @@ int section_load(const char *filename, section_t **out, int *n) {
     size = json_object_size(root);
     *out = (section_t*)realloc(*out, (*n+size) * sizeof(section_t));
     ptr = *out + *n;
-    *n += size;
+    *n += (int)size;
     json_object_foreach(root, key, obj) {
         section_reset(ptr);
         ret = ret && section_parse(obj, ptr);

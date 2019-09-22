@@ -11,7 +11,7 @@ int json_validate_int(const json_t* obj, int* out) {
         return 1;
     }
     else if(json_is_integer(obj)) {
-        *out = json_integer_value(obj);
+        *out = (int)json_integer_value(obj);
         return 1;
     }
     return 0;

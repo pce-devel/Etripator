@@ -53,6 +53,6 @@ void mem_destroy(mem_t *mem) {
  */
 void mem_fill(mem_t *mem, uint8_t c) {
     if(mem->data && mem->len) {
-        memset(mem->data, mem->len, c);
+        memset(mem->data, (int)mem->len, c);
     }
 }

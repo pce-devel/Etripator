@@ -73,7 +73,7 @@ uint8_t memmap_page(memmap_t* map, uint16_t logical) {
  * \return Byte read.
  */
 uint8_t memmap_read(memmap_t *map, size_t logical) {
-    uint8_t i = memmap_page(map, logical);
+    uint8_t i = memmap_page(map, (uint16_t)logical);
     return (map->page[i]) ? map->page[i][logical & 0x1fff] : 0xff;
 }
 /**
