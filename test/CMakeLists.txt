@@ -2,24 +2,42 @@ add_library(munit STATIC ${CMAKE_CURRENT_LIST_DIR}/munit/munit.c)
 target_include_directories(munit PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/munit>)
 set_property(TARGET munit PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/munit>)
 
-add_executable(section_tests section.c ../section.c ../section/load.c ../section/save.c ../jsonhelpers.c ../message.c ../message/file.c ../message/console.c)
-target_compile_features(section_tests PUBLIC c_std_99)
+if(WIN32 AND MSVC)
+    set(etripator_PLATFORM_SRC
+        ../platform/windows/time.c
+        ../platform/windows/getopt1.c
+        ../platform/windows/getopt.c
+        ../platform/windows/time.c
+        ../platform/windows/basename.c
+    )
+    set(etripator_PLATFORM_HDR
+        ../platform/windows/time.h
+        ../platform/windows/basename.h
+        ../platform/windows/stdint.h
+        ../platform/windows/inttypes.h
+        ../platform/windows/config_win.h
+        ../platform/windows/getopt_win.h
+    )
+endif()
+
+add_executable(section_tests section.c ../section.c ../section/load.c ../section/save.c ../jsonhelpers.c ../message.c ../message/file.c ../message/console.c ${etripator_PLATFORM_SRC} ${etripator_PLATFORM_HDR})
+target_compile_features(section_tests PUBLIC c_std_11)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     target_compile_options(section_tests PRIVATE -Wall -Wshadow -Wextra)
 endif()
 target_link_libraries(section_tests munit ${JANSSON_LIBRARIES})
-target_include_directories(section_tests PRIVATE ${PROJECT_SOURCE_DIR})
+target_include_directories(section_tests PRIVATE ${PROJECT_SOURCE_DIR} ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE})
 add_test(NAME section_tests 
          COMMAND $<TARGET_FILE:section_tests>
          WORKING_DIRECTORY $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>)
 
-add_executable(label_tests label.c ../label.c ../message.c ../message/file.c ../message/console.c)
-target_compile_features(label_tests PUBLIC c_std_99)
+add_executable(label_tests label.c ../label.c ../message.c ../message/file.c ../message/console.c ${etripator_PLATFORM_SRC} ${etripator_PLATFORM_HDR})
+target_compile_features(label_tests PUBLIC c_std_11)
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     target_compile_options(label_tests PRIVATE -Wall -Wshadow -Wextra)
 endif()
 target_link_libraries(label_tests munit ${JANSSON_LIBRARIES})
-target_include_directories(label_tests PRIVATE ${PROJECT_SOURCE_DIR})
+target_include_directories(label_tests PRIVATE ${PROJECT_SOURCE_DIR} ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE})
 add_test(NAME label_tests 
          COMMAND $<TARGET_FILE:label_tests>)
 
