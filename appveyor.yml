@@ -6,13 +6,13 @@ configuration: Release
 environment:
   matrix:
     - compiler: msvc-15-seh
-      generator: "Visual Studio 15 2017 Win64"
+      CMAKE_GENERATOR: "Visual Studio 15 2017 Win64"
       build_system: cmake
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       MSVC_PLATFORM: amd64
 
     - compiler: msvc-15-seh
-      generator: "Visual Studio 15 2017"
+      CMAKE_GENERATOR: "Visual Studio 15 2017"
       build_system: cmake
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       MSVC_PLATFORM: x86
@@ -25,7 +25,7 @@ install:
   - md install
   - md build
   - cd build
-  - ps: cmake -DJANSSON_BUILD_DOCS=OFF -DJANSSON_WITHOUT_TESTS=ON -G "$env:generator" -DCMAKE_INSTALL_PREFIX=../install ..
+  - cmake -DJANSSON_BUILD_DOCS=OFF -DJANSSON_WITHOUT_TESTS=ON -G %CMAKE_GENERATOR% -DCMAKE_INSTALL_PREFIX=../install ..
   - cmake --build . --config Release
   - cmake --build . --config Release --target install
   - cd ../../Etripator
@@ -36,7 +36,7 @@ before_build:
   - mkdir install
   - mkdir build
   - cd build 
-  - ps: cmake -G "$env:generator" -DCMAKE_INSTALL_PREFIX=../install -DJANSSON_INCLUDE_DIR=../../jansson-2.12/install/include -DJANSSON_LIBRARY=../../jansson-2.12/install/lib/jansson.lib ..
+  - cmake -G %CMAKE_GENERATOR% -DCMAKE_INSTALL_PREFIX=../install -DJANSSON_INCLUDE_DIR=../../jansson-2.12/install/include -DJANSSON_LIBRARY=../../jansson-2.12/install/lib/jansson.lib ..
 
 build_script:
   - cmake --build . --config Release
