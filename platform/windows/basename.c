@@ -17,8 +17,13 @@
 */
 #include "basename.h"
 
+#include <stdlib.h>
+
 char *basename(char *path) {
-    char *drive, dir, fname, ext;
+    char *drive = NULL;
+    char *dir = NULL;
+    char *fname;
+    char *ext = NULL;
     _splitpath(path, drive, dir, fname, ext);
     return fname;
 }
