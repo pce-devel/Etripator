@@ -20,9 +20,9 @@
 #include <stdlib.h>
 
 char *basename(char *path) {
+    static char fname[_MAX_FNAME]; // :(
     char *drive = NULL;
     char *dir = NULL;
-    char *fname;
     char *ext = NULL;
     _splitpath(path, drive, dir, fname, ext);
     return fname;
