@@ -5,8 +5,6 @@ set_property(TARGET munit PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFA
 if(WIN32 AND MSVC)
     set(etripator_PLATFORM_SRC
         ../platform/windows/time.c
-        ../platform/windows/getopt1.c
-        ../platform/windows/getopt.c
         ../platform/windows/time.c
         ../platform/windows/basename.c
     )
@@ -16,7 +14,6 @@ if(WIN32 AND MSVC)
         ../platform/windows/stdint.h
         ../platform/windows/inttypes.h
         ../platform/windows/config_win.h
-        ../platform/windows/getopt_win.h
     )
 endif()
 

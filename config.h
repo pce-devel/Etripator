@@ -32,7 +32,6 @@
 //#define strcasecmp _stricmp
 
 #include <unistd.h>
-#include <getopt.h>
 #include <stdint.h>
 #include <time.h>
 
