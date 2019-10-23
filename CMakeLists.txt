@@ -19,6 +19,8 @@ find_package(Jansson)
 
 set(CMAKE_C_STANDARDS 11)
 
+add_subdirectory(externals)
+
 set(etripator_SRC
     message.c 
     message/file.c
@@ -65,8 +67,6 @@ set(etripator_HDR
 if(WIN32 AND MSVC)
     list(APPEND etripator_SRC
         platform/windows/time.c
-        platform/windows/getopt1.c
-        platform/windows/getopt.c
         platform/windows/time.c
         platform/windows/basename.c
     )
@@ -76,16 +76,15 @@ if(WIN32 AND MSVC)
         platform/windows/stdint.h
         platform/windows/inttypes.h
         platform/windows/config_win.h
-        platform/windows/getopt_win.h
     )
     set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
 endif(WIN32 AND MSVC)
 
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
 target_compile_features(etripator PUBLIC c_std_99)
-target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE})
+target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE} externals)
 target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
-target_link_libraries(etripator ${JANSSON_LIBRARIES})
+target_link_libraries(etripator ${JANSSON_LIBRARIES} argparse)
 
 add_executable(etripator_cli cli/etripator.c cli/options.c)
 target_compile_features(etripator_cli PUBLIC c_std_99)

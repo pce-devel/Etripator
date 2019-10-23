@@ -74,7 +74,7 @@ int label_output(cli_opt_t *option, label_repository_t *repository) {
 }
 
 /* ---------------------------------------------------------------- */
-int main(int argc, char **argv) {
+int main(int argc, const char **argv) {
     cli_opt_t option;
 
     FILE *out;
@@ -113,7 +113,6 @@ int main(int argc, char **argv) {
     /* Extract command line options */
     ret = get_cli_opt(argc, argv, &option);
     if (ret <= 0) {
-        usage();
         goto error_1;
     }
 

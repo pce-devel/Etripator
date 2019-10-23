@@ -17,104 +17,80 @@
 */
 #include "options.h"
 
-/* Print usage */
-void usage()
-{
-    fprintf(stderr, "Usage : etripator [options] <cfg> <in>\n"
-            "--irq-detect or -i    : automatically detect and extract irq vectors when disassembling a ROM, or extract opening code and gfx from CDROM IPL data.\n"
-            "--cd or -c            : cdrom image disassembly. Irq detection and rom\n"
-            "                        header jump are not performed.\n"
-            "--help or -h          : displays this message.\n"
-            "--out or -o <file>    : main asm file containing includes for all sections \n"
-            "                        as long the irq vector table if the irq-detect\n"
-            "                        option is enabled.\n"
-            "--labels or -l <file> : labels definition filename.\n"
-            "--labels-out <file>   : extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl.\n"
-            "<cfg>                 : configuration file (optional with -i option).\n"
-            "<in>                  : binary.\n");
+#include <argparse/argparse.h>
+
+struct labels_in_payload {
+    size_t capacity;
+    size_t size;
+    const char ***array;
+};
+
+static int labels_opt_callback(struct argparse *self, const struct argparse_option *option) {
+    struct labels_in_payload *payload = (struct labels_in_payload*)option->data;
+    size_t last = payload->size++;
+    if(payload->capacity <= payload->size) {
+        payload->capacity += 4;
+        const char **tmp = (const char**)realloc(*payload->array, payload->capacity*sizeof(const char*));
+        if(tmp == NULL) {
+            return 0;
+        }
+        memset(tmp+last, 0, 4*sizeof(const char*));
+        *payload->array = tmp;
+    }
+    (*payload->array)[last] = *(char**)option->value;
+    return 1;
 }
 
 /* Extract command line options */
-int get_cli_opt(int argc, char** argv, cli_opt_t* option)
-{
-    char *short_opt = "icho:l:";
-    struct option long_opt[] = {
-        {"irq-detect", 0, 0, 'i'},
-        {"cd",         0, 0, 'c'},
-        {"help",       0, 0, 'h'},
-        {"out",        1, 0, 'o'},
-        {"labels",     1, 0, 'l'},
-        {"labels-out", 1, 0,  1 },
-        { 0,           0, 0,  0 }
+int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
+    static const char *const usages[] = {
+        "etripator [options] [--] <cfg.json> <in>",
+        NULL
     };
-    int idx, opt;
-    size_t top = 0;
-    size_t count = 2;
-    /* Reset options */
-    option->extract_irq   = 0;
-    option->cdrom         = 0;
+
+    char *dummy;
+    struct labels_in_payload payload = { 0, 0, &option->labels_in };
+
+    struct argparse_option options[] = {
+        OPT_HELP(),
+        OPT_BOOLEAN('i', "irq-detect", &option->extract_irq, "automatically detect and extract irq vectors when disassembling a ROM, or extract opening code and gfx from CDROM IPL data", NULL, 0, 0),
+        OPT_BOOLEAN('c', "cd", &option->cdrom, "cdrom image disassembly. Irq detection and rom. Header jump is not performed", NULL, 0, 0),
+        OPT_STRING('o', "out", &option->main_filename, "main asm file containing includes for all sections as long the irq vector table if the irq-detect option is enabled", NULL, 0, 0),
+        OPT_STRING('l', "labels", &dummy, "labels definition filename", labels_opt_callback, (intptr_t)&payload, 0),
+        OPT_STRING(0, "labels-out", &option->labels_out, "extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl", NULL, 0, 0),
+        OPT_END(),
+    };
+
+    struct argparse argparse;
+
+    option->extract_irq = 0;
+    option->cdrom = 0;
     option->cfg_filename  = NULL;
     option->rom_filename  = NULL;
     option->main_filename = "main.asm";
-    option->labels_out    = NULL;
-    option->labels_in     = NULL;
-    /* Note : IRQ detection is disabled with the cdrom option */
-    while ((opt = getopt_long (argc, argv, short_opt, long_opt, &idx)) > 0) {
-        switch(opt) {
-            case 1:
-                option->labels_out = optarg;
-                break;
-            case 'i':
-                option->extract_irq = 1;
-                break;
-            case 'c':
-                option->cdrom = 1;
-                break;
-            case 'o':
-                option->main_filename = optarg;
-                break;
-            case 'l':
-                if((top >= count) || (NULL == option->labels_in)) {
-                    size_t capacity = count * 2;
-                    char **tmp = (char**)realloc(option->labels_in, capacity * sizeof(char*));
-                    if(NULL == tmp) {
-                        return -1;
-                    }
-                    memset(tmp+top, 0, (capacity-count) * sizeof(char*));
-                    option->labels_in = tmp;
-                    count = capacity;
-                }            
-                option->labels_in[top++] = optarg;
-                break;
-            
-            case 'h':
-                return 0;
+    option->labels_in = NULL;
 
-            default:
-                return -1;
-        }       
+    argparse_init(&argparse, options, usages, 0);
+    argparse_describe(&argparse, "\nEtripator : a PC Engine disassembler", "  ");
+    argc = argparse_parse(&argparse, argc, argv);
+    if(!argc) {
+        argparse_usage(&argparse);
+        return 0;
     }
-
-    /* Retrieve config file and rom file. */
-    if((argc - optind) != 2)
-    {
-        if((option->extract_irq) && ((argc - optind) == 1))
-        {
+    if(argc != 2) {
+        if((option->extract_irq) && (argc == 1)) {
             /* Config file is optional with automatic irq vector extraction. */
             option->cfg_filename =  NULL;
-            option->rom_filename = argv[optind];
+            option->rom_filename = argv[0];
         }
-        else
-        {
-            /* Not enough parameters!. */
-            option->cfg_filename  = option->rom_filename = NULL;
-            return -1;
+        else {
+            argparse_usage(&argparse);
+            return 0;
         }
     }
-    else
-    {
-        option->cfg_filename = argv[optind];
-        option->rom_filename = argv[optind+1];
+    else {
+        option->cfg_filename = argv[0];
+        option->rom_filename = argv[1];
     }
     return 1;
 }

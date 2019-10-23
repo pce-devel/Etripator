@@ -22,19 +22,16 @@
 
 /* Command line options */
 typedef struct {
-    uint8_t extract_irq;
-    uint8_t cdrom;
-    char *cfg_filename;
-    char *rom_filename;
-    char *main_filename;
-    char *labels_out;
-    char **labels_in;
+    int extract_irq;
+    int cdrom;
+    const char *cfg_filename;
+    const char *rom_filename;
+    const char *main_filename;
+    const char *labels_out;
+    const char **labels_in;
 } cli_opt_t;
 
-/* Print usage */
-void usage();
-
 /* Extract command line options */
-int get_cli_opt(int, char**, cli_opt_t*);
+int get_cli_opt(int argc, const char** argv, cli_opt_t* option);
 
 #endif // ETRIPATOR_OPTIONS_H
