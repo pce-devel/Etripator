@@ -31,7 +31,7 @@ install:
   - cmake --build . --config Release
   - cmake --build . --config Release --target install
   - cd ../../Etripator
-
+  - git submodule update --init --recursive
 
 before_build:
   - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars%BITS%.bat"
