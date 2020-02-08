@@ -215,7 +215,8 @@ int main(int argc, const char **argv) {
             }
         }
 
-        if((i > 0) && (section[i].logical < (section[i-1].logical + section[i-1].size)) 
+        if((i > 0) && (section[i].logical < (section[i-1].logical + section[i-1].size))
+                   && (section[i].page == section[i-1].page) 
                    && (section[i].type != section[i-1].type)) {
             WARNING_MSG("Section %s and %s overlaps!", section[i].name, section[i-1].name);
         }
