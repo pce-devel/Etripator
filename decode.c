@@ -508,17 +508,38 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 
 /**
  * Computes section size.
- * @param [in] section Current section.
+ * @param [in] sections Section array.
+ * @param [in] index Index of the current section.
+ * @param [in] count Number of sections.
  * @param [in] map Memory map.
  * @return Section size. 
  */
-int32_t compute_size(section_t *section, memmap_t *map) {
+int32_t compute_size(section_t *sections, int index, int count, memmap_t *map) {
     uint8_t i;
     uint8_t data[7];
-    uint32_t start = section->logical;
+    section_t *current = &sections[index];
+    uint32_t start = current->logical;
     uint32_t logical = start;
 
+    // Search for the closest section past the current one.
+    // This also ensures that we don't cross the current page.
+    uint32_t max_offset = 0xffffffff;
+    for(i=0; i<count; i++) {
+        if(i != index) {
+            if(current->page == sections[i].page) {
+                uint32_t offset_current = current->offset & 0x1fff;
+                uint32_t offset_it = sections[i].offset & 0x1fff;
+                if((offset_current < offset_it) && (max_offset > offset_it)){
+                    max_offset = offset_it;
+                }
+            }
+        }
+    }
     for(int eor=0; !eor; ) {
+        if((logical & 0x1fff) >= max_offset) {
+            printf("%x %x\n", logical&0x1fff, max_offset);
+            break;
+        }
         uint8_t page = memmap_page(map, logical);
     	data[0] = memmap_read(map, logical);
         const opcode_t *opcode = opcode_get(data[0]);

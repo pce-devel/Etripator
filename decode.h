@@ -55,10 +55,12 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 
 /**
  * Computes section size.
- * @param [in] section Current section.
+ * @param [in] sections Section array.
+ * @param [in] index Index of the current section.
+ * @param [in] count Number of sections.
  * @param [in] map Memory map.
  * @return Section size. 
  */
-int32_t compute_size(section_t *section, memmap_t *map);
+int32_t compute_size(section_t *sections, int index, int count, memmap_t *map);
 
 #endif // ETRIPATOR_DECODE_H

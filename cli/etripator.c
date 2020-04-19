@@ -258,7 +258,7 @@ int main(int argc, const char **argv) {
        
         if (section[i].type == Code) {
             if(section[i].size <= 0) {
-                section[i].size = compute_size(&section[i], &map);
+                section[i].size = compute_size(section, i, section_count, &map);
             }
 
             /* Extract labels */
