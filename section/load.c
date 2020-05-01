@@ -155,16 +155,18 @@ static int section_parse(const json_t *obj, section_t *out) {
             return 0;
         }        
         value = json_object_get(tmp, "element_size");
-        if(value && (out->data.type != String)) { 
+        if(value && (out->data.type == Hex)) { 
             if (!json_validate_int(value, &out->data.element_size) || (out->data.element_size > 2)) {
                 ERROR_MSG("Invalid element size.");
                 return 0;
             }
         }
         value = json_object_get(tmp, "elements_per_line");
-        if (!json_validate_int(value, &out->data.elements_per_line)) {
-            ERROR_MSG("Invalid number of elements per line.");
-            return 0;
+        if(value && (out->data.type != Binary)) {
+            if (!json_validate_int(value, &out->data.elements_per_line)) {
+                ERROR_MSG("Invalid number of elements per line.");
+                return 0;
+            }
         }
     }
     return 1;

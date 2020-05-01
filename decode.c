@@ -92,8 +92,8 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 static int data_extract_binary(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository) {
     uint16_t logical;
     int32_t i;
-    for (i = section->size, logical=section->logical; i > 0; i--, logical++) {
-        uint8_t data = memmap_read(map, logical++);
+    for (i=0, logical=section->logical; i < section->size; i++, logical++) {
+        uint8_t data = memmap_read(map, logical);
         fwrite(&data, 1, 1, out);
     }
     return 1;

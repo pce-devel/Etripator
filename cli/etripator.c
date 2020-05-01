@@ -218,7 +218,7 @@ int main(int argc, const char **argv) {
         if((i > 0) && (section[i].logical < (section[i-1].logical + section[i-1].size))
                    && (section[i].page == section[i-1].page) 
                    && (section[i].type != section[i-1].type)) {
-            WARNING_MSG("Section %s and %s overlaps!", section[i].name, section[i-1].name);
+            WARNING_MSG("Section %s and %s overlaps! %x %x.%x", section[i].name, section[i-1].name);
         }
 
         if((i > 0) && (0 == strcmp(section[i].output, section[i-1].output))
@@ -246,7 +246,7 @@ int main(int argc, const char **argv) {
                 INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
             }
         }
-        else {
+        else if(section[i].type != Binary) {
             /* Print header */
             fprintf(out, "\t.%s\n"
                          "\t.bank $%03x\n"
@@ -271,12 +271,13 @@ int main(int argc, const char **argv) {
             do {
                 (void)decode(out, &logical, &section[i], &map, repository);
             } while (logical < (section[i].logical+section[i].size));
+            fputc('\n', out);
         } else {
             ret = data_extract(out, &section[i], &map, repository);
             if (!ret) {
+                // [todo]
             }
         }
-        fputc('\n', out);
 
         fclose(out);
         out = NULL;

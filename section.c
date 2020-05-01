@@ -75,12 +75,9 @@ void section_reset(section_t *s) {
 static int section_compare(const void *a, const void *b) {
     section_t* s0 = (section_t*)a;
     section_t* s1 = (section_t*)b;
-    int cmp = strcmp(s0->output, s1->output);
+    int cmp = s0->page - s1->page;
     if(!cmp) {
-        cmp = s0->page - s1->page;
-        if(!cmp) {
-            cmp = s0->logical - s1->logical;
-        }
+        cmp = s0->logical - s1->logical;
     }
     return cmp;
 }
