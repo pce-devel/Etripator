@@ -118,7 +118,7 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
                 }
                 k = 0;
             }
-            if(j) {
+            if(i) {
                 fputc('\n', out);
             }
             fprintf(out, "%s:", name);
@@ -142,13 +142,13 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
             j = (j+1) % elements_per_line;
         }
     }
-    fputc('\n', out);
     if(k) {
-        fprintf(out, "          .db ");
+        fprintf(out, "\n          .db ");
         for(j=0; j<k; j++) {
             fprintf(out, "$%02x%c", data[j], ((j+1)<k) ? ',' : '\n');
         }
     }
+    fputc('\n', out);
     return 1;
 }
 
@@ -206,7 +206,7 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
         fputc('"', out);
         fputc('\n', out);
     }
-
+    fputc('\n', out);
     return 1;
 }
 
@@ -340,7 +340,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 	} else if (is_jump) {
 		/* BBR* and BBS* */
 		if ((inst & 0x0F) == 0x0F) {
-			uint16_t zp_offset = 0x2000 + data[0];
+			uint16_t zp_offset = 0x2000 + data[0];                                              // [todo] RAM may not be in mpr1 ...
 			page = memmap_page(map, zp_offset);
 			if (label_repository_find(repository, zp_offset, page, &name)) {
 				fprintf(out, "<%s, ", name);

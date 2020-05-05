@@ -246,7 +246,7 @@ int main(int argc, const char **argv) {
                 INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
             }
         }
-        else if(section[i].type != Binary) {
+        else if((section[i].type != Data) || (section[i].data.type != Binary)) {
             /* Print header */
             fprintf(out, "\t.%s\n"
                          "\t.bank $%03x\n"
