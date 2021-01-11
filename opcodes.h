@@ -21,6 +21,58 @@
 #include "config.h"
 
 /**
+ * Opcode types:
+ * -# `OPC`
+ * -# `OPC A`
+ * -# `OPC #nn`
+ * -# `OPC #nn, ZZ`
+ * -# `OPC #nn, ZZ, X`
+ * -# `OPC #nn, hhll`
+ * -# `OPC #nn, hhll, X`
+ * -# `OPC ZZ`
+ * -# `OPC ZZ, X`
+ * -# `OPC ZZ, Y`
+ * -# `OPC (ZZ)`
+ * -# `OPC (ZZ, X)`
+ * -# `OPC (ZZ), Y`
+ * -# `OPC ZZ, hhll`
+ * -# `OPC hhll`
+ * -# `OPC (hhll)`
+ * -# `OPC hhll, X`
+ * -# `OPC hhll, Y`
+ * -# `OPC shsl,dhdl,hhll` 
+ * -# `OPC l_hhll` (label)
+ * -# `OPC ZZ, l_hhll` (label)
+ * -# `OPC [hhll, X]` 
+ * -# `.db OPC` (unsupported opcode output as raw binary data)
+ */
+enum PCE_ADDRESSING_MODE {    
+    PCE_OP = 0,
+    PCE_OP_A,
+    PCE_OP_nn,
+    PCE_OP_nn_ZZ,
+    PCE_OP_nn_ZZ_X,
+    PCE_OP_nn_hhll,
+    PCE_OP_nn_hhll_X,
+    PCE_OP_ZZ,
+    PCE_OP_ZZ_X,
+    PCE_OP_ZZ_Y,
+    PCE_OP__ZZ__,
+    PCE_OP__ZZ_X__,
+    PCE_OP__ZZ__Y_,
+    PCE_OP_ZZ_hhll,   
+    PCE_OP_hhll,
+    PCE_OP__hhll__,
+    PCE_OP_hhll_X,
+    PCE_OP_hhll_Y,
+    PCE_OP_shsl_dhdl_hhll, 
+    PCE_OP__lbl__,
+    PCE_OP_ZZ_lbl,
+    PCE_OP__hhll_X__,
+    PCE_unknown
+};
+
+/**
  * Opcode
  */
 typedef struct {

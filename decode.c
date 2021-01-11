@@ -367,9 +367,9 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 			const char *none = "";
 			const char *extra = none;
 			switch (opcode->type) {
-			case 4: /* #$aa, <$zp, X */
+			case PCE_OP_nn_ZZ_X:                                /* #$aa, <$zp, X */
 				extra = ", X";
-			case 3: /* #$aa, <$zp */
+			case PCE_OP_nn_ZZ:                                  /* #$aa, <$zp */
 				offset = 0x2000 + data[1];
 				page = memmap_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &name);
@@ -377,10 +377,10 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 					fprintf(out, "#$%02x, <%s%s", data[0], name, extra);
 				}
 				break;
-			case 6: /* #$aa, $hhll, X */
+			case PCE_OP_nn_hhll_X:                              /* #$aa, $hhll, X */
 				extra = ", X";
-			case 5: /* #$aa, $hhll */
-				offset = (data[0] << 8) + data[1];
+			case PCE_OP_nn_hhll:                                /* #$aa, $hhll */
+				offset = (data[1] << 8) + data[2];
 				page = memmap_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &name);
 				if (has_label) {
@@ -388,13 +388,13 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				}
 				break;
 
-			case 9: /* <zp, Y */
+			case PCE_OP_ZZ_Y:                                   /* <zp, Y */
 				extra = ", Y";
-			case 8: /* <zp, X */
+			case PCE_OP_ZZ_X:                                   /* <zp, X */
 				if (none == extra) {
 					extra = ", X";
 				}
-			case 7: /* <zp    */
+			case PCE_OP_ZZ:                                     /* <zp    */
 				offset = 0x2000 + data[0];
 				page = memmap_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &name);
@@ -403,13 +403,13 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				}
 				break;
 
-			case 12: /* [zp], Y */
+			case PCE_OP__ZZ__Y_:                                /* [zp], Y */
 				extra = "], Y";
-			case 11: /* [zp, X] */
+			case PCE_OP__ZZ_X__:                                /* [zp, X] */
 				if (none == extra) {
 					extra = ", X";
 				}
-			case 10: /* [zp] */
+			case PCE_OP__ZZ__:                                  /* [zp] */
 				if (none == extra) {
 					extra = "]";
 				}
@@ -421,9 +421,9 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				}
 				break;
 
-			case 21: /* [hhll, X] */
+			case PCE_OP__hhll_X__:                              /* [hhll, X] */
 				extra = ", X]";
-			case 15: /* [hhll] */
+			case PCE_OP__hhll__:                                /* [hhll] */
 				if (none == extra) {
 					extra = "]";
 				}
@@ -435,13 +435,13 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				}
 				break;
 
-			case 16: /* hhll, X */
+			case PCE_OP_hhll_X:                                 /* hhll, X */
 				extra = ", X";
-			case 17: /* hhll, Y */
+			case PCE_OP_hhll_Y:                                 /* hhll, Y */
 				if (none == extra) {
 					extra = ", Y";
 				}
-			case 14: /* hhll */
+			case PCE_OP_hhll:                                   /* hhll */
 				offset = (data[0] << 8) | data[1];
 				page = memmap_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &name);
@@ -450,7 +450,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				}
 				break;
 
-			case 13: /* <zp, $hhll */
+			case PCE_OP_ZZ_hhll:                                /* <zp, $hhll */
 				offset = 0x2000 + data[0];
 				page = memmap_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &name);
@@ -470,7 +470,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				has_label = 1;
 				break;
 
-			case 18: /* shsl, dhdl, sz */
+			case PCE_OP_shsl_dhdl_hhll:                         /* shsl, dhdl, sz */
 				/* Source and destination */
 				for (i = 0; i < 4; i += 2) {
 					offset = (data[i] << 8) | data[i + 1];
