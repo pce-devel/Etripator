@@ -1,7 +1,3 @@
-add_library(munit STATIC ${CMAKE_CURRENT_LIST_DIR}/munit/munit.c)
-target_include_directories(munit PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/munit>)
-set_property(TARGET munit PROPERTY INTERFACE_INCLUDE_DIRECTORIES $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/munit>)
-
 if(WIN32 AND MSVC)
     set(etripator_PLATFORM_SRC
         ../platform/windows/time.c
