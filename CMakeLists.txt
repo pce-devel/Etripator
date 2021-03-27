@@ -4,9 +4,17 @@ project(etripator
     VERSION 0.7.0
     LANGUAGES C)
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    add_compile_definitions(_XOPEN_SOURCE=700)
+endif()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 enable_testing()
+
+include(CheckSymbolExists)
+
+check_symbol_exists(strdup "string.h" HAVE_STRDUP)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")

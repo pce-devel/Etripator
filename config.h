@@ -44,6 +44,8 @@
 #include <limits.h>
 #include <ctype.h>
 
+#include <libgen.h>
+
 #ifndef APIENTRY
 #define APIENTRY
 #endif
