@@ -210,12 +210,15 @@ int ipl_sections(ipl_t *in, section_t **out, int *count) {
     if(in->opening_gfx_sector_count) {
         record = (in->opening_gfx_record[0] << 16) | (in->opening_gfx_record[1] << 8) | in->opening_gfx_record[2];
         section[j].name    = strdup(section_name[1]);
-        section[j].type    = Binary;
+        section[j].type    = Data;
         section[j].page    = section[j].mpr[in->opening_gfx_read_address[1]>>5];
         section[j].logical = (in->opening_gfx_read_address[1] << 8) | in->opening_gfx_read_address[0];
         section[j].offset  = record * 2048;
         section[j].size    = in->opening_gfx_sector_count * 2048;
         section[j].output  = strdup(section_filename[1]);
+        section[j].data.type = Binary;
+        section[j].data.element_size = 1;
+        section[j].data.elements_per_line = 16;
         j++;
     }
     return 1;

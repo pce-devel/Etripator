@@ -64,13 +64,9 @@ MunitResult section_sort_test(const MunitParameter params[], void* fixture) {
     section_sort(section, 8);
 
     for(int i=0; i<7; i++) {
-        int cmp = strcmp(section[i].output, section[i+1].output);
-        munit_assert_int(cmp, <=, 0);
-        if(cmp == 0) {
-            munit_assert_int(section[i].page, <=, section[i+1].page);
-            if(section[i].page == section[i+1].page) {
-                munit_assert_int(section[i].logical, <=, section[i+1].logical);
-            }
+        munit_assert_int(section[i].page, <=, section[i+1].page);
+        if(section[i].page == section[i+1].page) {
+            munit_assert_int(section[i].logical, <=, section[i+1].logical);
         }
     }
 

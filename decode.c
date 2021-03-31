@@ -226,8 +226,9 @@ int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_
             return data_extract_hex(out, section, map, repository);
         case String:
             return data_extract_string(out, section, map, repository);
+		default:
+			return 0;
     }
-    return 0;
 }
 
 static const char *spacing = "          ";
@@ -495,7 +496,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 			if (!has_label) {
 			    const char *format;
 			    i = 0;
-				while(format = opcode_format(opcode, i)) {
+				while((format = opcode_format(opcode, i))) {
 					fprintf(out, format, data[i]);
 					i++;
 				}
