@@ -63,4 +63,12 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
  */
 int32_t compute_size(section_t *sections, int index, int count, memmap_t *map);
 
+/**
+ * Output hardware IO port and RAM labels.
+ * @param [out] out File output.
+ * @param [in] map Memory map.
+ * @param [in] repository Label repository.
+ */
+void label_dump(FILE *out, memmap_t *map, label_repository_t *repository);
+
 #endif // ETRIPATOR_DECODE_H

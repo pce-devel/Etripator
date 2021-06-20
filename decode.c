@@ -588,4 +588,23 @@ int32_t compute_size(section_t *sections, int index, int count, memmap_t *map) {
     return (logical - start);
 }
 
-
+/**
+ * Output hardware IO port and RAM labels.
+ * @param [out] out File output.
+ * @param [in] map Memory map.
+ * @param [in] repository Label repository.
+ */
+void label_dump(FILE *out, memmap_t *map, label_repository_t *repository) {
+    int count = label_repository_size(repository);
+    for(int i=0; i<count; i++) {
+     uint16_t logical;
+        uint8_t page;
+        char *name;
+        if(label_repository_get(repository, i, &logical, &page, &name)) {
+            // IO port and RAM
+            if((page == 0xff) || (page == 0xf8)) {
+                fprintf(out, "%s .equ $%04x\n", name, logical);
+            }
+        }
+    }
+}

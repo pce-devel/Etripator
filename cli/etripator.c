@@ -290,6 +290,8 @@ int main(int argc, const char **argv) {
         goto error_4;
     }
 
+    label_dump(main_file, &map, repository);
+
     if (!option.cdrom && option.extract_irq) {
         fprintf(main_file, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
         for (i = 0; i < 5; ++i) {
