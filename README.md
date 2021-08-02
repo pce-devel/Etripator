@@ -105,11 +105,11 @@ Example:
 ```json
 [
 	{ "name":"cd_reset", "logical":"e22a", "page":"00", "description": [
-        "Reset CD drive",
-        "input: none",
-        "output: A - $00: OK",
-        "            sub error code"
-    ]},
+		"Reset CD drive",
+		"input: none",
+		"output: A - $00: OK",
+		"            sub error code"
+	]},
 	{ "name":"irq_2", "logical":"eaa3", "page":"00"},
 	{ "name":"irq_1", "logical":"eba5", "page":"00"},
 	{ "name":"irq_timer", "logical":"ea9c", "page":"00"},
