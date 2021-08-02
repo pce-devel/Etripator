@@ -104,18 +104,18 @@ Each entry is an object containing the following fields:
 Example:
 ```json
 [
-	{ "name":"cd_reset", "logical":"e22a", "page":"00", "description": [
-		"Reset CD drive",
-		"input: none",
-		"output: A - $00: OK",
-		"            sub error code"
-	]},
-	{ "name":"irq_2", "logical":"eaa3", "page":"00"},
-	{ "name":"irq_1", "logical":"eba5", "page":"00"},
-	{ "name":"irq_timer", "logical":"ea9c", "page":"00"},
-	{ "name":"irq_nmi", "logical":"ea9b", "page":"00"},
-	{ "name":"irq_reset", "logical":"eab3", "page":"00"},
-	{ "name":"main", "logical":"f8a4", "page":"00"}
+    { "name":"cd_reset", "logical":"e22a", "page":"00", "description": [
+        "Reset CD drive",
+        "input: none",
+        "output: A - $00: OK",
+        "            sub error code"
+    ]},
+    { "name":"irq_2", "logical":"eaa3", "page":"00"},
+    { "name":"irq_1", "logical":"eba5", "page":"00"},
+    { "name":"irq_timer", "logical":"ea9c", "page":"00"},
+    { "name":"irq_nmi", "logical":"ea9b", "page":"00"},
+    { "name":"irq_reset", "logical":"eab3", "page":"00"},
+    { "name":"main", "logical":"f8a4", "page":"00"}
 ]
 ```
 
