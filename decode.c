@@ -19,6 +19,23 @@
 #include "message.h"
 #include "opcodes.h"
 
+static void print_comment(FILE *out, const char *str) {
+    if(!str) {
+        return;
+    }
+    while(*str) {
+        fputc(';', out);
+        fputc(' ', out);
+        for(;*str && (*str != '\n'); str++) {
+            fputc(*str, out);
+        }
+        fputc('\n', out);
+        if(*str) {
+            str++;
+        }
+    }
+}
+
 /**
  * Finds any jump address from the current section.
  * @param [in] section Current section.
@@ -69,7 +86,7 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 			snprintf(buffer, 32, "l%04x_%02d", jump, page);
 
 			/* Insert offset to repository */
-			if (!label_repository_add(repository, buffer, jump, page)) {
+			if (!label_repository_add(repository, buffer, jump, page, NULL)) {
 				return 0;
 			}
 			INFO_MSG("%04x short jump to %04x (%02x)", logical, jump, page);
@@ -79,7 +96,7 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
 				/* Create label name */
 				snprintf(buffer, 32, "l%04x_%02d", jump, page);
 				/* Insert offset to repository */
-				if (!label_repository_add(repository, buffer, jump, page)) {
+				if (!label_repository_add(repository, buffer, jump, page, NULL)) {
 					return 0;
 				}
 
@@ -106,11 +123,11 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
     int32_t element_size = section->data.element_size;
 	int32_t elements_per_line = section->data.elements_per_line;
     const char *data_decl = (element_size > 1) ? ".dw" : ".db";
-    char *name = "";
+    label_t label;
     
     for(i=0, j=0, k=0, logical=section->logical; i<section->size; i++, logical++) {
         uint8_t page = memmap_page(map, logical);
-        if(label_repository_find(repository, logical, page, &name)) {
+        if(label_repository_find(repository, logical, page, &label)) {
             if(k && (k < element_size)) {
                 fprintf(out, "\n          .db");
                 for(j=0; j<k; j++) {
@@ -121,7 +138,8 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
             if(i) {
                 fputc('\n', out);
             }
-            fprintf(out, "%s:", name);
+            print_comment(out, label.description);
+            fprintf(out, "%s:", label.name);
             j = 0;
         }
         data[k++] = memmap_read(map, logical);
@@ -156,20 +174,21 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
 	int32_t i, j, k;
     uint16_t logical;
 	int32_t elements_per_line = section->data.elements_per_line;
-    char *name = "";
+    label_t label;
     char c;
     
     for(i=0, j=0, k=0, c=0, logical=section->logical; i<section->size; i++, logical++) {
         uint8_t data;
         uint8_t page = memmap_page(map, logical);
-        if(label_repository_find(repository, logical, page, &name)) {
+        if(label_repository_find(repository, logical, page, &label)) {
             if(j) {
                 if(c) {
                     fputc('"', out);
                 }
                 fputc('\n', out);
             }
-            fprintf(out, "%s:", name);
+            print_comment(out, label.description);
+            fprintf(out, "%s:", label.name);
             j = 0;
             c = 0;
         }
@@ -245,10 +264,11 @@ static const char *spacing = "          ";
 int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository) {
 	int i, delta;
 	uint8_t inst, data[6], is_jump;
-	char eor, *name;
+	char eor;
 	uint8_t page;
 	uint32_t offset;
 	uint16_t next_logical;
+    label_t label;
 
     const opcode_t *opcode;
 
@@ -264,9 +284,11 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 	next_logical = *logical + opcode->size;
 
 	/* Is there a label ? */
-	if (label_repository_find(repository, *logical, page, &name)) {
-		/* Print label*/
-		fprintf(out, "%s:\n", name);
+	if (label_repository_find(repository, *logical, page, &label)) {
+        /* Print description */
+        print_comment(out, label.description);
+		/* Print label */
+		fprintf(out, "%s:\n", label.name);
 	}
 
 	/* Front spacing */
@@ -343,15 +365,15 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 		if ((inst & 0x0F) == 0x0F) {
 			uint16_t zp_offset = 0x2000 + data[0];                                              // [todo] RAM may not be in mpr1 ...
 			page = memmap_page(map, zp_offset);
-			if (label_repository_find(repository, zp_offset, page, &name)) {
-				fprintf(out, "<%s, ", name);
+			if (label_repository_find(repository, zp_offset, page, &label)) {
+				fprintf(out, "<%s, ", label.name);
 			} else {
 				fprintf(out, "<$%02x, ", data[0]);
 			}
 		}
 		page = memmap_page(map, offset);
-		label_repository_find(repository, offset, page, &name);
-		fwrite(name, 1, strlen(name), out);
+		label_repository_find(repository, offset, page, &label);
+		fwrite(label.name, 1, strlen(label.name), out);
 	} else {
 		int has_label = 0;
 		if ((inst == 0x43) || (inst == 0x53)) {
@@ -373,9 +395,9 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 			case PCE_OP_nn_ZZ:                                  /* #$aa, <$zp */
 				offset = 0x2000 + data[1];
 				page = memmap_page(map, offset);
-				has_label = label_repository_find(repository, offset, page, &name);
+				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "#$%02x, <%s%s", data[0], name, extra);
+					fprintf(out, "#$%02x, <%s%s", data[0], label.name, extra);
 				}
 				break;
 			case PCE_OP_nn_hhll_X:                              /* #$aa, $hhll, X */
@@ -383,9 +405,9 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 			case PCE_OP_nn_hhll:                                /* #$aa, $hhll */
 				offset = (data[1] << 8) + data[2];
 				page = memmap_page(map, offset);
-				has_label = label_repository_find(repository, offset, page, &name);
+				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "#$%02x, %s%s", data[0], name, extra);
+					fprintf(out, "#$%02x, %s%s", data[0], label.name, extra);
 				}
 				break;
 
@@ -398,9 +420,9 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 			case PCE_OP_ZZ:                                     /* <zp    */
 				offset = 0x2000 + data[0];
 				page = memmap_page(map, offset);
-				has_label = label_repository_find(repository, offset, page, &name);
+				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "<%s%s", name, extra);
+					fprintf(out, "<%s%s", label.name, extra);
 				}
 				break;
 
@@ -416,9 +438,9 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				}
 				offset = 0x2000 + data[0];
 				page = memmap_page(map, offset);
-				has_label = label_repository_find(repository, offset, page, &name);
+				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "[%s%s", name, extra);
+					fprintf(out, "[%s%s", label.name, extra);
 				}
 				break;
 
@@ -430,9 +452,9 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				}
 				offset = (data[0] << 8) | data[1];
 				page = memmap_page(map, offset);
-				has_label = label_repository_find(repository, offset, page, &name);
+				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "[%s%s", name, extra);
+					fprintf(out, "[%s%s", label.name, extra);
 				}
 				break;
 
@@ -445,26 +467,26 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 			case PCE_OP_hhll:                                   /* hhll */
 				offset = (data[0] << 8) | data[1];
 				page = memmap_page(map, offset);
-				has_label = label_repository_find(repository, offset, page, &name);
+				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "%s%s", name, extra);
+					fprintf(out, "%s%s", label.name, extra);
 				}
 				break;
 
 			case PCE_OP_ZZ_hhll:                                /* <zp, $hhll */
 				offset = 0x2000 + data[0];
 				page = memmap_page(map, offset);
-				has_label = label_repository_find(repository, offset, page, &name);
+				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "<%s, ", name);
+					fprintf(out, "<%s, ", label.name);
 				} else {
 					fprintf(out, "<%02x, ", data[0]);
 				}
 				offset = (data[1] << 8) | data[2];
 				page = memmap_page(map, offset);
-				has_label = label_repository_find(repository, offset, page, &name);
+				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "%s", name);
+					fprintf(out, "%s", label.name);
 				} else {
 					fprintf(out, "$%04x", offset);
 				}
@@ -476,9 +498,9 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				for (i = 0; i < 4; i += 2) {
 					offset = (data[i] << 8) | data[i + 1];
 					page = memmap_page(map, offset);
-					has_label = label_repository_find(repository, offset, page, &name);
+					has_label = label_repository_find(repository, offset, page, &label);
 					if (has_label) {
-						fprintf(out, "%s, ", name);
+						fprintf(out, "%s, ", label.name);
 					} else {
 						fprintf(out, "$%04x, ", offset);
 					}
@@ -597,13 +619,12 @@ int32_t compute_size(section_t *sections, int index, int count, memmap_t *map) {
 void label_dump(FILE *out, memmap_t *map, label_repository_t *repository) {
     int count = label_repository_size(repository);
     for(int i=0; i<count; i++) {
-     uint16_t logical;
-        uint8_t page;
-        char *name;
-        if(label_repository_get(repository, i, &logical, &page, &name)) {
+        label_t label;
+        if(label_repository_get(repository, i, &label)) {
             // IO port and RAM
-            if((page == 0xff) || (page == 0xf8)) {
-                fprintf(out, "%s .equ $%04x\n", name, logical);
+            if((label.page == 0xff) || (label.page == 0xf8)) {
+                print_comment(out, label.description);
+                fprintf(out, "%s .equ $%04x\n", label.name, label.logical);
             }
         }
     }

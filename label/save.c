@@ -20,6 +20,7 @@
 
 #include "save.h"
 #include "../message.h"
+#include "../jsonhelpers.h"
 
 /**
  * Save labels to file.
@@ -37,11 +38,14 @@ int label_repository_save(const char* filename, label_repository_t* repository) 
     }
     fprintf(stream, "[\n");
     for(i=0; i<count; i++) {
-        uint16_t logical;
-        uint8_t page;
-        char* name;
-        if(label_repository_get(repository, i, &logical, &page, &name)) {
-            fprintf(stream, "\t{ \"name\":\"%s\", \"logical\":\"%04x\", \"page\":\"%02x\"}%c\n", name, logical, page, (i<(count-1)) ? ',' : ' ');
+        label_t label;
+        if(label_repository_get(repository, i, &label)) {
+            fprintf(stream, "\t{ \"name\":\"%s\", \"logical\":\"%04x\", \"page\":\"%02x\"", label.name, label.logical, label.page);
+            if(label.description) {
+                fputc(',', stream);
+                json_print_description(stream, "description", label.description);
+            }
+            fprintf(stream,"}%c\n", (i<(count-1)) ? ',' : ' ');
         }
     }
     fprintf(stream, "]\n");

@@ -38,6 +38,7 @@ int label_repository_load(const char* filename, label_repository_t* repository) 
     int num;
     uint16_t logical;
     uint8_t page;
+    const char *description;
 
     root = json_load_file(filename, 0, &err);
     if(!root) {
@@ -80,13 +81,16 @@ int label_repository_load(const char* filename, label_repository_t* repository) 
             ERROR_MSG("Invalid or missing page.");
             return 0;
         }
+        // description
+        description = json_load_description(value);
+        
         if((num < 0) || (num > 0xff)) {
             ERROR_MSG("Page value out of range.");
             return 0;
         }
 	    page = (uint8_t)num;
 
-        if(!label_repository_add(repository, key, logical, page)) {
+        if(!label_repository_add(repository, key, logical, page, description)) {
             return 0;
         }
     }

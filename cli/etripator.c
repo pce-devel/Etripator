@@ -191,7 +191,7 @@ int main(int argc, const char **argv) {
 
     /* Add section name to label repository. */
     for (i = 0; i < section_count; ++i) {
-        ret = label_repository_add(repository, section[i].name, section[i].logical, section[i].page);
+        ret = label_repository_add(repository, section[i].name, section[i].logical, section[i].page, section[i].description);
         if (!ret) {
             ERROR_MSG("Failed to add section name (%s) to labels", section[i].name);
             goto error_4;

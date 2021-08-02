@@ -17,12 +17,14 @@
 */
 #include "load.h"
 
-#include "../jsonhelpers.h"
-#include "../message.h"
-#include <jansson.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <jansson.h>
+
+#include "../jsonhelpers.h"
+#include "../message.h"
 
 static section_type_t json_validate_section_type(const char *str) {
     int i;
@@ -169,6 +171,9 @@ static int section_parse(const json_t *obj, section_t *out) {
             }
         }
     }
+    /* description (optional) */
+    out->description = json_load_description(obj);
+
     return 1;
 }
 

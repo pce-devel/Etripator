@@ -1,4 +1,6 @@
 #include <errno.h>
+#include <string.h>
+
 #include "jsonhelpers.h"
 
 int json_validate_int(const json_t* obj, int* out) {
@@ -17,3 +19,48 @@ int json_validate_int(const json_t* obj, int* out) {
     return 0;
 }
 
+char* json_load_description(const json_t* obj) {
+    json_t *tmp = json_object_get(obj, "description");
+    if(json_is_string(tmp)) {
+        return strdup(json_string_value(tmp));
+    }
+
+    if (!json_is_array(tmp)) {
+        return NULL;
+    }
+
+    int index;
+    json_t* value;
+
+    char *out = NULL;
+    size_t len = 0;
+    json_array_foreach(tmp, index, value) {
+        if(json_is_string(value)) {
+            const char *str = json_string_value(value);
+            if(out) {
+                out[len-1] = '\n';
+            }
+            size_t n = len + strlen(str) + 1;
+            char *tmp = realloc(out, n);
+            memcpy(tmp+len, str, strlen(str));
+            tmp[n-1] = '\0';
+            out = tmp;
+            len = n;
+        }
+    }
+    return out;
+}
+
+void json_print_description(FILE *out, const char *key, const char *str) {
+    int len = (int)strlen(str);
+    fprintf(out, "\"%s\":[", key);
+    while(*str) {
+        fprintf(out, "\n\t\t\t\"");
+        for(;*str && (*str != '\n'); str++) {
+            fputc(*str, out);
+        }
+        fprintf(out, "\"%c", *str ? ',' : ' ');
+        if(*str) str++;
+    }
+    fprintf(out, "\n\t]");
+}

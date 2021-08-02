@@ -70,6 +70,7 @@ void section_reset(section_t *s) {
     s->data.type = UnknownDataType;
     s->data.element_size = g_default_element_size;
     s->data.elements_per_line = g_default_elements_per_line;
+    s->description = NULL;
 }
 
 static int section_compare(const void *a, const void *b) {
@@ -102,6 +103,9 @@ void section_delete(section_t *ptr, int n) {
         }
         if(ptr[i].output) {
             free(ptr[i].output);
+        }
+        if(ptr[i].description) {
+            free(ptr[i].description);
         }
     }
     free(ptr);

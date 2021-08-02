@@ -21,24 +21,32 @@
 #define LABEL_ARRAY_INC 16
 
 /**
- * Label.
- */
-typedef struct {
-    size_t   name;    /**< Offset in the repository name buffer */
-    uint16_t logical; /**< Logical address */
-    uint8_t  page;    /**< Memory page  */
-} label_t;
-
-/**
  * Label repository.
  */
 struct label_repository_impl {
     size_t size;            /**< Size of label repository */
     size_t last;            /**< Last element in the repository */
     label_t *labels;        /**< Labels */
-    size_t name_buffer_len; /**< Label name buffer length */
-    char   *name_buffer;    /**< Label name buffer */
 };
+
+
+/**
+ * Get label index by its address.
+ * \param [in]  repository  Label repository.
+ * \param [in]  logical     Logical address.
+ * \param [in]  page        Memory page.
+ * \return label index or -1 if the label was not found.
+ */
+static int label_repository_index(label_repository_t* repository, uint16_t logical, uint8_t page) {
+    size_t i;
+    for(i=0; i<repository->last; i++) {
+        if( (repository->labels[i].page == page) &&
+            (repository->labels[i].logical == logical) ) {
+            return i;
+        }
+    }
+    return -1;
+}
 
 /**
  * Create label repository.
@@ -53,9 +61,6 @@ label_repository_t* label_repository_create() {
     }
     
     repository->last  = 0;
-
-    repository->name_buffer     = NULL;
-    repository->name_buffer_len = 0;
 
     repository->labels = NULL;
 
@@ -79,50 +84,36 @@ void label_repository_destroy(label_repository_t* repository) {
     repository->size  = 0;
     repository->last  = 0;
 
-    repository->name_buffer_len = 0;
-
     if(repository->labels != NULL) {
+        for(int i=0; i<repository->last; i++) {
+            if(repository->labels[i].name) {
+                free(repository->labels[i].name);
+            }
+            if(repository->labels[i].description) {
+                free(repository->labels[i].description);
+            }
+        }
         free(repository->labels);
         repository->labels = NULL;
     }
-
-    if(repository->name_buffer != NULL) {
-        free(repository->name_buffer);
-        repository->name_buffer = NULL;
-    }
-}
-
-/* Set name and add it to label name buffer */
-static int label_set(label_repository_t* repository, label_t *label, const char* name) {
-    char *tmp;
-    size_t name_len = strlen(name) + 1;
-    size_t len      = repository->name_buffer_len + name_len;
-    tmp = (char*)realloc(repository->name_buffer, len);
-    if(NULL == tmp) {
-        return 0;
-    }
-
-    label->name = repository->name_buffer_len;
-    memcpy(tmp+label->name, name, name_len);
-
-    repository->name_buffer     = tmp;
-    repository->name_buffer_len = len;
-    return 1;
 }
 
 /**
  * Add label to repository.
  * \param [in,out] repository Label repository.
- * \param [in]     name     Name.
- * \param [in]     logical  Logical address.
- * \param [in]     page     Memory page.
+ * \param [in]     name        Name.
+ * \param [in]     logical     Logical address.
+ * \param [in]     page        Memory page.
+ * \param [in]     description Description (optional).
  */
-int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page) {
-    char *dummy;
-
-    if(label_repository_find(repository, logical, page, &dummy)) {
-        if(strcmp(name, dummy)) {
+int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page, const char *description) {
+    int index = label_repository_index(repository, logical, page);
+    if(index >= 0) {
+        if(strcmp(name, repository->labels[index].name)) {
         //    return 0;
+        }
+        if(description && !repository->labels[index].description) {
+            repository->labels[index].description = strdup(description);
         }
         return  1;
     }
@@ -144,12 +135,9 @@ int label_repository_add(label_repository_t* repository, const char* name, uint1
     repository->labels[repository->last].logical = logical;
     repository->labels[repository->last].page    = page;
     
-    /* Push name */
-    if(!label_set(repository, &repository->labels[repository->last], name)) {
-        label_repository_destroy(repository);
-        return 0;
-    }
-
+    /* Push name and description */
+    repository->labels[repository->last].name = strdup(name);
+    repository->labels[repository->last].description = description;
     ++repository->last;
     return 1;
 }
@@ -159,20 +147,17 @@ int label_repository_add(label_repository_t* repository, const char* name, uint1
  * \param [in]  repository  Label repository.
  * \param [in]  logical     Logical address.
  * \param [in]  page        Memory page.
- * \param [out] name        Label name (if found).
+ * \param [out] label       Label (if found).
  * \return 1 if a label was found, 0 otherwise.
  */
-int label_repository_find(label_repository_t* repository, uint16_t logical, uint8_t page, char** name) {
-    size_t i;
-    for(i=0; i<repository->last; i++) {
-        if( (repository->labels[i].page == page) &&
-            (repository->labels[i].logical == logical) ) {
-            *name = repository->name_buffer + repository->labels[i].name;
-            return 1;
-        }
+int label_repository_find(label_repository_t* repository, uint16_t logical, uint8_t page, label_t *out) {
+    int index = label_repository_index(repository, logical, page);
+    if(index < 0) {
+        memset(out, 0, sizeof(label_t));
+        return 0;
     }
-    *name = "";
-    return 0;
+    memcpy(out, &repository->labels[index], sizeof(label_t));
+    return 1;
 }
 
 /**
@@ -189,17 +174,13 @@ int label_repository_size(label_repository_t* repository) {
 
 /**
  * Retrieve the label at the specified index.
- * \param [in] repository Label repository.
- * \param [in] index      Label index.
- * \param [out] logical   Logical address.
- * \param [out] page      Memory page.
- * \param [out] name      Label name.
+ * \param [in]  repository Label repository.
+ * \param [in]  index      Label index.
+ * \param [out] out        Label.
  * \return 1 if a label exists for the specified index, 0 otherwise.
  */
-int label_repository_get(label_repository_t* repository, int index, uint16_t* logical, uint8_t* page, char** name) {
-    *page = 0;
-    *logical  = 0;
-    *name = NULL;
+int label_repository_get(label_repository_t* repository, int index, label_t *out) {
+    memset(out, 0, sizeof(label_t));
     if(repository == NULL) {
         return 0;
     }
@@ -208,12 +189,7 @@ int label_repository_get(label_repository_t* repository, int index, uint16_t* lo
         if((index < 0) || (index >= end)) {
             return 0;
         }
-        if(repository->labels[index].name >= repository->name_buffer_len) {
-            return 0;
-        }
-        *logical = repository->labels[index].logical;
-        *page = repository->labels[index].page;
-        *name = repository->name_buffer + repository->labels[index].name;
+        memcpy(out, &repository->labels[index], sizeof(label_t));
         return 1;
     }
 }
@@ -232,20 +208,16 @@ int label_repository_delete(label_repository_t* repository, uint16_t first, uint
             (repository->labels[i].logical < end) ) {
             if(repository->last) {
                 repository->last--;
+                if(repository->labels[i].name) {
+                    free(repository->labels[i].name);
+                }
+                if(repository->labels[i].description) {
+                    free(repository->labels[i].description);
+                }
                 memcpy(&repository->labels[i], &repository->labels[repository->last], sizeof(label_t));
                 i--;
             }
         }
     }
-    int ret = 1;
-    char *tmp = repository->name_buffer;
-    repository->name_buffer_len = 0;
-    repository->name_buffer     = NULL;
-    for(i=0; ret && (i<repository->last); i++) {
-        ret = label_set(repository, &repository->labels[i], tmp + repository->labels[i].name);
-    }    
-    if(tmp) {
-        free(tmp);
-    }
-    return ret;
+    return 1;
 }

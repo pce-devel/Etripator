@@ -55,6 +55,8 @@ The supported fields are :
      * **element_size** *(default value: 1)* : element size in bytes. The only supported values are 1 or 2.
      * **elements_per_line** *(default value: 16)* : number of elements per line. 
   
+* **description** *(optional)*: description as a string or an array of strings for multiline description. 
+
 There must be only one occurence of each field per section.
 
 Example:
@@ -66,7 +68,8 @@ Example:
         "page": "0",
         "logical" : "e000",
         "size": "505",
-        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ]
+        "mpr": ["ff", "f8", 0, 0, 0, 0, 0, 0 ],
+        "description": "CDROM Bios functions"
     },
     "ex_colorcmd.impl": {
         "filename": "syscard.asm",
@@ -96,11 +99,17 @@ Each entry is an object containing the following fields:
  * **name**: label name.
  * **logical** : logical address of the label in hexadecimal.
  * **page** : physical page, i.e. the value of the mpr of the logical address.
+ * **description** *(optional)* : description (as a string or as an array of strings).
 
 Example:
 ```json
 [
-	{ "name":"cd_reset", "logical":"e22a", "page":"00"},
+	{ "name":"cd_reset", "logical":"e22a", "page":"00", "description": [
+        "Reset CD drive",
+        "input: none",
+        "output: A - $00: OK",
+        "            sub error code"
+    ]},
 	{ "name":"irq_2", "logical":"eaa3", "page":"00"},
 	{ "name":"irq_1", "logical":"eba5", "page":"00"},
 	{ "name":"irq_timer", "logical":"ea9c", "page":"00"},

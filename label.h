@@ -20,6 +20,16 @@
 
 #include "config.h"
 
+/**
+ * Label.
+ */
+typedef struct {
+    char*    name;        /**< Offset in the repository name buffer */
+    uint16_t logical;     /**< Logical address */
+    uint8_t  page;        /**< Memory page  */
+    char*    description; /**< Description (optional) */
+} label_t;
+
 typedef struct label_repository_impl label_repository_t;
 
 /**
@@ -37,21 +47,22 @@ void label_repository_destroy(label_repository_t* repository);
 /**
  * Add label to repository.
  * \param [in,out] repository Label repository.
- * \param [in]     name       Name.
- * \param [in]     logical    Logical address.
- * \param [in]     page       Memory page.
+ * \param [in]     name        Name.
+ * \param [in]     logical     Logical address.
+ * \param [in]     page        Memory page.
+ * \param [in]     description Description.
  */
-int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page);
+int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page, const char *description);
 
 /**
  * Find a label by its address.
  * \param [in]  repository  Label repository.
  * \param [in]  logical     Logical address.
  * \param [in]  page        Memory page.
- * \param [out] name        Label name (if found).
+ * \param [out] out         Associated label (if any).
  * \return 1 if a label was found, 0 otherwise.
  */
-int label_repository_find(label_repository_t* repository, uint16_t logical, uint8_t page, char** name);
+int label_repository_find(label_repository_t* repository, uint16_t logical, uint8_t page, label_t *out);
 
 /**
  * Get the number of labels stored in the repository.
@@ -62,14 +73,12 @@ int label_repository_size(label_repository_t* repository);
 
 /**
  * Retrieve the label at the specified index.
- * \param [in] repository Label repository.
- * \param [in] index      Label index.
- * \param [out] logical   Logical address.
- * \param [out]  page     Memory page.
- * \param [out] name      Label name.
+ * \param [in]  repository Label repository.
+ * \param [in]  index      Label index.
+ * \param [out] out        Label (if any).
  * \return 1 if a label exists for the specified index, 0 otherwise.
  */
-int label_repository_get(label_repository_t* repository, int index, uint16_t* logical, uint8_t* page, char** name);
+int label_repository_get(label_repository_t* repository, int index, label_t *out);
 
 /**
  * Delete labels

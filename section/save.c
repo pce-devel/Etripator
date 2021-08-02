@@ -61,6 +61,10 @@ int section_save(const char *filename, section_t *ptr, int n) {
             fprintf(out, "               \"elements_per_line\": %d\n", ptr[i].data.elements_per_line);
             fprintf(out, "            }\n");
         }
+        if(ptr[i].description) {
+            fputc(',', out);
+            json_print_description(out, "description", ptr[i].description);
+        }
         fprintf(out, "\n}\n");
     }
     fprintf(out, "}\n");

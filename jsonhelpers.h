@@ -21,5 +21,7 @@
 #include <jansson.h>
 
 int json_validate_int(const json_t* obj, int* out);
+char* json_load_description(const json_t* obj);
+void json_print_description(FILE *out, const char *key, const char *str);
 
 #endif // ETRIPATOR_JSON_HELPERS_H

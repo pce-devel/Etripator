@@ -73,6 +73,7 @@ typedef struct {
     uint8_t mpr[8];      /**< mpr registers value. **/ 
     char *output;        /**< output filename. **/ 
     data_config_t data;  /**< data configuration (only valid for *data* sections) **/
+    char *description;   /**< optional description. **/
 } section_t;
 
 /**
