@@ -221,7 +221,6 @@ int ipl_sections(ipl_t *in, section_t **out, int *count) {
         section[j].data.type = Binary;
         section[j].data.element_size = 1;
         section[j].data.elements_per_line = 16;
-        j++;
     }
     return 1;
 }

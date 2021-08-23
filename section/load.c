@@ -127,7 +127,7 @@ static int section_parse(const json_t *obj, section_t *out) {
                 break;
             }
             if(json_validate_int(value, &num)) {
-                if((num < 0) && (num > 0xff)) {
+                if((num < 0) || (num > 0xff)) {
                     ERROR_MSG("Invalid mpr %d value", index);
                     return 0;
                 }

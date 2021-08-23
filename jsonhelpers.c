@@ -1,7 +1,7 @@
+#include "jsonhelpers.h"
+
 #include <errno.h>
 #include <string.h>
-
-#include "jsonhelpers.h"
 
 int json_validate_int(const json_t* obj, int* out) {
     if(json_is_string(obj)) {
@@ -41,10 +41,10 @@ char* json_load_description(const json_t* obj) {
                 out[len-1] = '\n';
             }
             size_t n = len + strlen(str) + 1;
-            char *tmp = realloc(out, n);
-            memcpy(tmp+len, str, strlen(str));
-            tmp[n-1] = '\0';
-            out = tmp;
+            char *ptr = realloc(out, n);
+            memcpy(ptr+len, str, strlen(str));
+            ptr[n-1] = '\0';
+            out = ptr;
             len = n;
         }
     }
@@ -52,7 +52,6 @@ char* json_load_description(const json_t* obj) {
 }
 
 void json_print_description(FILE *out, const char *key, const char *str) {
-    int len = (int)strlen(str);
     fprintf(out, "\"%s\":[", key);
     while(*str) {
         fprintf(out, "\n\t\t\t\"");
