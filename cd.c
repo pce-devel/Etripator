@@ -43,7 +43,7 @@ int cd_memmap(memmap_t *map) {
         memmap_destroy(map);
         return ret;
     }
-    /* System Card RAM is mapped to pages 0x68-0x80. */
+    /* System Card RAM is mapped to pages 0x68-0x86. */
     for (i = 0; i < 24; i++) {
         map->page[0x68 + i] = &map->mem[PCE_MEM_SYSCARD_RAM].data[i * 8192];
     }

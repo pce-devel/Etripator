@@ -69,6 +69,7 @@ int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
     option->rom_filename  = NULL;
     option->main_filename = "main.asm";
     option->labels_in = NULL;
+    option->labels_out = NULL;
 
     argparse_init(&argparse, options, usages, 0);
     argparse_describe(&argparse, "\nEtripator : a PC Engine disassembler", "  ");

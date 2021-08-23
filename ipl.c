@@ -186,6 +186,8 @@ int ipl_sections(ipl_t *in, section_t **out, int *count) {
     *count += extra;
     *out = section;
 
+    memset(&section[j], 0, extra * sizeof(section_t));
+
     for(k=0; k<extra; k++) {
         section[j+k].mpr[0] = 0xff;
         section[j+k].mpr[1] = 0xf8;

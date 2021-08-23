@@ -71,6 +71,8 @@ int irq_read(memmap_t* map, section_t **section, int *count) {
         tmp[j+i].output = (char*)malloc(filename_len);
         snprintf(tmp[j+i].output, filename_len, "%s.asm", g_irq_names[i]);
 
+        tmp[j+1].description = NULL;
+
         INFO_MSG("%s found at %04x", tmp[j+i].name, tmp[j+i].logical);
     }
     

@@ -21,6 +21,6 @@
 
 char *basename(char *path) {
     static char fname[_MAX_FNAME];
-    _splitpath(NULL, NULL, NULL, fname, NULL);
+    _splitpath(path, NULL, NULL, fname, NULL);
     return fname;
 }
