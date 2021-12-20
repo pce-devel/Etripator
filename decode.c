@@ -19,6 +19,8 @@
 #include "message.h"
 #include "opcodes.h"
 
+#include <stdarg.h>
+
 static void print_comment(FILE *out, const char *str) {
     if(!str) {
         return;
@@ -34,6 +36,15 @@ static void print_comment(FILE *out, const char *str) {
             str++;
         }
     }
+}
+
+static void print_label(FILE *out, label_t *label) {
+	int n = strlen(label->name) + 1;
+	n = (n < 40) ? (40 - n) : 1; 
+	/* Print description */
+	print_comment(out, label->description);
+	/* Print label with bank and logical address as comments*/
+	fprintf(out, "%s:%*c; bank: $%03x logical: $%04x\n", label->name, n, ' ', label->page, label->logical);
 }
 
 /**
@@ -138,8 +149,7 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
             if(i) {
                 fputc('\n', out);
             }
-            print_comment(out, label.description);
-            fprintf(out, "%s:", label.name);
+            print_label(out, &label);
             j = 0;
         }
         data[k++] = memmap_read(map, logical);
@@ -187,8 +197,7 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
                 }
                 fputc('\n', out);
             }
-            print_comment(out, label.description);
-            fprintf(out, "%s:", label.name);
+            print_label(out, &label);
             j = 0;
             c = 0;
         }
@@ -285,10 +294,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 
 	/* Is there a label ? */
 	if (label_repository_find(repository, *logical, page, &label)) {
-        /* Print description */
-        print_comment(out, label.description);
-		/* Print label */
-		fprintf(out, "%s:\n", label.name);
+		print_label(out, &label);
 	}
 
 	/* Front spacing */
