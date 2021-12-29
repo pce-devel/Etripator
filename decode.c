@@ -44,7 +44,7 @@ static void print_label(FILE *out, label_t *label) {
 	/* Print description */
 	print_comment(out, label->description);
 	/* Print label with bank and logical address as comments*/
-	fprintf(out, "%s:%*c; bank: $%03x logical: $%04x\n", label->name, n, ' ', label->page, label->logical);
+	fprintf(out, "%s:%*c; bank: $%03x logical: $%04x", label->name, n, ' ', label->page, label->logical);
 }
 
 /**
@@ -191,12 +191,12 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
         uint8_t data;
         uint8_t page = memmap_page(map, logical);
         if(label_repository_find(repository, logical, page, &label)) {
-            if(j) {
-                if(c) {
-                    fputc('"', out);
-                }
-                fputc('\n', out);
+            if(j && c) {
+            	putc('"', out);
             }
+			if(i) {
+				fputc('\n', out);
+			}
             print_label(out, &label);
             j = 0;
             c = 0;
@@ -227,7 +227,10 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
                fprintf(out, "\",");
                c = 0;
             }
-            fprintf(out, "$%02x%c", data, j ? ',' : ' ');
+            fprintf(out, "$%02x", data);
+			if(j && ((i+1) < section->size)) {
+				fputc(',', out);
+			}
         }
     }
     if((j || (i >= section->size)) && c) {
@@ -295,6 +298,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 	/* Is there a label ? */
 	if (label_repository_find(repository, *logical, page, &label)) {
 		print_label(out, &label);
+		fputc('\n', out);
 	}
 
 	/* Front spacing */
