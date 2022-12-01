@@ -1,6 +1,7 @@
 *~
 *.o
-junk
+*.obj
+ijunk
 .svn
 build
 *.ncb
@@ -9,3 +10,4 @@ build
 ipch
 *.sdf
 *.opensdf
+.DS_Store
