@@ -1,6 +1,6 @@
 # Etripator : a PC Engine disassembler
 
-![Github action Status](https://github.com/BlockoS/Etripator/actions/workflows/cmake.yml/badge.svg) [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/github/BlockoS/etripator?svg=true)](https://ci.appveyor.com/project/BlockoS/etripator/branch/master) [![Coverity Scan Build Status](https://scan.coverity.com/projects/6483/badge.svg)](https://scan.coverity.com/projects/blockos-etripator)
+![Github action Status](https://github.com/BlockoS/Etripator/actions/workflows/build.yml/badge.svg) [![AppVeyor Build status](https://ci.appveyor.com/api/projects/status/github/BlockoS/etripator?svg=true)](https://ci.appveyor.com/project/BlockoS/etripator/branch/master) [![Coverity Scan Build Status](https://scan.coverity.com/projects/6483/badge.svg)](https://scan.coverity.com/projects/blockos-etripator)
 
 ## Examples
 * [Monster Pro Wrestling - モンスタープロレス tutorial](examples/monster_puroresu).
