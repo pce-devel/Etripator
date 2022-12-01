@@ -1,14 +1,9 @@
 if(WIN32 AND MSVC)
     set(etripator_PLATFORM_SRC
-        ../platform/windows/time.c
-        ../platform/windows/time.c
         ../platform/windows/basename.c
     )
     set(etripator_PLATFORM_HDR
-        ../platform/windows/time.h
         ../platform/windows/basename.h
-        ../platform/windows/stdint.h
-        ../platform/windows/inttypes.h
         ../platform/windows/config_win.h
     )
 endif()

@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
+#include <stdint.h>
 
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
@@ -47,12 +48,6 @@
 #define F_OK 0x00
 #endif
 
-#if _MSC_VER >= 1800 // [
-#include <stdint.h>
-#else // ] _MSC_VER >= 1800 [
-#include "stdint.h"
-#endif // ]
-#include "time.h"
 #include "basename.h"
 
 #include <sys/types.h>
