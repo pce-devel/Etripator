@@ -39,7 +39,7 @@ static void print_comment(FILE *out, const char *str) {
 }
 
 static void print_label(FILE *out, label_t *label) {
-	int n = strlen(label->name) + 1;
+	int n = (int)(strlen(label->name) + 1);
 	n = (n < 40) ? (40 - n) : 1; 
 	/* Print description */
 	print_comment(out, label->description);

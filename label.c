@@ -42,7 +42,7 @@ static int label_repository_index(label_repository_t* repository, uint16_t logic
     for(i=0; i<repository->last; i++) {
         if( (repository->labels[i].page == page) &&
             (repository->labels[i].logical == logical) ) {
-            return i;
+            return (int)i;
         }
     }
     return -1;

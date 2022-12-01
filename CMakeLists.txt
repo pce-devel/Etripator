@@ -10,7 +10,7 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-enable_testing()
+# enable_testing()
 
 include(CheckSymbolExists)
 
@@ -74,15 +74,10 @@ set(etripator_HDR
 
 if(WIN32 AND MSVC)
     list(APPEND etripator_SRC
-        platform/windows/time.c
-        platform/windows/time.c
         platform/windows/basename.c
     )
     list(APPEND etripator_HDR
-        platform/windows/time.h
         platform/windows/basename.h
-        platform/windows/stdint.h
-        platform/windows/inttypes.h
         platform/windows/config_win.h
     )
     set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
@@ -112,6 +107,6 @@ add_custom_target(doc
          COMMENT "Generating API documentation with Doxygen"
          VERBATIM )
 
-add_subdirectory(test)
+# add_subdirectory(test)
 
 install(TARGETS etripator_cli DESTINATION bin)

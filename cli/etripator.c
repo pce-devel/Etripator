@@ -50,18 +50,29 @@ void exit_callback(void) { msg_printer_destroy(); }
 int label_output(cli_opt_t *option, label_repository_t *repository) {
     char buffer[256];
 
-    if(NULL == option->labels_out) { 
+    if (NULL == option->labels_out) {
         /* We don't want to destroy the original label file. */
         char *tmp;
 
+        char dateString[128];
+
+#if defined(_MSC_VER)
+        struct tm now;
+        __time64_t tv;
+        _time64(&tv);
+        errno_t err = _localtime64_s(&now, &tv);
+        if (err == 0) {
+            strftime(dateString, 128, "%Y%m%d%H%M%S", &now);
+        } else {
+            sprintf(dateString, 128, "19871030133700");
+        }
+#else
         struct timeval tv;
         struct tm *now;
-        char dateString[128];
-            
         gettimeofday(&tv, NULL);
         now = localtime(&tv.tv_sec);
         strftime(dateString, 128, "%Y%m%d%H%M%S", now);
-        
+#endif   
         tmp = basename(option->rom_filename);
         snprintf(buffer, 256, "%s.%s.lbl", tmp, dateString);     
         option->labels_out = buffer;
