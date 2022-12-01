@@ -72,17 +72,6 @@ set(etripator_HDR
     ipl.h
 )
 
-if(WIN32 AND MSVC)
-    list(APPEND etripator_SRC
-        platform/windows/basename.c
-    )
-    list(APPEND etripator_HDR
-        platform/windows/basename.h
-        platform/windows/config_win.h
-    )
-    set(EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/platform/windows)
-endif(WIN32 AND MSVC)
-
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
 target_compile_features(etripator PUBLIC c_std_99)
 target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE} externals)
