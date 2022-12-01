@@ -18,6 +18,8 @@
 #include <config.h>
 
 #include <jansson.h>
+#include <cwalk.h>
+
 #include <time.h>
 
 #include <message.h>
@@ -52,7 +54,8 @@ int label_output(cli_opt_t *option, label_repository_t *repository) {
 
     if (NULL == option->labels_out) {
         /* We don't want to destroy the original label file. */
-        char *tmp;
+        const char *filename;
+        size_t length;
 
         char dateString[128];
 
@@ -73,8 +76,12 @@ int label_output(cli_opt_t *option, label_repository_t *repository) {
         now = localtime(&tv.tv_sec);
         strftime(dateString, 128, "%Y%m%d%H%M%S", now);
 #endif   
-        tmp = basename(option->rom_filename);
-        snprintf(buffer, 256, "%s.%s.lbl", tmp, dateString);     
+        cwk_path_get_basename(option->rom_filename, &filename, &length);
+        if(filename == NULL) {
+            filename = option->rom_filename;
+        }
+
+        snprintf(buffer, 256, "%s.%s.lbl", filename, dateString);     
         option->labels_out = buffer;
     }
     if (!label_repository_save(option->labels_out, repository)) {

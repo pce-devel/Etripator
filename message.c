@@ -18,6 +18,8 @@
 #include "config.h"
 #include "message.h"
 
+#include <cwalk.h>
+
 static msg_printer_t* g_msg_printer = NULL;
 
 /**
@@ -59,9 +61,12 @@ int msg_printer_add(msg_printer_t *printer) {
  */
 void print_msg(msg_type_t type, const char* file, size_t line, const char* function, const char* format, ...) {
     msg_printer_t* printer;
-    char* tmp = strdup(file);
-    char* filename = basename(tmp);
-    
+    const char* filename;
+    size_t length;
+    cwk_path_get_basename(file, &filename, &length);
+    if(filename == NULL) {
+        filename = file;
+    }
     for(printer=g_msg_printer; NULL != printer; printer=printer->next) {
         if(printer->output) {
             va_list args; 
@@ -70,6 +75,5 @@ void print_msg(msg_type_t type, const char* file, size_t line, const char* funct
             va_end(args);
         }
     }
-    free(tmp);
 }
 

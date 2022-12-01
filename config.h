@@ -18,18 +18,12 @@
 #ifndef ETRIPATOR_CONFIG_H
 #define ETRIPATOR_CONFIG_H
 
-#if defined(_MSC_VER)
-#include "platform/windows/config_win.h"
-#else
 #define _GNU_SOURCE
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <errno.h>
-
-//#define strncasecmp _strnicmp
-//#define strcasecmp _stricmp
 
 #include <unistd.h>
 #include <stdint.h>
@@ -44,16 +38,11 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <libgen.h>
-
-#ifndef APIENTRY
-#define APIENTRY
-#endif
-
-#ifndef ARCH_API
-#define ARCH_API
-#endif
-
+#if defined(_MSC_VER)
+#   define strncasecmp _strnicmp
+#   define strcasecmp _stricmp
+#   define snprintf _snprintf
+#   define access _access
 #endif
 
 #endif // ETRIPATOR_CONFIG_H
