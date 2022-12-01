@@ -124,14 +124,48 @@ Example:
 Theorically you can build **Etripator** for any platform supported by **CMake**.
 Here are the build step:
 ### Configuration
+If you cloned the repository, you first need to fetch submodules with 
 ```
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
+git submodule update --init --recursive
 ```
+
+You will also need to have [jansson](https://github.com/akheron/jansson) installed on your system.
+This can be acheived using via the package manager (apt, brew, chocolate, pacman, ...) or by building it from source.
+
+```
+wget https://github.com/akheron/jansson/archive/v2.12.zip
+unzip v2.12.zip
+cd jansson-2.12
+mkdir -p build/cmake
+mkdir -p build/install
+cd build/cmake
+cmake ../.. -DJANSSON_BUILD_DOCS=OFF \
+            -DJANSSON_WITHOUT_TESTS=ON \
+            -DCMAKE_INSTALL_PREFIX=../install 
+cmake --build . --target install
+cd ../../..
+```
+
+Now on to building etripator. 
+```
+cd etripator
+mkdir -p build/cmake
+cd build/cmake
+cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install
+```
+
+If you build jansson as shown earlier you may configure the project with
+```
+cmake ../.. -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_PREFIX=../install \
+    -DJANSSON_INCLUDE_DIR=../../jansson-2.12/build/install/include \
+    -DJANSSON_LIBRARY=../../jansson-2.12/build/install/lib/jansson.lib 
+```
+
 ### Build
+
+If everything went right, you can now compile the project with:
 ```
-cmake --build . --config Release
+cmake --build . --config Release --target install
 ```
 
 ## Authors
