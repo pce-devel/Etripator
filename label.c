@@ -137,7 +137,7 @@ int label_repository_add(label_repository_t* repository, const char* name, uint1
     
     /* Push name and description */
     repository->labels[repository->last].name = strdup(name);
-    repository->labels[repository->last].description = description;
+    repository->labels[repository->last].description = strdup(description);
     ++repository->last;
     return 1;
 }

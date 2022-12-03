@@ -129,7 +129,33 @@ void ipl_print(ipl_t *in) {
     INFO_MSG("ID STR: %.24s", in->id);
     INFO_MSG("LEGAL: %.50s", in->legal);
     INFO_MSG("PROGRAM NAME: %.16s", in->program_name);
-    INFO_MSG("EXTRA: %.6s", in->extra); 
+    INFO_MSG("EXTRA: %.6s", in->extra);
+
+    FILE *stream = fopen("ipl.inc", "wb");
+    if(stream == NULL) {
+        ERROR_MSG("failed to open ipl.inc: %s", strerror(errno));
+    } else {
+        fprintf(stream,  "IPLBLK: .db $%02x, $%02x, $%02x\n", in->load_start_record[0], in->load_start_record[1], in->load_start_record[2]); 
+        fprintf(stream, "IPLBKN: .db $%02x\n", in->load_sector_count);
+        fprintf(stream, "IPLSTA: .dw $%02x%02x\n", in->load_store_address[0], in->load_store_address[1]);
+        fprintf(stream, "IPLJMP: .dw $%02x%02x\n", in->load_exec_address[0], in->load_exec_address[1]);
+        fprintf(stream, "IPLMPR: .db $%02x, $%02x, $%02x, $%02x, $%02x\n", in->mpr[0], in->mpr[1], in->mpr[2], in->mpr[3], in->mpr[4]);
+        fprintf(stream, "OPENMODE: .db $%02x\n", in->opening_mode);
+        fprintf(stream, "GRPBLK: .db $%02x, $%02x, $%02x\n", in->opening_gfx_record[0], in->opening_gfx_record[1], in->opening_gfx_record[2]); 
+        fprintf(stream, "GRPBLN: .db $%02x\n", in->opening_gfx_sector_count);
+        fprintf(stream, "GRPADR: .dw $%02x%02x\n", in->opening_gfx_read_address[0], in->opening_gfx_read_address[1]);
+        fprintf(stream, "ADPBLK: .db $%02x, $%02x, $%02x\n", in->opening_adpcm_record[0], in->opening_adpcm_record[1], in->opening_adpcm_record[2]);
+        fprintf(stream, "ADPBLN: .db %02x\n", in->opening_adpcm_sector_count);
+        fprintf(stream, "ADPRATE: .db $%02x\b", in->opening_adpcm_sampling_rate);
+        fprintf(stream, "RESERVED: .db $%02x, $%02x, $%02x, $%02x, $%02x, $%02x, $%02x\n", 
+            in->reserved[0], in->reserved[1], in->reserved[2], in->reserved[3],
+            in->reserved[4], in->reserved[5], in->reserved[6]);
+        fprintf(stream, "ID STR: .db \"%.24s\"\n", in->id);
+        fprintf(stream, "LEGAL: .db \"%.50s\"\n", in->legal);
+        fprintf(stream,"PROGRAM NAME: .db \"%.16s\"\n", in->program_name);
+        fprintf(stream,"EXTRA: .db \"%.6s\"\n", in->extra);
+        fclose(stream);
+    }
 }
 
 /**
