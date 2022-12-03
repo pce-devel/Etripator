@@ -25,18 +25,21 @@
 #include <stdarg.h>
 #include <errno.h>
 
-#include <unistd.h>
 #include <stdint.h>
 #include <time.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 
 #include <string.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <ctype.h>
+
+#if defined(__linux__)
+#   include <sys/time.h>
+#   include <unistd.h>
+#endif
 
 #if defined(_MSC_VER)
 #   define strncasecmp _strnicmp
