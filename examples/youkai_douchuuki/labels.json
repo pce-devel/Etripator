@@ -1,0 +1,4 @@
+[
+    { "name": "password.str", "logical": "31dc", "page": "f8" },
+    { "name": "password.len", "logical": "31f6", "page": "f8" }
+]
