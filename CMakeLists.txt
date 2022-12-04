@@ -1,7 +1,7 @@
-cmake_minimum_required (VERSION 3.12)
+cmake_minimum_required (VERSION 3.16)
 
 project(etripator
-    VERSION 0.7.0
+    VERSION 0.9.0
     LANGUAGES C)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -10,7 +10,7 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# enable_testing()
+enable_testing()
 
 include(CheckSymbolExists)
 
@@ -27,7 +27,7 @@ find_package(Jansson)
 
 set(CMAKE_C_STANDARDS 11)
 
-add_subdirectory(externals EXCLUDE_FROM_ALL)
+add_subdirectory(externals)
 
 set(etripator_SRC
     message.c 
@@ -73,16 +73,19 @@ set(etripator_HDR
 )
 
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
-target_compile_features(etripator PUBLIC c_std_99)
+set_target_properties(etripator PROPERTIES C_STANDARD 11)
 target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE} externals)
 target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
-target_link_libraries(etripator ${JANSSON_LIBRARIES} argparse cwalk)
+target_link_libraries(etripator PUBLIC ${JANSSON_LIBRARIES} cwalk)
 
 add_executable(etripator_cli cli/etripator.c cli/options.c)
-target_compile_features(etripator_cli PUBLIC c_std_11)
-set_target_properties(etripator_cli PROPERTIES OUTPUT_NAME etripator)
+set_target_properties(etripator_cli 
+    PROPERTIES
+        OUTPUT_NAME etripator
+        C_STANDARD 11
+)
 target_include_directories(etripator_cli PRIVATE ${CMAKE_SOURCE_DIR})
-target_link_libraries(etripator_cli etripator)
+target_link_libraries(etripator_cli etripator argparse)
 
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
 set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
@@ -90,12 +93,13 @@ set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
 configure_file(${DOXYFILE_IN} ${DOXYFILE} @ONLY IMMEDIATE)
 
 add_custom_target(doc
-         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE}
-         SOURCES ${DOXYFILE}
-         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-         COMMENT "Generating API documentation with Doxygen"
-         VERBATIM )
+    COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYFILE}
+    SOURCES ${DOXYFILE}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM
+)
 
-# add_subdirectory(test)
+add_subdirectory(test)
 
 install(TARGETS etripator_cli DESTINATION bin)
