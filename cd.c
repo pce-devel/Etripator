@@ -24,28 +24,27 @@
  * \return 1 upon success, 0 if an error occured.
  */
 int cd_memmap(memmap_t *map) {
-    int i, ret;
+    int i, ret = 0;
     /* Allocate CD RAM */
-    ret = mem_create(&map->mem[PCE_MEM_CD_RAM], 8 * 8192);
-    if(!ret) {
+    if(!mem_create(&map->mem[PCE_MEM_CD_RAM], 8 * 8192)) {
         ERROR_MSG("Failed to allocate cd memory!\n");
         memmap_destroy(map);
-        return ret;
-    } 
-    /* CD RAM is mapped to pages 0x80-0x88 (included). */
-    for (i = 0; i <= 8; i++) {
-        map->page[0x80 + i] = &map->mem[PCE_MEM_CD_RAM].data[i * 8192];
-    }
-    /* Allocate System Card RAM */
-    ret = mem_create(&map->mem[PCE_MEM_SYSCARD_RAM], 24 * 8192);
-    if (!ret) {
-        ERROR_MSG("Failed to allocate system card memory!\n");
-        memmap_destroy(map);
-        return ret;
-    }
-    /* System Card RAM is mapped to pages 0x68-0x86. */
-    for (i = 0; i < 24; i++) {
-        map->page[0x68 + i] = &map->mem[PCE_MEM_SYSCARD_RAM].data[i * 8192];
+    } else {
+        /* CD RAM is mapped to pages 0x80-0x88 (included). */
+        for (i = 0; i <= 8; i++) {
+            map->page[0x80 + i] = &map->mem[PCE_MEM_CD_RAM].data[i * 8192];
+        }
+        /* Allocate System Card RAM */
+        if (!mem_create(&map->mem[PCE_MEM_SYSCARD_RAM], 24 * 8192)) {
+            ERROR_MSG("Failed to allocate system card memory!\n");
+            memmap_destroy(map);
+        } else {
+            /* System Card RAM is mapped to pages 0x68-0x86. */
+            for (i = 0; i < 24; i++) {
+                map->page[0x68 + i] = &map->mem[PCE_MEM_SYSCARD_RAM].data[i * 8192];
+            }
+            ret = 1;
+        }
     }
     return ret;
 }
@@ -60,33 +59,22 @@ int cd_memmap(memmap_t *map) {
  * \return 1 upon success, 0 if an error occured.
  */
 int cd_load(const char* filename, size_t start, size_t len, uint8_t page, size_t offset, memmap_t* map) {
-    FILE *in;
-    int ret;
-
-    size_t addr;
-    size_t nRead;
-
-    in = fopen(filename, "rb");
+    int ret = 0;
+    FILE *in = fopen(filename, "rb");
     if(in == NULL) {
         ERROR_MSG("Unable to open %s : %s", filename, strerror(errno));
-        return 0;
-    }
-
-    ret = fseek(in, (long int)start, SEEK_SET);
-    if(ret) {
+    } else if(fseek(in, (long int)start, SEEK_SET)) {
         ERROR_MSG("Offset out of bound : %s", strerror(errno));
+    } else {
+        size_t addr = offset & 0x1fff;
+        if(fread(map->page[page] + addr, 1, len, in) != len) {
+            ERROR_MSG("Failed to read %d bytes : %s", len, strerror(errno));
+        } else {
+            ret = 1;
+        }
+    }    
+    if(in) {
         fclose(in);
-        return 0;
     }
-
-    addr = offset & 0x1fff;
-    nRead = fread(map->page[page] + addr, 1, len, in);    
-    if(nRead != len) {
-        ERROR_MSG("Failed to read %d bytes : %s", len, strerror(errno));
-        fclose(in);
-        return 0;
-    }
-    
-    fclose(in);
-    return 1;
+    return ret;
 }
