@@ -26,17 +26,19 @@ static const char* g_log_filename = "etripator.log";
  * \return 0 upon success.
  */
 static int file_msg_printer_open(void* impl) {
+    int ret = 1;
     file_msg_printer_t* printer = (file_msg_printer_t*)impl; 
     if(!printer) {
         fprintf(stderr, "Invalid file logger.\n");
-        return 1;
+    } else {
+        printer->out = fopen(g_log_filename, "ab");
+        if(!printer->out) {
+            fprintf(stderr, "Failed to open log file %s: %s\n", g_log_filename, strerror(errno));
+        } else {
+            ret = 0;
+        }             
     }
-    printer->out = fopen(g_log_filename, "ab");
-    if(!printer->out) {
-        fprintf(stderr, "Failed to open log file %s: %s\n", g_log_filename, strerror(errno));
-        return 1;
-    }
-    return 0;
+    return ret;
 }
 
 /**
@@ -45,17 +47,17 @@ static int file_msg_printer_open(void* impl) {
  * \return 0 upon success.
  */
 static int file_msg_printer_close(void* impl) {
+    int ret = 1;
     file_msg_printer_t* printer = (file_msg_printer_t*)impl; 
     if((!printer) || (!printer->out)) {
         fprintf(stderr, "Invalid file logger.\n");
-        return 1;
-    }
-    if(fclose(printer->out)) {
+    } else if(fclose(printer->out)) {
         fprintf(stderr, "Failed to close log file %s : %s\n", g_log_filename, strerror(errno));
-        return 1;
+    } else {
+        printer->out = NULL;
+        ret = 0;
     }
-    printer->out = NULL;
-    return 0;
+    return ret;
 }
 
 /**
@@ -75,22 +77,23 @@ static int file_msg_printer_output(void* impl, msg_type_t type, const char* file
         "[Warning]",
         "[Info]"
     };
+    int ret = 1;
     if(!impl) {
         fprintf(stderr, "Invalid file logger.\n");
-        return 1;
-    }
+    } else {
+        file_msg_printer_t* printer = (file_msg_printer_t*)impl; 
 
-    file_msg_printer_t* printer = (file_msg_printer_t*)impl; 
-
-    fprintf(printer->out, "%s %s:%zd %s : ", msg_type_name[type], file, line, function);
-    vfprintf(printer->out, format, args);
-    fputc('\n', printer->out);
-    fflush(printer->out);
-    if(ferror(printer->out)) {
-        fprintf(stderr, "Failed to output log to %s: %s\n", g_log_filename, strerror(errno));
-        return 1;
+        fprintf(printer->out, "%s %s:%zd %s : ", msg_type_name[type], file, line, function);
+        vfprintf(printer->out, format, args);
+        fputc('\n', printer->out);
+        fflush(printer->out);
+        if(ferror(printer->out)) {
+            fprintf(stderr, "Failed to output log to %s: %s\n", g_log_filename, strerror(errno));
+        } else {
+            ret = 0;
+        }
     }
-    return 0;
+    return ret;
 }
 
 /**

@@ -66,28 +66,39 @@ static int console_msg_printer_output(void* impl, msg_type_t type, const char* f
         "\x1b[1;32m"
     };
 
+    int ret = 1;
     if(!impl) {
         fprintf(stderr, "Invalid console logger.\n");
-        return 1;
-    }
+    } else {
+        console_msg_printer_t* printer = (console_msg_printer_t*)impl;
+        if(printer->use_escape_code) {
+            fprintf(stderr, "%s%s\x1b[0m %s:%zd \x1b[0;33m %s \x1b[1;37m : "
+                          , msg_type_prefix[type]
+                          , msg_type_name[type]
+                          , file
+                          , line
+                          , function
+            );
+        } else {
+            fprintf(stderr, "%s %s:%zd %s : "
+                          , msg_type_name[type]
+                          , file
+                          , line
+                          , function
+            );
+        }
 
-    console_msg_printer_t* printer = (console_msg_printer_t*)impl;
-    if(printer->use_escape_code) {
-        fprintf(stderr, "%s%s\x1b[0m %s:%zd \x1b[0;33m %s \x1b[1;37m : ", msg_type_prefix[type], msg_type_name[type], file, line, function);
-    }
-    else {
-        fprintf(stderr, "%s %s:%zd %s : ", msg_type_name[type], file, line, function);
-    }
-    vfprintf(stderr, format, args);
+        vfprintf(stderr, format, args);
     
-    if(printer->use_escape_code) {
-        fprintf(stderr, "\x1b[0m\n");
+        if(printer->use_escape_code) {
+            fprintf(stderr, "\x1b[0m\n");
+        } else {
+            fputc('\n', stderr);
+        }
+        fflush(stderr);
+        ret = 0;
     }
-    else {
-        fputc('\n', stderr);
-    }
-    fflush(stderr);
-    return 0;
+    return ret;
 }
 
 /**

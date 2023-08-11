@@ -23,26 +23,27 @@
  * \return 1 upon success, 0 if an error occured.
  */
 int memmap_init(memmap_t *map) {
-    int i, ret;
+    int i, ret = 0;
     memset(map, 0, sizeof(memmap_t));
     /* Allocate main (or work) RAM */
-    ret = mem_create(&map->mem[PCE_MEM_BASE_RAM], 8192);
-    if (!ret) {
+    if(!mem_create(&map->mem[PCE_MEM_BASE_RAM], 8192)) {
         ERROR_MSG("Failed to allocate main memory!\n");
-        return ret;
-    }
-    /* Main RAM is mapped to pages 0xf8-0xfb (included). */
-    /* Pages 0xf9 to 0xfb mirror page 0xf8. */
-    for(i=0xf8; i<=0xfb; i++) {
-        map->page[i] = &(map->mem[PCE_MEM_BASE_RAM].data[0]);
-    }
-    
-    /* ROM and syscard RAM will be initialized later. */
+    } else {
+        /* Main RAM is mapped to pages 0xf8-0xfb (included). */
+        /* Pages 0xf9 to 0xfb mirror page 0xf8. */
+        for(i=0xf8; i<=0xfb; i++) {
+            map->page[i] = &(map->mem[PCE_MEM_BASE_RAM].data[0]);
+        }
+        
+        /* ROM and syscard RAM will be initialized later. */
 
-    /* Clear mprs. */
-    memset(map->mpr, 0, 8);
-    map->mpr[0] = 0xff;
-    map->mpr[1] = 0xf8;
+        /* Clear mprs. */
+        memset(map->mpr, 0, 8);
+        map->mpr[0] = 0xff;
+        map->mpr[1] = 0xf8;
+    
+        ret = 1;
+    }
     return ret;
 }
 /**

@@ -19,96 +19,49 @@
 #include "ipl.h"
 #include "message.h"
 
-#define IPL_DATA_SIZE 0xb2
+#define IPL_HEADER_SIZE 0x80
+#define IPL_DATA_SIZE 0xB2
 
 static int ipl_read_header(ipl_t *out, FILE *in, const char *filename) {
-    size_t nRead;
-    nRead = fread(out->load_start_record, 1, 3, in);
-    if(nRead != 3) {
+    int ret = 0;
+    if(fread(out->load_start_record, 1, 3, in) != 3) {
         ERROR_MSG("Failed to read IPLBLK from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(&out->load_sector_count, 1, 1, in);
-    if(nRead != 1) {
+    } else if(fread(&out->load_sector_count, 1, 1, in) != 1) {
         ERROR_MSG("Failed to read IPLBLN from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->load_store_address, 1, 2, in);
-    if(nRead != 2) {
+    } else if(fread(out->load_store_address, 1, 2, in) != 2) {
         ERROR_MSG("Failed to read IPLSTA from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->load_exec_address, 1, 2, in);
-    if(nRead != 2) {
+    } else if(fread(out->load_exec_address, 1, 2, in) != 2) {
         ERROR_MSG("Failed to read IPLJMP from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->mpr, 1, 5, in);
-    if(nRead != 5) {
+    } else if(fread(out->mpr, 1, 5, in) != 5) {
         ERROR_MSG("Failed to read IPLMPR from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(&out->opening_mode, 1, 1, in);
-    if(nRead != 1) {
+    } else if(fread(&out->opening_mode, 1, 1, in) != 1) {
         ERROR_MSG("Failed to read OPENMODE from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->opening_gfx_record, 1, 3, in);
-    if(nRead != 3) {
+    } else if(fread(out->opening_gfx_record, 1, 3, in) != 3) {
         ERROR_MSG("Failed to read GRPBLK from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(&out->opening_gfx_sector_count, 1, 1, in);
-    if(nRead != 1) {
+    } else if(fread(&out->opening_gfx_sector_count, 1, 1, in) != 1) {
         ERROR_MSG("Failed to read GRPBLN from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->opening_gfx_read_address, 1, 2, in);
-    if(nRead != 2) {
+    } else if(fread(out->opening_gfx_read_address, 1, 2, in) != 2) {
         ERROR_MSG("Failed to read GRPADR from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->opening_adpcm_record, 1, 3, in);
-    if(nRead != 3) {
+    } else if(fread(out->opening_adpcm_record, 1, 3, in) != 3) {
         ERROR_MSG("Failed to read ADPBLK from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(&out->opening_adpcm_sector_count, 1, 1, in);
-    if(nRead != 1) {
+    } else if(fread(&out->opening_adpcm_sector_count, 1, 1, in) != 1) {
         ERROR_MSG("Failed to read ADPBLN from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(&out->opening_adpcm_sampling_rate, 1, 1, in);
-    if(nRead != 1) {
+    } else if(fread(&out->opening_adpcm_sampling_rate, 1, 1, in) != 1) {
         ERROR_MSG("Failed to read ADPRATE from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->reserved, 1, 7, in);
-    if(nRead != 7) {
+    } else if(fread(out->reserved, 1, 7, in) != 7) {
         ERROR_MSG("Failed to read RESERVED from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->id, 1, 24, in);
-    if(nRead != 24) {
+    } else if(fread(out->id, 1, 24, in) != 24) {
         ERROR_MSG("Failed to read ID STR from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->legal, 1, 50, in);
-    if(nRead != 50) {
+    } else if(fread(out->legal, 1, 50, in) != 50) {
         ERROR_MSG("Failed to read LEGAL from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->program_name, 1, 16, in);
-    if(nRead != 16) {
+    } else if(fread(out->program_name, 1, 16, in) != 16) {
         ERROR_MSG("Failed to read PROGRAM NAME from %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    nRead = fread(out->extra, 1, 6, in);
-    if(nRead != 6) {
+    } else if(fread(out->extra, 1, 6, in) != 6) {
         ERROR_MSG("Failed to read EXTRA from %s: %s", filename, strerror(errno));
-        return 0;
+    } else {
+        ret = 1;
     }
-    return 1;
+    return ret;
 }
 
 void ipl_print(ipl_t *in) {
@@ -166,18 +119,18 @@ void ipl_print(ipl_t *in) {
  */
 int ipl_read(ipl_t *out, const char *filename) {
     FILE *in = fopen(filename, "rb");
+    int ret = 0;
     if(in == NULL) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
-        return 0;
+    } else {
+        if(fseek(in, 0x800, SEEK_SET)) {
+            ERROR_MSG("Failed to seek to IPL header in %s: %s", filename, strerror(errno));
+        } else if(ipl_read_header(out, in, filename)) {
+            ipl_print(out);
+            ret = 1;
+        }
+        fclose(in);
     }
-
-    int ret = 0;
-    fseek(in, 0x800, SEEK_SET);
-    ret = ipl_read_header(out, in, filename);
-    if(ret) {
-        ipl_print(out);
-    }
-    fclose(in);
     return ret;
 }
 
