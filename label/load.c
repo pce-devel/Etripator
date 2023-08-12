@@ -31,70 +31,53 @@
  */
 int label_repository_load(const char* filename, label_repository_t* repository) {
     json_t* root;
-    json_t* value;
     json_error_t err;
-    const char* key;
-    int index;
-    int num;
-    uint16_t logical;
-    uint8_t page;
-    const char *description;
-
+    json_t* value;
+    int ret = 0, index = 0;
     root = json_load_file(filename, 0, &err);
     if(!root) {
         ERROR_MSG("Failed to parse %s: %s", filename, err.text);
-        return 0;
+    } else {
+        if(!json_is_array(root)) {
+            ERROR_MSG("Array expected.");
+        } else for (index = 0, ret = 1; ret && (index < json_array_size(root)) && (value = json_array_get(root, index)); index++) {
+            ret = 0;
+            if(!json_is_object(value)) {
+                ERROR_MSG("Expected object.");
+            } else {
+                // name
+                json_t* tmp = json_object_get(value, "name");
+                if (!json_is_string(tmp)) {
+                    ERROR_MSG("Missing or invalid label name.");
+                } else {
+                    int num;
+                    const char* key = json_string_value(tmp);
+                    // logical
+                    tmp = json_object_get(value, "logical");
+                    if(!json_validate_int(tmp, &num)) {
+                        ERROR_MSG("Invalid or missing logical address.");
+                    } else if((num < 0) || (num > 0xffff)) {
+                        ERROR_MSG("Logical address out of range.");
+                    } else {
+                        uint16_t logical = (uint16_t)num;
+                        // page
+                        tmp = json_object_get(value, "page");
+                        if(!json_validate_int(tmp, &num)) {
+                            ERROR_MSG("Invalid or missing page.");
+                        } else {
+                            // description
+                            const char* description = json_load_description(value);
+                            if((num < 0) || (num > 0xff)) {
+                                ERROR_MSG("Page value out of range.");
+                            } else if(label_repository_add(repository, key, logical, (uint8_t)num, description)) {
+                                ret = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        json_decref(root);
     }
-    if(!json_is_array(root)) {
-        ERROR_MSG("Array expected.");
-        return 0;
-    }
-    
-    json_array_foreach(root, index, value) {
-        json_t* tmp;
-        if(!json_is_object(value)) {
-            ERROR_MSG("Expected object.");
-            return 0;
-        }
-        // name
-        tmp = json_object_get(value, "name");
-        if (!json_is_string(tmp)) {
-            ERROR_MSG("Missing or invalid label name.");
-            return 0;
-        }
-        key = json_string_value(tmp);
-
-        // logical
-        tmp = json_object_get(value, "logical");
-        if(!json_validate_int(tmp, &num)) {
-            ERROR_MSG("Invalid or missing logical address.");
-            return 0;
-        }
-        if((num < 0) || (num > 0xffff)) {
-            ERROR_MSG("Logical address out of range.");
-            return 0;
-        }
-        logical = (uint16_t)num;
-        // page
-        tmp = json_object_get(value, "page");
-        if(!json_validate_int(tmp, &num)) {
-            ERROR_MSG("Invalid or missing page.");
-            return 0;
-        }
-        // description
-        description = json_load_description(value);
-        
-        if((num < 0) || (num > 0xff)) {
-            ERROR_MSG("Page value out of range.");
-            return 0;
-        }
-	    page = (uint8_t)num;
-
-        if(!label_repository_add(repository, key, logical, page, description)) {
-            return 0;
-        }
-    }
-
-    json_decref(root);
-    return 1;
+    return ret;
 }
