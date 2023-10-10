@@ -124,6 +124,30 @@ int main(int argc, const char **argv) {
         return EXIT_FAILURE;
     }
 
+    /* Log CLI */
+    {
+        size_t len = 0;
+        char *buffer;
+        for(i=0; i<argc; i++) {
+            len += strlen(argv[i]) + 1;
+        }
+        buffer = (char*)malloc(len);
+        if(buffer == NULL) {
+            /* too bad... */
+        } else {
+            char *ptr = buffer;
+            for(int i=0; i<argc; i++) {
+                size_t n = strlen(argv[i]);
+                strcpy(ptr, argv[i]);
+                ptr += n;
+                *ptr++ = ' ';
+            }
+            buffer[len-1] = '\0';
+            INFO_MSG("Command line: %s", buffer);
+            free(buffer);
+        }
+    }
+
     failure = 1;
     section_count = 0;
     section = NULL;
