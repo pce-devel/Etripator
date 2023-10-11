@@ -1,20 +1,20 @@
 /*
-    This file is part of Etripator,
-    copyright (c) 2009--2023 Vincent Cruz.
-
-    Etripator is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Etripator is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * This file is part of Etripator,
+ * copyright (c) 2009--2023 Vincent Cruz.
+ *
+ * Etripator is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Etripator is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "load.h"
 
 #include <errno.h>
@@ -177,14 +177,7 @@ static int section_parse(const json_t *obj, section_t *out) {
     return 1;
 }
 
-/**
- * Load sections from a JSON file.
- * \param [in]  filename Input filename.
- * \param [out] sections Loaded sections.
- * \param [out] count Number of loaded sections. 
- * \return 1 if the sections contained in the file were succesfully loaded.
- *         0 if an error occured.
- */
+/* Load sections from a JSON file. */
 int section_load(const char *filename, section_t **out, int *n) {
     json_t* root;
     json_t* obj;

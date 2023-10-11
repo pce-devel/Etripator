@@ -1,20 +1,20 @@
 /*
-    This file is part of Etripator,
-    copyright (c) 2009--2023 Vincent Cruz.
-
-    Etripator is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Etripator is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * This file is part of Etripator,
+ * copyright (c) 2009--2023 Vincent Cruz.
+ *
+ * Etripator is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Etripator is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "section.h"
 #include "jsonhelpers.h"
 #include "message.h"
@@ -36,9 +36,7 @@ static const char *g_supported_data_types[DataTypeCount] = {
     "string"
 };
 
-/**
- * Retrieves section type name.
- */
+/* Retrieves section type name. */
 const char* section_type_name(section_type_t type) {
     if((type <= UnknownSectionType) || (type >= SectionTypeCount)) {
         return "unknown";
@@ -46,9 +44,7 @@ const char* section_type_name(section_type_t type) {
     return g_supported_section_types[type];
 }
 
-/**
- * Retrieves data type name.
- */
+/* Retrieves data type name. */
 const char* data_type_name(data_type_t type) {
     if((type <= UnknownDataType) || (type >= DataTypeCount)) {
         return "unknown";
@@ -56,9 +52,7 @@ const char* data_type_name(data_type_t type) {
     return g_supported_data_types[type];
 }
 
-/**
- * Reset a section to its default values.
- **/
+/* Reset a section to its default values. */
 void section_reset(section_t *s) {
     s->name = NULL;
     s->type = UnknownSectionType;
@@ -83,18 +77,12 @@ static int section_compare(const void *a, const void *b) {
     return cmp;
 }
 
-/**
- * Group section per output filename and sort them in bank/org order.
- * \param [in][out] sections Sections.
- * \param [in] count Number of sections to sort.
- */
+/* Group section per output filename and sort them in bank/org order. */
 void section_sort(section_t *ptr, size_t n) {
     qsort(ptr, n, sizeof(section_t), &section_compare);
 }
 
-/**
- * Delete sections.
- */
+/* Delete sections. */
 void section_delete(section_t *ptr, int n) {
     int i;
     for(i=0; i<n; i++) {

@@ -1,20 +1,20 @@
 /*
-    This file is part of Etripator,
-    copyright (c) 2009--2023 Vincent Cruz.
-
-    Etripator is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Etripator is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ * This file is part of Etripator,
+ * copyright (c) 2009--2023 Vincent Cruz.
+ *
+ * Etripator is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Etripator is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "label.h"
 #include "message.h"
 
@@ -47,10 +47,7 @@ static int label_repository_index(label_repository_t* repository, uint16_t logic
     return -1;
 }
 
-/**
- * Create label repository.
- * \return A pointer to a label repository or NULL if an error occured.
- */
+/* Create label repository. */
 label_repository_t* label_repository_create() {
     label_repository_t *repository;
     repository = (label_repository_t*)malloc(sizeof(label_repository_t));
@@ -75,10 +72,7 @@ label_repository_t* label_repository_create() {
     return repository;
 }
 
-/**
- * Delete label repository.
- * \param [in,out] repository Label repository.
- */
+/*  Delete label repository. */
 void label_repository_destroy(label_repository_t* repository) {
     repository->size  = 0;
     repository->last  = 0;
@@ -97,14 +91,7 @@ void label_repository_destroy(label_repository_t* repository) {
     }
 }
 
-/**
- * Add label to repository.
- * \param [in,out] repository Label repository.
- * \param [in]     name        Name.
- * \param [in]     logical     Logical address.
- * \param [in]     page        Memory page.
- * \param [in]     description Description (optional).
- */
+/* Add label to repository. */
 int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page, const char *description) {
     int ret = 1;
     int index = label_repository_index(repository, logical, page);
@@ -145,14 +132,7 @@ int label_repository_add(label_repository_t* repository, const char* name, uint1
     return ret;
 }
 
-/**
- * Find a label by its address.
- * \param [in]  repository  Label repository.
- * \param [in]  logical     Logical address.
- * \param [in]  page        Memory page.
- * \param [out] label       Label (if found).
- * \return 1 if a label was found, 0 otherwise.
- */
+/* Find a label by its address. */
 int label_repository_find(label_repository_t* repository, uint16_t logical, uint8_t page, label_t *out) {
     int index = label_repository_index(repository, logical, page);
     if(index < 0) {
@@ -163,22 +143,12 @@ int label_repository_find(label_repository_t* repository, uint16_t logical, uint
     return 1;
 }
 
-/**
- * Get the number of labels stored in the repository.
- * \param [in] repository Label repository.
- * \return Label count.
- */
+/* Get the number of labels stored in the repository. */
 int label_repository_size(label_repository_t* repository) {
     return repository ? (int)repository->last : 0;
 }
 
-/**
- * Retrieve the label at the specified index.
- * \param [in]  repository Label repository.
- * \param [in]  index      Label index.
- * \param [out] out        Label.
- * \return 1 if a label exists for the specified index, 0 otherwise.
- */
+/* Retrieve the label at the specified index. */
 int label_repository_get(label_repository_t* repository, int index, label_t *out) {
     if((repository != NULL) && ((index >= 0) && (index < (int)repository->last))) {    
         memcpy(out, &repository->labels[index], sizeof(label_t));
@@ -188,13 +158,7 @@ int label_repository_get(label_repository_t* repository, int index, label_t *out
         return 0;
     }
 }
-/**
- * Delete labels
- * \param [in]  repository  Label repository.
- * \param [in]  first       Start of the logical address range.
- * \param [in]  end         End of the logical address range.
- * \param [in]  page        Memory page.
- */
+/* Delete labels */
 int label_repository_delete(label_repository_t* repository, uint16_t first, uint16_t end, uint8_t page) {
     size_t i;        
     for(i=0; i<repository->last; i++) {

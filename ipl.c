@@ -1,21 +1,20 @@
 /*
-    This file is part of Etripator,
-    copyright (c) 2009--2023 Vincent Cruz.
-
-    Etripator is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    Etripator is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
+ * This file is part of Etripator,
+ * copyright (c) 2009--2023 Vincent Cruz.
+ *
+ * Etripator is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * Etripator is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
+ */
 #include "ipl.h"
 #include "message.h"
 
@@ -111,12 +110,7 @@ void ipl_print(ipl_t *in) {
     }
 }
 
-/**
- * Read IPL data from file.
- * \param [out] out IPL infos.
- * \param [in] filename Input filename.
- * \return 0 on error, 1 otherwise.
- */
+/* Read IPL data from file. */
 int ipl_read(ipl_t *out, const char *filename) {
     FILE *in = fopen(filename, "rb");
     int ret = 0;
@@ -134,13 +128,7 @@ int ipl_read(ipl_t *out, const char *filename) {
     return ret;
 }
 
-/**
- * Get irq code offsets from IPL.
- * \param [in]  in IPL infos.
- * \param [out] section Sections.
- * \param [out] count  Section count.
- * \return 0 on error, 1 otherwise.
- */
+/* Get irq code offsets from IPL. */
 int ipl_sections(ipl_t *in, section_t **out, int *count) {
     int i, j, k, extra;
     section_t *section;
