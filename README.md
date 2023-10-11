@@ -22,6 +22,8 @@ The options are :
 * **--out** or **-o < file >** : main asm file containing includes for all sections as long the irq vector table if the irq-detect  option is enabled.
 * **--labels** or **-l < file >** : labels definition filename.
 * **--labels-out <file>** : extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl.\n"
+* **--comments <file>** : comments description filename.
+* **--address** : print statement logical address and page in an inline comment.
 * **cfg** :  configuration file. It is optional if irq detection is enabled.
 * **in** : binary to be disassembled (ROM or CDROM track).
 
@@ -118,6 +120,55 @@ Example:
     { "name":"irq_reset", "logical":"eab3", "page":"00"},
     { "name":"main", "logical":"f8a4", "page":"00"}
 ]
+```
+
+## Comments file format
+
+The comments file is very similar to the labels definition file. It is a standard **JSON** file containing an array of comments. Each entry is an object containing the following fields:
+ * **logical** : logical address of the statement to comment in hexadecimal.
+ * **page** : physical page, i.e. the value of the mpr of the logical address.
+ * **text** : comment text (as a string or as an array of strings).
+
+Example:
+```json
+[
+    { "logical": "eab3", "page":"00", "text": " switch CPU to high speed mode"},
+    { "logical": "eab4", "page":"00", "text": " disable interrupts"},
+    { "logical": "eab5", "page":"00", "text": " clear decimal flag"},
+    { "logical": "eab6", "page":"00", "text": " map I/O to the 1st memory page"},
+    { "logical": "eaba", "page":"00", "text": " map RAM to the 2nd memory page"},
+    { "logical": "eabe", "page":"00", "text": " clear zero page"},
+    { "logical": "eac7", "page":"00", "text": " clear bss"},
+    { "logical": "ead1", "page":"00", "text": [
+            " disable interrupts",
+            " this looks like the soft reset entry point"
+        ]
+    },
+    { "logical": "ead2", "page":"00", "text": " disable CPU timer"},
+    { "logical": "ead5", "page":"00", "text": " switch CPU to high speed mode"},
+    { "logical": "ead6", "page":"00", "text": " reset stack pointer"}
+]
+```
+This comment configuration file comes the [Games Express CD Card bank #0](examples/games_express) example and produces the following assembly code.
+```asm
+irq_reset:                              ; bank: $000 logical: $eab3
+          csh                           ; switch CPU to high speed mode
+          sei                           ; disable interrupts
+          cld                           ; clear decimal flag
+          lda     #$ff                  ; map I/O to the 1st memory page
+          tam     #$00
+          lda     #$f8                  ; map RAM to the 2nd memory page
+          tam     #$01
+          stz     <$00                  ; clear zero page
+          tii     $2000, $2001, $00ff
+          stz     irq1_jmp              ; clear bss
+          tii     irq1_jmp, $2201, $1dff
+lead1_00:                               ; bank: $000 logical: $ead1
+          sei                           ; disable interrupts
+                                        ; this looks like the soft reset entry point
+          stz     $0c01                 ; disable CPU timer
+          csh                           ; switch CPU to high speed mode
+          ldx     #$ff                  ; reset stack pointer
 ```
 
 ## Build

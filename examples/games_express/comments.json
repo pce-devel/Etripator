@@ -1,13 +1,17 @@
 [
-    { "logical": "eab3", "page":"00", "text": " switch CPU to high speed mode"},
-    { "logical": "eab4", "page":"00", "text": " disable interrupts"},
-    { "logical": "eab5", "page":"00", "text": " clear decimal flag"},
-    { "logical": "eab6", "page":"00", "text": " map I/O to the 1st memory page"},
-    { "logical": "eaba", "page":"00", "text": " map RAM to the 2nd memory page"},
-    { "logical": "eabe", "page":"00", "text": " clear zero page"},
-    { "logical": "eac7", "page":"00", "text": " clear bss"},
-    { "logical": "ead1", "page":"00", "text": " disable interrupts"},
-    { "logical": "ead2", "page":"00", "text": " disable CPU timer"},
-    { "logical": "ead5", "page":"00", "text": " switch CPU to high speed mode"},
-    { "logical": "ead6", "page":"00", "text": " reset stack pointer"}
+    { "logical": "eab3", "page":"00", "text": "switch CPU to high speed mode"},
+    { "logical": "eab4", "page":"00", "text": "disable interrupts"},
+    { "logical": "eab5", "page":"00", "text": "clear decimal flag"},
+    { "logical": "eab6", "page":"00", "text": "map I/O to the 1st memory page"},
+    { "logical": "eaba", "page":"00", "text": "map RAM to the 2nd memory page"},
+    { "logical": "eabe", "page":"00", "text": "clear zero page"},
+    { "logical": "eac7", "page":"00", "text": "clear bss"},
+    { "logical": "ead1", "page":"00", "text": [
+            "disable interrupts",
+            "this looks like the soft reset entry point"
+        ]
+    },
+    { "logical": "ead2", "page":"00", "text": "disable CPU timer"},
+    { "logical": "ead5", "page":"00", "text": "switch CPU to high speed mode"},
+    { "logical": "ead6", "page":"00", "text": "reset stack pointer"}
 ]

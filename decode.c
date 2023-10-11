@@ -53,6 +53,7 @@ static void print_inline_comment(FILE *out, int n, const char *str) {
 		}
 		n = 0;
 		fputc(';', out);
+		fputc(' ', out);
 		for(;*str && (*str != '\n'); ++str) {
             fputc(*str, out);
         }
