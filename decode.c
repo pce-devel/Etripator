@@ -65,6 +65,10 @@ static void print_inline_comment(FILE *out, int n, const char *str) {
 	}
 }
 
+static void print_statement_address(FILE *out, int n, uint16_t logical, uint8_t page) {
+	fprintf(out, "%*c; bank: $%03x logical: $%04x", last_column_spacing(n), ' ', page, logical);
+}
+
 static void print_label(FILE *out, label_t *label) {
 	int n = last_column_spacing((int)strlen(label->name) + 1);
 	/* Print description */
@@ -147,7 +151,7 @@ static int data_extract_binary(FILE *out, section_t *section, memmap_t *map, lab
     return 1;
 }
 
-static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments) {
+static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos) {
     const int32_t element_size = section->data.element_size;
 	const int32_t elements_per_line = section->data.elements_per_line;
 
@@ -162,8 +166,11 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
 
 	size_t start = ftell(out);
 
+	uint8_t page = memmap_page(map, logical);
+	uint16_t start_logical = logical;
+
     for(i=0, j=0, logical=section->logical; i<section->size; i++, logical++) {
-		uint8_t page = memmap_page(map, logical);
+		page = memmap_page(map, logical);
 		
 		int has_comment = comment_repository_find(comments, logical, page, &comment);
 		int has_label   = label_repository_find(repository, logical, page, &label);
@@ -182,6 +189,7 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
 			}
 			print_label(out, &label);
 			start = ftell(out);
+			start_logical = logical;
 			j = 0;
 		}
 
@@ -192,7 +200,10 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
 			if((j == 0) || has_comment) {
 				const char *data_decl = (top > 1) ? ".dw" : ".db";
 				fputc('\n', out);
-				start = ftell(out);
+
+				start = ftell(out);				
+				start_logical = logical-(top-1);
+
 				fprintf(out, "%s%s", spacing, data_decl);
 				sep = ' ';
 			} else {
@@ -213,11 +224,16 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
 			if(has_comment) {
 				print_inline_comment(out, (int)(ftell(out) - start), comment.text);
 				j = 0;
+			} else if((j == 0) && extra_infos) {
+				print_statement_address(out, (int)(ftell(out)-start), start_logical, memmap_page(map, start_logical));
 			}
 		}
 	}
 	// flush remaining bytes
     if(top) {
+		if(extra_infos) {
+			print_statement_address(out, (int)(ftell(out)-start), start_logical, memmap_page(map, start_logical));
+		}
         fprintf(out, "\n%s.db $%02x", spacing, buffer[0]);
 		for(int32_t j=1; j<top; j++) {		// useless as top is always equal to 1
 			fprintf(out, ",$%02x", buffer[j]);
@@ -227,16 +243,17 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
     return 1;
 }
 
-static int data_extract_string(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments) {
+static int data_extract_string(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos) {
     const int32_t elements_per_line = section->data.elements_per_line;
 
 	int32_t i;
 	uint16_t logical;
 
 	for(i=0, logical=section->logical; i<section->size; ) {
-		uint8_t page = memmap_page(map, logical);
+		uint16_t start_logical = logical;
+		uint8_t start_page = memmap_page(map, logical);
 		label_t label;
-		if(label_repository_find(repository, logical, page, &label)) {
+		if(label_repository_find(repository, start_logical, start_page, &label)) {
 			print_label(out, &label);
 		}
 
@@ -250,6 +267,7 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
 		int has_comment = 0;
 		for(int32_t j=0; (has_comment == 0) && (j<elements_per_line) && (i<section->size); j++, i++, logical++) {
  			uint8_t data = memmap_read(map, logical);
+			uint8_t page = memmap_page(map, logical);
 			comment_t comment = {0};
 			has_comment = comment_repository_find(comments, logical, page, &comment);
 
@@ -287,27 +305,30 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
 		if(c) {
 			fputc('"', out);
 		}
+		if((!has_comment) && extra_infos) {
+			print_statement_address(out, (int)(ftell(out) - start), start_logical, start_page);
+		}
 	}
 	fputc('\n', out);
 	return 1;
 }
 
 /* Process data section. The result will be output has a binary file or an asm file containing hex values or strings. */
-int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments) {
+int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos) {
     switch(section->data.type) {
         case Binary:
             return data_extract_binary(out, section, map, repository);
         case Hex:
-            return data_extract_hex(out, section, map, repository, comments);
+            return data_extract_hex(out, section, map, repository, comments, extra_infos);
         case String:
-            return data_extract_string(out, section, map, repository, comments);
+            return data_extract_string(out, section, map, repository, comments, extra_infos);
 		default:
 			return 0;
     }
 }
 
 /* Process code section. */
-int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments) {
+int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos) {
 	int i, delta;
 	uint8_t inst, data[6], is_jump;
 	char eor;
@@ -577,11 +598,12 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 
 	/* display inline comments if any */
 	comment_t comment = {0};
+	int n = (int)(ftell(out) - start);
 	if(comment_repository_find(comments, current_logical, current_page, &comment)) {
-		int n = (int)(ftell(out) - start);
 		print_inline_comment(out, n, comment.text);
+	} else if(extra_infos) {
+		print_statement_address(out, n, current_logical, current_page);
 	}
-
 	fputc('\n', out);
 	return eor;
 }
@@ -610,7 +632,6 @@ int32_t compute_size(section_t *sections, int index, int count, memmap_t *map) {
     }
     for(int eor=0; !eor; ) {
         if((logical & 0x1fff) >= max_offset) {
-            printf("%x %x\n", logical&0x1fff, max_offset);
             break;
         }
         uint8_t page = memmap_page(map, logical);

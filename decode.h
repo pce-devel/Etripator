@@ -40,9 +40,10 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
  * @param [in] map Memory map.
  * @param [in] repository Label repository.
  * @param [in] comments Comments repository.
+ * @param [in] extra_infos Display extra informations as comments (if none set).
  * @return 1 upon success, 0 otherwise.
  */
-int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments);
+int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos);
 
 /**
  * Process code section.
@@ -52,9 +53,10 @@ int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_
  * @param [in] map Memory map.
  * @param [in] repository Label repository.
  * @param [in] comments Comments repository.
+ * @param [in] extra_infos Display extra informations as comments (if none set).
  * @return 1 if rts, rti or brk instruction was decoded, 0 otherwise.
  */
-int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments);
+int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos);
 
 /**
  * Computes section size.

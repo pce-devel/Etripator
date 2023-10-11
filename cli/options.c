@@ -60,6 +60,7 @@ int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
         OPT_STRING('l', "labels", &dummy, "labels definition filename", opt_callback, (intptr_t)&labels_payload, 0),
         OPT_STRING(0, "labels-out", &option->labels_out, "extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl", NULL, 0, 0),
         OPT_STRING(0, "comments", &dummy, "comments description filename", opt_callback, (intptr_t)&comments_payload, 0),
+        OPT_BOOLEAN(0, "address", &option->address, "print statement address as comment", NULL, 0, 0),
         OPT_END(),
     };
 
@@ -73,7 +74,8 @@ int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
     option->labels_in = NULL;
     option->labels_out = NULL;
     option->comments_in = NULL;
-
+    option->address = 0;
+    
     argparse_init(&argparse, options, usages, 0);
     argparse_describe(&argparse, "\nEtripator : a PC Engine disassembler", "  ");
     argc = argparse_parse(&argparse, argc, argv);

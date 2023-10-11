@@ -322,11 +322,11 @@ int main(int argc, const char **argv) {
             /* Process opcodes */
             uint16_t logical = section[i].logical;
             do {
-                (void)decode(out, &logical, &section[i], &map, repository, comments_repository);
+                (void)decode(out, &logical, &section[i], &map, repository, comments_repository, option.address);
             } while (logical < (section[i].logical+section[i].size));
             fputc('\n', out);
         } else {
-            ret = data_extract(out, &section[i], &map, repository, comments_repository);
+            ret = data_extract(out, &section[i], &map, repository, comments_repository, option.address);
             if (!ret) {
                 // [todo]
             }
