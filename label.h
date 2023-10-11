@@ -45,12 +45,12 @@ label_repository_t* label_repository_create();
 void label_repository_destroy(label_repository_t* repository);
 
 /**
- * Add label to repository.
+ * Add label (or inline description) to repository.
  * \param [in,out] repository Label repository.
- * \param [in]     name        Name.
+ * \param [in]     name        Name. If the name is NULL, then this label is an inline description.
  * \param [in]     logical     Logical address.
  * \param [in]     page        Memory page.
- * \param [in]     description Description.
+ * \param [in]     description Description (optional if name is set, mandatory otherwise).
  */
 int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page, const char *description);
 
@@ -88,5 +88,23 @@ int label_repository_get(label_repository_t* repository, int index, label_t *out
  * \param [in]  page        Memory page.
  */
 int label_repository_delete(label_repository_t* repository, uint16_t first, uint16_t end, uint8_t page);
+
+/**
+ * Load labels from file.
+ * \param [in]  filename Input filename.
+ * \param [out] repository Label repository.
+ * \return 1 if the labels contained in the file was succesfully added to the repository.
+ *         0 if an error occured.
+ */
+int label_repository_load(const char* filename, label_repository_t* repository);
+
+/**
+ * Save labels to file.
+ * \param [in] filename Configuration file.
+ * \param [in] reposity Label repository.
+ * \return 1 if the labels in the repository were succesfully written to the file.
+ *         0 if an error occured.
+ */
+int label_repository_save(const char* filename, label_repository_t* repository);
 
 #endif // ETRIPATOR_LABEL_H

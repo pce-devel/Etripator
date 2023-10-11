@@ -30,14 +30,14 @@
 #include <decode.h>
 #include <irq.h>
 #include <label.h>
-#include <label/load.h>
-#include <label/save.h>
+#include <comment.h>
 #include <memorymap.h>
 #include <opcodes.h>
 #include <rom.h>
 #include <ipl.h>
 #include <section.h>
 #include <section/load.h>
+#include <comment.h>
 
 #include "options.h"
 
@@ -208,8 +208,19 @@ int main(int argc, const char **argv) {
 
     section_sort(section, section_count);
 
+    comment_repository_t *comments_repository = comment_repository_create();
+    /* Load comments */
+    if(NULL != option.comments_in) {
+        for(i=0; option.comments_in[i]; i++) {
+            ret = comment_repository_load(option.comments_in[i], comments_repository);
+            if (!ret) {
+                ERROR_MSG("An error occured while loading comments from %s : %s", option.comments_in[i], strerror(errno));
+                goto error_3;
+            }
+        }
+    }
+
     label_repository_t *repository = label_repository_create();
-    
     /* Load labels */
     if (NULL != option.labels_in) {
         for(i=0; option.labels_in[i]; i++) {
@@ -311,11 +322,11 @@ int main(int argc, const char **argv) {
             /* Process opcodes */
             uint16_t logical = section[i].logical;
             do {
-                (void)decode(out, &logical, &section[i], &map, repository);
+                (void)decode(out, &logical, &section[i], &map, repository, comments_repository);
             } while (logical < (section[i].logical+section[i].size));
             fputc('\n', out);
         } else {
-            ret = data_extract(out, &section[i], &map, repository);
+            ret = data_extract(out, &section[i], &map, repository, comments_repository);
             if (!ret) {
                 // [todo]
             }
@@ -351,13 +362,12 @@ int main(int argc, const char **argv) {
 
 error_4:
     label_repository_destroy(repository);
+error_3:
+    comment_repository_destroy(comments_repository);
 error_2:
     memmap_destroy(&map);
 error_1:
-    if(option.labels_in) {
-        free(option.labels_in);
-        option.labels_in = NULL;
-    }
+    release_cli_opt(&option);
 
     for (i = 0; i < section_count; ++i) {
         free(section[i].name);

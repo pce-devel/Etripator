@@ -29,9 +29,13 @@ typedef struct {
     const char *main_filename;
     const char *labels_out;
     const char **labels_in;
+    const char **comments_in;
 } cli_opt_t;
 
 /* Extract command line options */
 int get_cli_opt(int argc, const char** argv, cli_opt_t* option);
+
+/* Release allocated resources during command line parsing */
+void release_cli_opt(cli_opt_t* option);
 
 #endif // ETRIPATOR_OPTIONS_H

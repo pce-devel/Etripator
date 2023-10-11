@@ -18,7 +18,7 @@
 #include <jansson.h>
 #include "../message.h"
 #include "../jsonhelpers.h"
-#include "load.h"
+#include "../label.h"
 
 #define MAX_LABEL_NAME 128
 
@@ -66,7 +66,7 @@ int label_repository_load(const char* filename, label_repository_t* repository) 
                             ERROR_MSG("Invalid or missing page.");
                         } else {
                             // description
-                            const char* description = json_load_description(value);
+                            const char* description = json_load_description(value, "description");
                             if((num < 0) || (num > 0xff)) {
                                 ERROR_MSG("Page value out of range.");
                             } else if(label_repository_add(repository, key, logical, (uint8_t)num, description)) {

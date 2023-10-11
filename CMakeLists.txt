@@ -39,6 +39,7 @@ set(etripator_SRC
     section/load.c
     section/save.c
     opcodes.c
+    comment.c
     label.c
     label/load.c
     label/save.c
@@ -61,9 +62,8 @@ set(etripator_HDR
     section/load.h
     section/save.h
     opcodes.h
+    comment.h
     label.h
-    label/load.h
-    label/save.h
     irq.h
     memory.h
     memorymap.h

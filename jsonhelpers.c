@@ -18,8 +18,8 @@ int json_validate_int(const json_t* obj, int* out) {
     return ret;
 }
 
-char* json_load_description(const json_t* obj) {
-    json_t *tmp = json_object_get(obj, "description");
+char* json_load_description(const json_t* obj, const char *key) {
+    json_t *tmp = json_object_get(obj, key);
     char *out = NULL;
     if(json_is_string(tmp)) {
         out = strdup(json_string_value(tmp));

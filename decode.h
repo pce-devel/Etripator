@@ -22,6 +22,7 @@
 #include "label.h"
 #include "section.h"
 #include "memorymap.h"
+#include "comment.h"
 
 /**
  * Finds any jump address from the current section.
@@ -38,9 +39,10 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
  * @param [in] section Current section.
  * @param [in] map Memory map.
  * @param [in] repository Label repository.
+ * @param [in] comments Comments repository.
  * @return 1 upon success, 0 otherwise.
  */
-int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository);
+int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments);
 
 /**
  * Process code section.
@@ -49,9 +51,10 @@ int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_
  * @param [in] section Current section.
  * @param [in] map Memory map.
  * @param [in] repository Label repository.
+ * @param [in] comments Comments repository.
  * @return 1 if rts, rti or brk instruction was decoded, 0 otherwise.
  */
-int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository);
+int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments);
 
 /**
  * Computes section size.

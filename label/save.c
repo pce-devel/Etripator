@@ -18,9 +18,9 @@
 #include <errno.h>
 #include <string.h>
 
-#include "save.h"
 #include "../message.h"
 #include "../jsonhelpers.h"
+#include "../label.h"
 
 /**
  * Save labels to file.

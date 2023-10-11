@@ -29,7 +29,6 @@ struct label_repository_impl {
     label_t *labels;        /**< Labels */
 };
 
-
 /**
  * Get label index by its address.
  * \param [in]  repository  Label repository.
@@ -107,40 +106,43 @@ void label_repository_destroy(label_repository_t* repository) {
  * \param [in]     description Description (optional).
  */
 int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page, const char *description) {
+    int ret = 1;
     int index = label_repository_index(repository, logical, page);
     if(index >= 0) {
+#if 0
         if(strcmp(name, repository->labels[index].name)) {
-        //    return 0;
+            //    return 0;
         }
+#endif
         if(description && !repository->labels[index].description) {
             repository->labels[index].description = strdup(description);
         }
-        return  1;
-    }
-
-    /* Expand arrays if necessary */
-    if(repository->last >= repository->size) {
-        label_t *ptr;
-        repository->size += LABEL_ARRAY_INC;
-        
-        ptr = (label_t*)realloc(repository->labels, repository->size * sizeof(label_t));
-        if(ptr == NULL) {
-            label_repository_destroy(repository);
-            return 0;
+    } else {
+        /* Expand arrays if necessary */
+        if(repository->last >= repository->size) {
+            label_t *ptr;
+            repository->size += LABEL_ARRAY_INC;                
+            ptr = (label_t*)realloc(repository->labels, repository->size * sizeof(label_t));
+            if(ptr == NULL) {
+                label_repository_destroy(repository);
+                ret = 0;
+            } else {
+                repository->labels = ptr;
+            }
         }
-        repository->labels = ptr;
-    }
-    
-    /* Push addresses */
-    repository->labels[repository->last].logical = logical;
-    repository->labels[repository->last].page    = page;
-    
-    /* Push name and description */
-    repository->labels[repository->last].name = strdup(name);
-    repository->labels[repository->last].description = description ? strdup(description) : NULL;
+        if(ret != 0) {
+            /* Push addresses */
+            repository->labels[repository->last].logical = logical;
+            repository->labels[repository->last].page    = page;
 
-    ++repository->last;
-    return 1;
+            /* Push name and description */
+            repository->labels[repository->last].name = strdup(name);
+            repository->labels[repository->last].description = (description != NULL) ? strdup(description) : NULL;
+
+            ++repository->last;
+        }
+    }
+    return ret;
 }
 
 /**
@@ -167,10 +169,7 @@ int label_repository_find(label_repository_t* repository, uint16_t logical, uint
  * \return Label count.
  */
 int label_repository_size(label_repository_t* repository) {
-    if(repository == NULL) {
-        return 0;
-    }
-    return (int)repository->last;
+    return repository ? (int)repository->last : 0;
 }
 
 /**
@@ -181,17 +180,12 @@ int label_repository_size(label_repository_t* repository) {
  * \return 1 if a label exists for the specified index, 0 otherwise.
  */
 int label_repository_get(label_repository_t* repository, int index, label_t *out) {
-    memset(out, 0, sizeof(label_t));
-    if(repository == NULL) {
-        return 0;
-    }
-    else {
-        int end = (int)repository->last;
-        if((index < 0) || (index >= end)) {
-            return 0;
-        }
+    if((repository != NULL) && ((index >= 0) && (index < (int)repository->last))) {    
         memcpy(out, &repository->labels[index], sizeof(label_t));
         return 1;
+    } else {
+        memset(out, 0, sizeof(label_t));
+        return 0;
     }
 }
 /**

@@ -172,7 +172,7 @@ static int section_parse(const json_t *obj, section_t *out) {
         }
     }
     /* description (optional) */
-    out->description = json_load_description(obj);
+    out->description = json_load_description(obj, "description");
 
     return 1;
 }
