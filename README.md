@@ -149,7 +149,7 @@ Example:
     { "logical": "ead6", "page":"00", "text": " reset stack pointer"}
 ]
 ```
-This comment configuration file comes the [Games Express CD Card bank #0](examples/games_express) example and produces the following assembly code.
+This comments configuration file comes from the [Games Express CD Card bank #0](examples/games_express) example and produces the following assembly code.
 ```asm
 irq_reset:                              ; bank: $000 logical: $eab3
           csh                           ; switch CPU to high speed mode
