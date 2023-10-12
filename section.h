@@ -43,6 +43,7 @@ typedef enum {
     Binary,
     Hex,
     String,
+    JumpTable,
     DataTypeCount
 } data_type_t;
 

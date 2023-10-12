@@ -33,7 +33,8 @@ static const char *g_supported_section_types[SectionTypeCount] = {
 static const char *g_supported_data_types[DataTypeCount] = {
     "binary",
     "hex",
-    "string"
+    "string",
+    "jumptable"
 };
 
 /* Retrieves section type name. */

@@ -349,11 +349,108 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
 			}
 		}
 	}
-	if(j && c) {
-		fputc('"', out);
+	if(j) {
+		if(c) {
+			fputc('"', out);
+		}
+		int n = (int)(ftell(out) - line_offset);
+		if(has_comment) {
+			print_inline_comment(out, n, comment.text);
+			has_comment = 0;
+		} else if(extra_infos) {
+			print_statement_address(out, n, line_logical, line_page);
+		}
 	}
 	fputc('\n', out);
 	return 1;
+}
+
+static int data_extract_jump_table(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos) {
+	const int32_t elements_per_line = section->data.elements_per_line;
+
+	int32_t i, j;
+	uint8_t page;
+    uint16_t logical;
+
+    label_t label;
+	comment_t comment;
+
+	size_t line_offset = ftell(out);
+	uint8_t line_page = section->page;
+	uint16_t line_logical = section->logical;
+
+	int has_label = 0;
+	int has_comment = 0;
+
+	uint8_t data[2] = {0};
+
+    for(i=0, j=0, logical=section->logical; i<section->size; i+=2, logical+=2) {
+		page = memmap_page(map, logical);
+		data[0] = memmap_read(map, logical);
+		data[1] = memmap_read(map, logical+1);
+
+		has_label = label_repository_find(repository, logical, page, &label);
+
+		if(has_label) {
+			if(i) {
+				fputc('\n', out);
+			}
+			print_label(out, &label);
+			j = 0;
+		}
+
+		comment_t dummy;
+		if(comment_repository_find(comments, logical, page, &dummy)) {
+			if(has_comment) {
+				print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
+			}
+			memcpy(&comment, &dummy, sizeof(comment_t));
+			has_comment = 1;
+			j = 0;
+		}
+
+		if(j==0) {
+			fputc('\n', out);
+			line_offset = ftell(out);
+			line_logical = logical;
+			line_page = page;
+			fprintf(out, "%s.dw ", spacing);
+		}
+
+		if(j) {
+			fputc(',', out);
+		}
+
+		uint16_t jump_logical = data[0] | (data[1] << 8);
+		uint8_t jump_page = memmap_page(map, jump_logical);
+
+		if(label_repository_find(repository, jump_logical, jump_page, &label)) {
+			fprintf(out, "%s", label.name);
+		} else {
+			fprintf(out, "$%04x", jump_logical);
+		}
+
+		j++;
+
+		if(j == elements_per_line) {
+			j = 0;
+			if(has_comment) {
+				print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
+				j = 0;
+			} else if(extra_infos) {
+				print_statement_address(out, (int)(ftell(out)-line_offset), line_logical, line_page);
+			}
+		}
+	}
+	if(j) {
+		if(has_comment) {
+			print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
+		} else if(extra_infos) {
+			print_statement_address(out, (int)(ftell(out)-line_offset), line_logical, line_page);
+		}
+	}
+    fputc('\n', out);
+    return 1;
 }
 
 /* Process data section. The result will be output has a binary file or an asm file containing hex values or strings. */
@@ -365,6 +462,8 @@ int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_
             return data_extract_hex(out, section, map, repository, comments, extra_infos);
         case String:
             return data_extract_string(out, section, map, repository, comments, extra_infos);
+		case JumpTable:
+            return data_extract_jump_table(out, section, map, repository, comments, extra_infos);
 		default:
 			return 0;
     }
