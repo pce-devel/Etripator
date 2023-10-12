@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include "decode.h"
 #include "message.h"
 #include "opcodes.h"
@@ -247,67 +248,105 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
 static int data_extract_string(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos) {
     const int32_t elements_per_line = section->data.elements_per_line;
 
-	int32_t i;
+	int32_t i, j;
 	uint16_t logical;
 
-	for(i=0, logical=section->logical; i<section->size; ) {
-		uint16_t start_logical = logical;
-		uint8_t start_page = memmap_page(map, logical);
-		label_t label;
-		if(label_repository_find(repository, start_logical, start_page, &label)) {
+	int c = 0;
+	int has_label = 0;
+	int has_comment = 0;
+
+	size_t line_offset = 0;
+	uint16_t line_logical = 0;
+	uint8_t line_page;
+
+	comment_t comment = {0};
+
+	for(i=0, j=0, logical=section->logical; i<section->size; i++, logical++) {
+		uint8_t data = memmap_read(map, logical);
+		uint8_t page = memmap_page(map, logical);
+
+		label_t label = {0};
+		
+		has_label = label_repository_find(repository, logical, page, &label);
+		
+		if(has_label) {
+			if(c) {			// close string if neededs
+				fputc('"', out);
+				c = 0;
+			}
+			if(i) {
+				fputc('\n', out);
+			}
+			j = 0;
 			print_label(out, &label);
 		}
 
-		fputc('\n', out);
-
-		size_t start = ftell(out);
-
-		fprintf(out, "%s.db ", spacing);
-
-		int c = 0;
-		int has_comment = 0;
-		for(int32_t j=0; (has_comment == 0) && (j<elements_per_line) && (i<section->size); j++, i++, logical++) {
- 			uint8_t data = memmap_read(map, logical);
-			uint8_t page = memmap_page(map, logical);
-			comment_t comment = {0};
-			has_comment = comment_repository_find(comments, logical, page, &comment);
-
-			if((data >= 0x20) && (data < 0x7f)) {
-				if(!c) {
+		comment_t dummy;
+		if(comment_repository_find(comments, logical, page, &dummy)) {
+			if(j) {
+				if(c) {			// close string if neededs
 					fputc('"', out);
-					c = 1;
-				}
-				if(data == '"') {
-					fputc('\\', out);
-				}
-				fputc(data, out);
-			} else {
-				if(c) {
-					fputc('"', out);
-					fputc(',', out);
 					c = 0;
 				}
-				fprintf(out, "$%02x", data);
-				if((has_comment == 0) && ((j+1) < elements_per_line) && ((i+1) < section->size)) {
-					fputc(',', out);
-				}
+				j = 0;
 			}
-
 			if(has_comment) {
-				int n = (int)(ftell(out) - start);
-				if(c) {
-					fputc('"', out);
-					c = 0;
-					n++;
-				}
-				print_inline_comment(out, n, comment.text);
+				print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
 			}
+			memcpy(&comment, &dummy, sizeof(comment_t));
+			has_comment = 1;
 		}
-		if(c) {
-			fputc('"', out);
+
+		// display directives
+		if(j==0) {
+			fputc('\n', out);
+			line_offset = ftell(out);		// record star of line
+			line_logical = logical;
+			line_page = page;
+			fprintf(out, "%s.db ", spacing);
 		}
-		if((!has_comment) && extra_infos) {
-			print_statement_address(out, (int)(ftell(out) - start), start_logical, start_page);
+	
+		// print char
+		if((data >= 0x20) && (data < 0x7f)) {
+			// ascii/printable char
+			if(!c) {
+				if(j) {
+					fputc(',', out);
+				}
+				fputc('"', out);
+				c = 1;
+			}
+			if(data == '"') {
+				fputc('\\', out);
+			}
+			fputc(data, out);
+		} else {
+			// otherwise close string and display hex value
+			if(c) {
+				fputc('"', out);
+				c = 0;
+			}
+			if(j) {
+				fputc(',', out);
+			}
+			fprintf(out, "$%02x", data);
+		}
+		j++;
+
+		if(j == elements_per_line) {
+			j = 0;
+			if(c) {
+				fputc('"', out);
+				c = 0;
+			}
+	
+			int n = (int)(ftell(out) - line_offset);
+			if(has_comment) {
+				print_inline_comment(out, n, comment.text);
+				has_comment = 0;
+			} else if(extra_infos) {
+				print_statement_address(out, n, line_logical, line_page);
+			}
 		}
 	}
 	fputc('\n', out);
