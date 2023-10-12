@@ -349,6 +349,9 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
 			}
 		}
 	}
+	if(j && c) {
+		fputc('"', out);
+	}
 	fputc('\n', out);
 	return 1;
 }
