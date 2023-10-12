@@ -166,15 +166,15 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
 	uint8_t buffer[2] = {0};
 	int32_t top = 0;
 
-	size_t start = ftell(out);
+	size_t line_offset = ftell(out);
+	uint8_t line_page = section->page;
+	uint16_t line_logical = section->logical;
 
-	uint8_t page = memmap_page(map, logical);
-	uint16_t start_logical = logical;
+	int has_comment = 0;
 
     for(i=0, j=0, logical=section->logical; i<section->size; i++, logical++) {
-		page = memmap_page(map, logical);
+		uint8_t page = memmap_page(map, logical);
 		
-		int has_comment = comment_repository_find(comments, logical, page, &comment);
 		int has_label   = label_repository_find(repository, logical, page, &label);
 
 		if(has_label) {
@@ -190,21 +190,38 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
 				fputc('\n', out);
 			}
 			print_label(out, &label);
-			start = ftell(out);
-			start_logical = logical;
+			j = 0;
+		}
+
+		comment_t dummy;
+		if(comment_repository_find(comments, logical, page, &dummy)) {
+			if(has_comment) {
+				if(top && (top < element_size)) {
+					fprintf(out, "\n%s.db $%02x", spacing, buffer[0]);
+					for(int32_t l=1; l<top; l++) {		// useless as top is always equal to 1
+						fprintf(out, ",$%02x", buffer[l]);
+					}
+					top = 0;
+				}
+				print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
+			}
+			memcpy(&comment, &dummy, sizeof(comment_t));
+			has_comment = 1;
 			j = 0;
 		}
 
 		buffer[top++] = memmap_read(map, logical);
 
-		if((top >= element_size) || has_comment) {
+		if(top >= element_size) {
 			char sep;
-			if((j == 0) || has_comment) {
-				const char *data_decl = (top > 1) ? ".dw" : ".db";
+			if(j == 0) {
 				fputc('\n', out);
 
-				start = ftell(out);				
-				start_logical = logical-(top-1);
+				line_offset = ftell(out);
+				line_logical = logical - top + 1;
+				line_page = page;
+
+				const char *data_decl = (top > 1) ? ".dw" : ".db";
 
 				fprintf(out, "%s%s", spacing, data_decl);
 				sep = ' ';
@@ -221,20 +238,28 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
 				fprintf(out, "%02x", buffer[0]);
 			}
 			top = 0;
-			j = (j+1) % elements_per_line;
+			j++;
 
-			if(has_comment) {
-				print_inline_comment(out, (int)(ftell(out) - start), comment.text);
+			if(j == elements_per_line) {
 				j = 0;
-			} else if((j == 0) && extra_infos) {
-				print_statement_address(out, (int)(ftell(out)-start), start_logical, memmap_page(map, start_logical));
+				int n = (int)(ftell(out) - line_offset);
+				if(has_comment) {
+					print_inline_comment(out, n, comment.text);
+					has_comment = 0;
+				} else if(extra_infos) {
+					print_statement_address(out, n, line_logical, line_page);
+				}
 			}
 		}
 	}
 	// flush remaining bytes
     if(top) {
-		if(extra_infos) {
-			print_statement_address(out, (int)(ftell(out)-start), start_logical, memmap_page(map, start_logical));
+		int n = (int)(ftell(out) - line_offset);
+		if(has_comment) {
+			print_inline_comment(out, n, comment.text);
+			has_comment = 0;
+		} else if(extra_infos) {
+			print_statement_address(out, (int)(ftell(out)-line_offset), line_logical, line_page);
 		}
         fprintf(out, "\n%s.db $%02x", spacing, buffer[0]);
 		for(int32_t j=1; j<top; j++) {		// useless as top is always equal to 1
