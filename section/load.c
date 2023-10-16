@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "load.h"
+#include "../section.h"
 
 #include <errno.h>
 #include <stdlib.h>

@@ -59,8 +59,6 @@ set(etripator_HDR
     jsonhelpers.h
     decode.h
     section.h
-    section/load.h
-    section/save.h
     opcodes.h
     comment.h
     label.h

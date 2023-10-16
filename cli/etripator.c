@@ -36,7 +36,6 @@
 #include <rom.h>
 #include <ipl.h>
 #include <section.h>
-#include <section/load.h>
 #include <comment.h>
 
 #include "options.h"

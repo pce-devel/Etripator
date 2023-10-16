@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "save.h"
+#include "../section.h"
 
 #include "../jsonhelpers.h"
 #include "../message.h"

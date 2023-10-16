@@ -94,4 +94,24 @@ void section_sort(section_t *ptr, size_t n);
  */
 void section_delete(section_t *ptr, int n);
 
+/**
+ * Load sections from a JSON file.
+ * \param [in]  filename Input filename.
+ * \param [out] out Loaded sections.
+ * \param [out] n Number of loaded sections. 
+ * \return 1 if the sections contained in the file were succesfully loaded.
+ *         0 if an error occured.
+ */
+int section_load(const char *filename, section_t **out, int *n);
+
+/**
+ * Save sections to a JSON file.
+ * \param [in] filename Output filename.
+ * \param [in] ptr Sections to be saved.
+ * \param [in] count Number of sections. 
+ * \return 1 if the sections were succesfully saved.
+ *         0 if an error occured.
+ */
+int section_save(const char *filename, section_t *ptr, int n);
+
 #endif // ETRIPATOR_SECTION_H

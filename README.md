@@ -54,10 +54,10 @@ The supported fields are :
  * **mpr** : an array containing the page value for each memory page register.
  
  * **data** : an object with 2 entries :
-     * **type** : **binary**, **hex** or **string**.
-     * **element_size** *(default value: 1)* : element size in bytes. The only supported values are 1 or 2.
+     * **type** : **binary**, **hex**, **string** or **jumptable**.
+     * **element_size** *(default value: 1 or 2 for **jumptable**)* : element size in bytes. The only supported values are 1 or 2.
      * **elements_per_line** *(default value: 16)* : number of elements per line. 
-  
+
 * **description** *(optional)*: description as a string or an array of strings for multiline description. 
 
 There must be only one occurence of each field per section.
