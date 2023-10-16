@@ -1,0 +1,13 @@
+[
+    {"logical":"d6a1" , "page":"01f", "text":"compute vram address"},
+    {"logical":"d6b4" , "page":"01f", "text":"set VRAM write address"},
+    {"logical":"d6bc" , "page":"01f", "text":"set VRAM read address"},
+    {"logical":"d736" , "page":"01f", "text":"set source pointer"},
+    {"logical":"d73c" , "page":"01f", "text":"check if we reached of password list"},
+    {"logical":"d73f" , "page":"01f", "text":"compare with input"},
+    {"logical":"d757" , "page":"01f", "text":"move pointer to the next password"},
+    
+    {"logical":"d76c" , "page":"01f", "text":"backup source pointer"},
+    
+    {"logical" : "d750", "page": "1f", "text": "find end of string"}
+]

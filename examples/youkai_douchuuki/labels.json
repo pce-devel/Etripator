@@ -1,4 +1,18 @@
 [
     { "name": "password.str", "logical": "31dc", "page": "f8" },
-    { "name": "password.len", "logical": "31f6", "page": "f8" }
+    { "name": "password.len", "logical": "31f6", "page": "f8" },
+    
+    { "name": "@loop", "logical" : "d738", "page": "1f"},
+    { "name": "@search", "logical" : "d73f", "page": "1f"},
+    { "name": "@next", "logical" : "d74e", "page": "1f"},
+    { "name": "@eos", "logical" : "d750", "page": "1f"},
+    { "name": "@end", "logical" : "d765", "page": "1f"},
+
+    { "name": "password.store", "logical" : "d6f7", "page": "1f",
+      "description": [
+            "-----------------------------------------------------------------",
+            "store password",
+            "-----------------------------------------------------------------"
+        ]
+    }
 ]
