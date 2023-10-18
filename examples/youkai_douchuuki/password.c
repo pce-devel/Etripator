@@ -180,6 +180,56 @@ wchar_t alphabet_ch[42] = {
     L'G',L'N',L'U',L'.',L'む',L'こ'
 };
 
+// taken from https://tcrf.net/Youkai_Douchuki_(TurboGrafx-16)
+const wchar_t *known_passwords[] = {
+    L"PC-ENGINE",
+    L"NAMCO",
+    L"NAMCOT",
+    L"6502",
+    L"6809",
+    L"68000",
+    L"756-2311",
+    L"YAMASHITA",
+    L"AKIRA",
+    L"KOMAI",
+    L"KAZUHIKO",
+    L"KAWADA",
+    L"HAL",
+    L"NAUSICAA",
+    L"LAPUTA",
+    L"MICHIYO",    
+    L"MONITOR",    
+    L"YAGI",    
+    L"YUKIHIKO",    
+    L"NAGAMATSU",
+    L"UDADAGAWA",    
+    L"818-6104",    
+    L"HENTAIOSUGI",    
+    L"なむこむな!756-2311",
+    L"KUMI.HANAOKA",
+    L"HARUHISA.UDAGAWA",
+    L"NEC",
+    L"KID",
+    L"MIZUNO"
+};
+
+const size_t known_passwords_count = sizeof(known_passwords) / sizeof(known_passwords[0]);
+
+void wchar_to_code(const wchar_t *in) {
+    *password_len = 0;
+    for(size_t i = 0; in[i] != L'\0'; ++i, *password_len+=1) {
+        size_t j;
+        for(j = 0; (j < 42) && (alphabet_ch[j] != in[i]) ; ++j) {
+        }
+        if(j < 42) {
+            password_str[i] = alphabet_code[j];
+        } else {
+            // should never happen but who knows?
+            fwprintf(stderr, L"Unknown character %lc in %ls\n", in[i], in);
+        }
+    }
+}
+
 int main() {
     uint8_t str[256];
     uint8_t code[8];
@@ -187,8 +237,44 @@ int main() {
 
     password_extract();
 
+    printf("password count %zu\n", password_count);
+
+    // remove known passwords
+    for(size_t j=0; j<known_passwords_count; j++) {
+        wchar_to_code(known_passwords[j]);
+        bool found = false;
+        size_t i;
+        for(i=0; i<password_count; i++) {
+            if(password_infos[i].len == *password_len) {
+                password_encode();
+                if(memcmp(password_encoded, blob+password_infos[i].offset, 8) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if(found) {
+            wprintf(L"%lld \"%ls\" ", password_infos[i].offset, known_passwords[j]);
+            for(size_t k=0; k<8; k++) {
+                printf("%02x ", password_encoded[k]);
+            }
+            fputc('\n', stdout);
+
+            if(i < password_count) {
+                --password_count;
+                memmove(&password_infos[i], &password_infos[password_count], sizeof(password_info_t));
+            }
+        } else {
+            wprintf(L"%ls not found\n", known_passwords[j]);
+        }
+    }
+
+    printf("remaining entries:\n");
     for(size_t i=0; i<password_count; i++) {
-        // if(password_infos[i].len > 6) continue;
+        printf("%lld %d\n", password_infos[i].offset, password_infos[i].len);
+    }
+
+    for(size_t i=0; i<password_count; i++) {
         *password_len = password_infos[i].len;
         
         memset(code, 0, 8);
