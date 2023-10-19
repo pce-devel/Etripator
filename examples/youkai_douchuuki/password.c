@@ -4,25 +4,12 @@
 #include <string.h>
 #include <wchar.h>
 #include <stdbool.h>
-uint8_t mem[0x2000];
-uint8_t a, x, y;
-uint8_t sp;
+#include <stdatomic.h>
+#include <pthread.h>
 
-struct {
-    uint8_t n : 1;
-    uint8_t v : 1;
-    uint8_t t : 1;
-    uint8_t d : 1;
-    uint8_t i : 1;
-    uint8_t z : 1;
-    uint8_t c : 1;
-} st = {0};
+#define ALPHABET_SIZE 42
 
-uint8_t *password_str = mem + 0x31DC - 0x2000;
-uint8_t *password_len = mem + 0x31F6 - 0x2000;
-uint8_t *password_encoded = mem + 0x31F4 - 0x2000;
-
-uint8_t blob[] = {
+static const uint8_t g_blob[] = {
     0xed,0x26,0x08,0xee,0x3d,0x23,0x1d,0x12,
     0x23,0xba,0xcf,0xb2,0x20,0xb6,0xbd,0xde,
     0xcb,0xba,0x20,0xc5,0x20,0xb6,0xde,0xd2,
@@ -149,18 +136,9 @@ uint8_t blob[] = {
     0x2a,0x00,0x00,0x00,0x00,0x00
 };
 
-typedef struct {
-    off_t offset;
-    uint8_t len;
-} password_info_t;
+static const size_t g_blob_size = sizeof(g_blob) / sizeof(g_blob[0]);
 
-password_info_t *password_infos = NULL;
-size_t password_count = 0;
-
-void password_extract();
-void password_encode();
-
-uint8_t alphabet_code[42] = {
+static const uint8_t g_alphabet_code[ALPHABET_SIZE] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, // AHOV16
     0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, // BIPW27
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, // CJQX38
@@ -170,7 +148,7 @@ uint8_t alphabet_code[42] = {
     0x30, 0x31, 0x32, 0x33, 0x34, 0x35  // GNU.むこ
 };
 
-wchar_t alphabet_ch[42] = {
+static const wchar_t g_alphabet_ch[ALPHABET_SIZE] = {
     L'A',L'H',L'O',L'V',L'1',L'6',
     L'B',L'I',L'P',L'W',L'2',L'7',
     L'C',L'J',L'Q',L'X',L'3',L'8',
@@ -181,7 +159,7 @@ wchar_t alphabet_ch[42] = {
 };
 
 // taken from https://tcrf.net/Youkai_Douchuki_(TurboGrafx-16)
-const wchar_t *known_passwords[] = {
+static const wchar_t *g_known_passwords[] = {
     L"PC-ENGINE",
     L"NAMCO",
     L"NAMCOT",
@@ -213,16 +191,75 @@ const wchar_t *known_passwords[] = {
     L"MIZUNO"
 };
 
-const size_t known_passwords_count = sizeof(known_passwords) / sizeof(known_passwords[0]);
+static const size_t g_known_passwords_count = sizeof(g_known_passwords) / sizeof(g_known_passwords[0]);
 
-void wchar_to_code(const wchar_t *in) {
-    *password_len = 0;
-    for(size_t i = 0; in[i] != L'\0'; ++i, *password_len+=1) {
+typedef struct {
+    uint8_t n : 1;
+    uint8_t v : 1;
+    uint8_t t : 1;
+    uint8_t d : 1;
+    uint8_t i : 1;
+    uint8_t z : 1;
+    uint8_t c : 1;
+} status_t;
+
+typedef struct {
+    uint8_t mem[0x2000];
+    uint8_t a, x, y;
+    uint8_t sp;
+    status_t st;
+} core_t;
+
+#define RAM_START 0x2000
+#define RAM_STACK_START 0x2100
+#define RAM_STACK_END 0x2200
+
+#define PASSWORD_STRING_ADDR 0x31DC
+#define PASSWORD_LENGTH_ADDR 0x31F6
+#define PASSWORD_HASH_ADDR 0x31F4
+
+typedef struct {
+    off_t offset;
+    uint8_t len;
+} password_info_t;
+
+void password_extract(const uint8_t *data, size_t size, password_info_t **out, size_t *count) {
+    const uint8_t *end = data + size;
+    password_info_t *infos;
+    size_t n = 0;
+
+    size_t capacity = 32;
+    infos = (password_info_t*)malloc(capacity * sizeof(password_info_t));
+
+    for(const uint8_t *ptr = data; ptr < end; ++ptr, ++n) {
+        if(ptr[2] == 0) {
+            break;
+        } else {
+            if(n > capacity) {
+                capacity *= 2;
+                infos = (password_info_t*)realloc(infos, capacity * sizeof(password_info_t));
+            }
+            password_info_t *last = infos + n;
+            last->offset = ptr - data;
+            last->len = ptr[2];
+            ptr+=9;
+            for(; (ptr < end) && (*ptr != 0x2a); ++ptr) {
+            }
+        }
+    }
+
+    *out = infos;
+    *count = n;
+}
+
+void string_to_code(const wchar_t *in, uint8_t *out, uint8_t *len) {
+    *len = 0;
+    for(size_t i = 0; in[i] != L'\0'; ++i, *len+=1) {
         size_t j;
-        for(j = 0; (j < 42) && (alphabet_ch[j] != in[i]) ; ++j) {
+        for(j = 0; (j < 42) && (g_alphabet_ch[j] != in[i]) ; ++j) {
         }
         if(j < 42) {
-            password_str[i] = alphabet_code[j];
+            out[i] = g_alphabet_code[j];
         } else {
             // should never happen but who knows?
             fwprintf(stderr, L"Unknown character %lc in %ls\n", in[i], in);
@@ -230,33 +267,339 @@ void wchar_to_code(const wchar_t *in) {
     }
 }
 
+void core_reset(core_t *core) {
+    memset(core, 0, sizeof(core_t));
+    core->sp = 0xff;
+}
+
+uint8_t* mem_addr(core_t *core, uint16_t addr) { return &core->mem[addr-RAM_START]; }
+
+void in_(core_t *core, uint8_t *ptr) {
+    *ptr += 1;
+    core->st.t = 0;
+    core->st.n = (*ptr & 0x80) ? 1 : 0;
+    core->st.z = (*ptr == 0) ? 1 : 0;
+}
+void ina(core_t *core) { in_(core, &core->a); }
+void inx(core_t *core) { in_(core, &core->x); }
+void iny(core_t *core) { in_(core, &core->y); }
+void inc(core_t *core, uint16_t addr) { in_(core, mem_addr(core, addr)); }
+
+void eor_(core_t *core, uint8_t val) {
+    core->a ^= val;
+    core->st.t = 0;
+    core->st.n = (core->a & 0x80) ? 1 : 0;
+    core->st.z = (core->a == 0) ? 1 : 0;
+}
+void eori(core_t *core, uint8_t val) { eor_(core, val); }
+void eor(core_t *core, uint16_t addr) { eor_(core, *mem_addr(core, addr)); }
+
+void and_(core_t *core, uint8_t val) {
+    core->a &= val;
+    core->st.t = 0;
+    core->st.n = (core->a & 0x80) ? 1 : 0;
+    core->st.z = (core->a == 0) ? 1 : 0;
+}
+void andi(core_t *core, uint8_t val) { and_(core, val); }
+void and(core_t *core, uint16_t addr) { and_(core, *mem_addr(core, addr)); }
+
+void adc_(core_t *core, uint8_t val) {
+    uint16_t r = core->a + val + core->st.c;
+    core->a = (uint8_t)r;
+    core->st.t = 0;
+    core->st.c = (r >= 256) ? 1 : 0;
+    core->st.n = (r & 0x80) ? 1 : 0;
+    core->st.z = (core->a == 0) ? 1 : 0;
+}
+void adci(core_t *core, uint8_t val) { adc_(core, val); }
+void adc(core_t *core, uint16_t addr) { adc_(core, *mem_addr(core, addr)); }
+
+void cmp_(core_t *core, uint8_t *ptr, uint8_t val) {
+    core->st.t = 0;
+    core->st.z = (*ptr == val) ? 1 : 0;
+    core->st.c = (*ptr >= val) ? 1 : 0;
+    core->st.n = ((*ptr - val) & 0x80) ? 1 : 0;
+}
+
+void cmpi(core_t *core, uint8_t val) { cmp_(core, &core->a, val); }
+void cpix(core_t *core, uint8_t val) { cmp_(core, &core->x, val); }
+void cpiy(core_t *core, uint8_t val) { cmp_(core, &core->y, val); }
+void cmp(core_t *core, uint16_t addr) { cmp_(core, &core->a, *mem_addr(core, addr)); }
+void cpx(core_t *core, uint16_t addr) { cmp_(core, &core->x, *mem_addr(core, addr)); }
+void cpy(core_t *core, uint16_t addr) { cmp_(core, &core->y, *mem_addr(core, addr)); }
+
+void cl_(core_t *core, uint8_t *reg) {
+    *reg = 0;
+    core->st.t = 0;
+}
+void cla(core_t *core) { cl_(core, &core->a); }
+void clx(core_t *core) { cl_(core, &core->x); }
+void cly(core_t *core) { cl_(core, &core->y); }
+
+void ld_(core_t *core, uint8_t val, uint8_t *dst) {
+    *dst = val;
+    core->st.t = 0;
+    core->st.n = (*dst & 0x80) ? 1 : 0;
+    core->st.z = (*dst == 0) ? 1 : 0;
+}
+void ldia(core_t *core, uint8_t val) { ld_(core, val, &core->a); }
+void ldix(core_t *core, uint8_t val) { ld_(core, val, &core->x); }
+void ldiy(core_t *core, uint8_t val) { ld_(core, val, &core->y); }
+void lda(core_t *core, uint16_t addr) { ld_(core, *mem_addr(core, addr), &core->a); }
+void ldx(core_t *core, uint16_t addr) { ld_(core, *mem_addr(core, addr), &core->x); }
+void ldy(core_t *core, uint16_t addr) { ld_(core, *mem_addr(core, addr), &core->y); }
+
+void st_(core_t *core, uint8_t *src, uint16_t dst) {
+    uint8_t *ptr = mem_addr(core, dst);
+    *ptr = *src;
+    core->st.t = 0;
+}
+void sta(core_t *core, uint16_t addr) { st_(core, &core->a, addr); }
+void stx(core_t *core, uint16_t addr) { st_(core, &core->x, addr); }
+void sty(core_t *core, uint16_t addr) { st_(core, &core->y, addr); }
+
+void ph_(core_t *core, uint8_t *src) {
+    core->mem[RAM_STACK_START+core->sp] = *src;
+    --core->sp;
+    core->st.t = 0;
+}
+void pha(core_t *core) { ph_(core, &core->a); }
+void phx(core_t *core) { ph_(core, &core->x); }
+void phy(core_t *core) { ph_(core, &core->y); }
+
+void pl_(core_t *core, uint8_t *addr) {
+    ++core->sp;
+    *addr = core->mem[RAM_STACK_START+core->sp];
+    core->st.t = 0;
+    core->st.n = (*addr & 0x80) ? 1 : 0;
+    core->st.z = (*addr == 0) ? 1 : 0;
+}
+void pla(core_t *core) { pl_(core, &core->a); }
+void plx(core_t *core) { pl_(core, &core->x); }
+void ply(core_t *core) { pl_(core, &core->y); }
+
+void dec(core_t *core, uint8_t *addr) {
+    *addr -= 1;
+    core->st.t = 0;
+    core->st.n = (*addr & 0x80) ? 1 : 0;   
+    core->st.z = (*addr == 0) ? 1 : 0;
+}
+void dea(core_t *core) { dec(core, &core->a); }
+void dex(core_t *core) { dec(core, &core->x); }
+void dey(core_t *core) { dec(core, &core->y); }
+
+void asla(core_t *core) {
+    core->st.c = (core->a & 0x80) ? 1 : 0;
+    core->a <<= 1;
+    core->st.n = (core->a & 0x80) ? 1 : 0;
+    core->st.z = (core->a == 0) ? 1 : 0;
+    core->st.t = 0;
+}
+
+void rol_(core_t *core, uint8_t *ptr) {
+    uint8_t tmp = core->st.c ? 0x01 : 0x00;
+    core->st.c = (*ptr & 0x80) ? 1 : 0;
+    core->a = (*ptr << 1) | tmp;
+    core->st.n = (*ptr & 0x80) ? 1 : 0;
+    core->st.z = (*ptr == 0) ? 1 : 0;
+    core->st.t = 0;
+}
+void rola(core_t *core) { rol_(core, &core->a); }
+void rol(core_t *core, uint16_t addr) { rol_(core, mem_addr(core, addr)); }
+
+void ror_(core_t *core, uint8_t *ptr) {
+    uint8_t tmp = core->st.c ? 0x80 : 0x00;
+    core->st.c = (*ptr & 0x01) ? 1 : 0;
+    *ptr = (*ptr >> 1) | tmp;
+    core->st.n = (*ptr & 0x80) ? 1 : 0;
+    core->st.z = (*ptr == 0) ? 1 : 0;
+    core->st.t = 0;
+}
+void rora(core_t *core) { ror_(core, &core->a); }
+void ror(core_t *core, uint16_t addr) { ror_(core, mem_addr(core, addr)); }
+
+void ld8bd(core_t *core) {
+    pha(core);
+    for(core->y = 0x08; core->y!=0; core->y--) {
+        asla(core);
+        pha(core);
+        ror(core, 0x31F4);
+        ror(core, 0x31F5);
+        ldia(core, 0x00);
+        adci(core, 0xFF);
+        eori(core, 0xFF);
+        pha(core);
+        andi(core, 0x84);
+        eor(core, 0x31F4);
+        sta(core, 0x31F4);
+        pla(core);
+        andi(core, 0x08);
+        eor(core, 0x31F5);
+        sta(core, 0x31F5);
+        pla(core);
+    }
+    pla(core);
+}
+
+void ld8a4(core_t *core) {
+    pha(core);
+    pha(core);
+    lda(core, 0x31F4);
+    cmpi(core, 0xe5);
+    pla(core);
+    adc(core, 0x31F7);
+    sta(core, 0x31F7);
+    lda(core, 0x31f8);
+    adc(core, 0x31F5);
+    sta(core, 0x31F8);
+    pla(core);
+}
+
+void ld89b(core_t *core) {
+    pha(core);
+    eor(core, 0x31F9);
+    sta(core, 0x31F9);
+    pla(core);
+}
+
+void ld88f(core_t *core) {
+    pha(core);
+    ror(core, 0x31FA);
+    adc(core, 0x31FA);
+    sta(core, 0x31FA);
+    pla(core);
+}
+
+void ld87f(core_t *core) {
+    pha(core);
+    do {
+        rola(core);
+        pha(core);
+        lda(core, 0x31FB);
+        adci(core, 0x00); 
+        sta(core, 0x31FB);
+        pla(core);
+    } while(!core->st.z);
+    pla(core);
+}
+
+void password_encode(core_t *core) {
+    const uint8_t *str = mem_addr(core, PASSWORD_STRING_ADDR);
+    const uint8_t len = *mem_addr(core, PASSWORD_LENGTH_ADDR);
+    clx(core);
+    stx(core, 0x31F4);
+    stx(core, 0x31F5);
+    stx(core, 0x31F7);
+    stx(core, 0x31F8);
+    stx(core, 0x31F9);
+    stx(core, 0x31FB);
+    ldia(core, 0x01);
+    sta(core, 0x31FA); 
+    do {
+        ldia(core, str[core->x]);
+        ld8bd(core);
+        ld8a4(core);
+        ld89b(core);
+        ld88f(core);
+        ld87f(core);
+        inx(core);
+    } while(core->x < len);
+}
+
+#define JOB_COUNT 8
+
+atomic_bool g_searching = true;
+atomic_uint g_code_id = 0;
+pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
+atomic_uint g_code_count = 0;
+uint8_t g_code[256] = {0};
+
+void* job_routine(void *arg) {
+    core_t core = {0};
+    password_info_t *infos = (password_info_t*)arg;
+    uint8_t code[256];
+    uint8_t *str;
+    uint8_t *len;
+    uint8_t *hash;
+
+    while(g_searching) {
+        core_reset(&core);
+
+        str = mem_addr(&core, PASSWORD_STRING_ADDR);
+        len = mem_addr(&core, PASSWORD_LENGTH_ADDR);
+        hash = mem_addr(&core, PASSWORD_HASH_ADDR);
+
+        pthread_mutex_lock(&g_lock);
+        int id = g_code_id;
+        *len = infos[id].len;
+        for(unsigned int j=0; j<*len; j++) {
+            g_code[j] = (g_code[j]+1) % ALPHABET_SIZE;
+            if(g_code[j]) {
+                break;
+            }
+        }
+        for(unsigned int j=0; j<*len; j++) {
+            code[j] = g_code[j];
+            str[j] = g_alphabet_code[code[j]];
+        }
+        pthread_mutex_unlock(&g_lock);
+
+        password_encode(&core);
+
+        if(memcmp(hash, g_blob+infos[id].offset, 8) == 0) {
+            pthread_mutex_lock(&g_lock);
+            printf("%lld: ", infos[id].offset);
+            for(unsigned int j=0; j<*len; j++) {
+                printf("%02x ", str[j]);
+            }
+            fputc('\n', stdout);
+            for(unsigned int j=0; j<*len; j++) {
+                fputwc(g_alphabet_ch[code[j]], stdout);
+            }
+            fputc('\n', stdout);
+            if(id == g_code_id) {
+                memset(g_code, 0, 256);
+                ++g_code_id;
+                g_searching = (g_code_id < g_code_count);
+            }
+            pthread_mutex_unlock(&g_lock);
+        }
+    }
+    return NULL;
+}
+
 int main() {
-    uint8_t str[256];
-    uint8_t code[8];
-    sp = 0xFF;
+    core_t core = {0};
 
-    password_extract();
+    password_info_t *password_infos = NULL;
+    size_t password_count = 0;
 
-    printf("password count %zu\n", password_count);
+    password_extract(g_blob, g_blob_size, &password_infos, &password_count); 
 
     // remove known passwords
-    for(size_t j=0; j<known_passwords_count; j++) {
-        wchar_to_code(known_passwords[j]);
+    for(size_t j=0; j<g_known_passwords_count; j++) {
+        uint8_t *str = mem_addr(&core, PASSWORD_STRING_ADDR);
+        uint8_t *len = mem_addr(&core, PASSWORD_LENGTH_ADDR);
+        uint8_t *hash = mem_addr(&core, PASSWORD_HASH_ADDR);
+
+        core_reset(&core);
+
+        string_to_code(g_known_passwords[j], str, len);
         bool found = false;
         size_t i;
         for(i=0; i<password_count; i++) {
-            if(password_infos[i].len == *password_len) {
-                password_encode();
-                if(memcmp(password_encoded, blob+password_infos[i].offset, 8) == 0) {
+            if(password_infos[i].len == *len) {
+                password_encode(&core);
+                if(memcmp(hash, g_blob+password_infos[i].offset, 8) == 0) {
                     found = true;
                     break;
                 }
             }
         }
         if(found) {
-            wprintf(L"%lld \"%ls\" ", password_infos[i].offset, known_passwords[j]);
+            wprintf(L"%lld \"%ls\" ", password_infos[i].offset, g_known_passwords[j]);
             for(size_t k=0; k<8; k++) {
-                printf("%02x ", password_encoded[k]);
+                printf("%02x ", hash[k]);
             }
             fputc('\n', stdout);
 
@@ -265,309 +608,30 @@ int main() {
                 memmove(&password_infos[i], &password_infos[password_count], sizeof(password_info_t));
             }
         } else {
-            wprintf(L"%ls not found\n", known_passwords[j]);
+            wprintf(L"%ls not found\n", g_known_passwords[j]);
         }
     }
 
+    // display remaining entries infos
     printf("remaining entries:\n");
     for(size_t i=0; i<password_count; i++) {
         printf("%lld %d\n", password_infos[i].offset, password_infos[i].len);
     }
 
-    for(size_t i=0; i<password_count; i++) {
-        *password_len = password_infos[i].len;
-        
-        memset(code, 0, 8);
-        memset(password_str, 0, *password_len);
-        memset(str, 0, *password_len);
-        
-        size_t attempt = 0;
-        uint8_t *last = str + (*password_len - 1);
-        bool found = false;
-        do {
-            for(size_t j=0; j<*password_len; j++) {
-                str[j] = (str[j]+1) % 42;
-                if(str[j]) {
-                    break;
-                }
-            }
-            for(size_t j=0; j<*password_len; j++) {
-                password_str[j] = alphabet_code[str[j]];
-            }
-            memset(&st, 0, sizeof(st));
-            password_encode();
-            if(memcmp(password_encoded, blob+password_infos[i].offset, 8) == 0) {
-                found = true;
-                break;
-            }
-            attempt++;
-        } while(*last != 41);
-    
-        if(found) {
-            printf("%zu \"", i);
-            for(size_t j=0; j<*password_len; j++) {
-                fputwc(alphabet_ch[str[j]], stdout);
-            }
-            printf("\" %zu ", attempt);
-            for(size_t j=0; j<8; j++) {
-                printf("%02x ", password_encoded[j]);
-            }
-        }
-        fputc('\n', stdout);
+    // try to find them
+    g_code_id = 0;
+    g_code_count = password_count;
+
+    pthread_t jobs[JOB_COUNT];
+    for(unsigned int i=0; i<JOB_COUNT; i++) {
+        pthread_create(jobs+i, NULL, job_routine, password_infos);
     }
+
+    for(unsigned int i=0; i<JOB_COUNT; i++) {
+        pthread_join(jobs[i], NULL);
+    }
+
+    free(password_infos);
+
     return EXIT_SUCCESS;
-}
-
-void in_(uint8_t *ptr) {
-    *ptr += 1;
-    st.t = 0;
-    st.n = (*ptr & 0x80) ? 1 : 0;
-    st.z = (*ptr == 0) ? 1 : 0;
-}
-void ina() { in_(&a); }
-void inx() { in_(&x); }
-void iny() { in_(&y); }
-void inc(uint16_t addr) { in_(&mem[addr-0x2000]); }
-
-void eor_(uint8_t val) {
-    a ^= val;
-    st.t = 0;
-    st.n = (a & 0x80) ? 1 : 0;
-    st.z = (a == 0) ? 1 : 0;
-}
-void eori(uint8_t val) { eor_(val); }
-void eor(uint16_t addr) { eor_(mem[addr-0x2000]); }
-
-void and_(uint8_t val) {
-    a &= val;
-    st.t = 0;
-    st.n = (a & 0x80) ? 1 : 0;
-    st.z = (a == 0) ? 1 : 0;
-}
-void andi(uint8_t val) { and_(val); }
-void and(uint16_t addr) { and_(mem[addr-0x2000]); }
-
-void adc_(uint8_t val) {
-    uint16_t r = a + val + st.c;
-    a = (uint8_t)r;
-    st.t = 0;
-    st.c = (r >= 256) ? 1 : 0;
-    st.n = (r & 0x80) ? 1 : 0;
-    st.z = (a == 0) ? 1 : 0;
-}
-void adci(uint8_t val) { adc_(val); }
-void adc(uint16_t addr) { adc_(mem[addr-0x2000]); }
-
-void cmp_(uint8_t *ptr, uint8_t val) {
-    st.t = 0;
-    st.z = (*ptr == val) ? 1 : 0;
-    st.c = (*ptr >= val) ? 1 : 0;
-    st.n = ((*ptr - val) & 0x80) ? 1 : 0;
-}
-
-void cmpi(uint8_t val) { cmp_(&a, val); }
-void cpix(uint8_t val) { cmp_(&x, val); }
-void cpiy(uint8_t val) { cmp_(&y, val); }
-void cmp(uint16_t addr) { cmp_(&a, mem[addr-0x2000]); }
-void cpx(uint16_t addr) { cmp_(&x, mem[addr-0x2000]); }
-void cpy(uint16_t addr) { cmp_(&y, mem[addr-0x2000]); }
-
-void cl_(uint8_t *reg) {
-    *reg = 0;
-    st.t = 0;
-}
-void cla() { cl_(&a); }
-void clx() { cl_(&x); }
-void cly() { cl_(&y); }
-
-void ld_(uint8_t val, uint8_t *dst) {
-    *dst = val;
-    st.t = 0;
-    st.n = (*dst & 0x80) ? 1 : 0;
-    st.z = (*dst == 0) ? 1 : 0;
-}
-void ldia(uint8_t val) { ld_(val, &a); }
-void ldix(uint8_t val) { ld_(val, &x); }
-void ldiy(uint8_t val) { ld_(val, &y); }
-void lda(uint16_t addr) { ld_(mem[addr-0x2000], &a); }
-void ldx(uint16_t addr) { ld_(mem[addr-0x2000], &x); }
-void ldy(uint16_t addr) { ld_(mem[addr-0x2000], &y); }
-
-void st_(uint8_t *src, uint16_t dst) {
-    mem[dst-0x2000] = *src;
-    st.t = 0;
-}
-void sta(uint16_t addr) { st_(&a, addr); }
-void stx(uint16_t addr) { st_(&x, addr); }
-void sty(uint16_t addr) { st_(&y, addr); }
-
-void ph_(uint8_t *src) {
-    mem[0x100+sp] = *src;
-    --sp;
-    st.t = 0;
-}
-void pha() { ph_(&a); }
-void phx() { ph_(&x); }
-void phy() { ph_(&y); }
-
-void pl_(uint8_t *addr) {
-    ++sp;
-    *addr = mem[0x100+sp];
-    st.t = 0;
-    st.n = (*addr & 0x80) ? 1 : 0;
-    st.z = (*addr == 0) ? 1 : 0;
-}
-void pla() { pl_(&a); }
-void plx() { pl_(&x); }
-void ply() { pl_(&y); }
-
-void dec(uint8_t *addr) {
-    *addr -= 1;
-    st.t = 0;
-    st.n = (*addr & 0x80) ? 1 : 0;   
-    st.z = (*addr == 0) ? 1 : 0;
-}
-void dea() { dec(&a); }
-void dex() { dec(&x); }
-void dey() { dec(&y); }
-
-void asla() {
-    st.c = (a & 0x80) ? 1 : 0;
-    a <<= 1;
-    st.n = (a & 0x80) ? 1 : 0;
-    st.z = (a == 0) ? 1 : 0;
-    st.t = 0;
-}
-
-void rol_(uint8_t *ptr) {
-    uint8_t tmp = st.c ? 0x01 : 0x00;
-    st.c = (*ptr & 0x80) ? 1 : 0;
-    a = (*ptr << 1) | tmp;
-    st.n = (*ptr & 0x80) ? 1 : 0;
-    st.z = (*ptr == 0) ? 1 : 0;
-    st.t = 0;
-}
-void rola() { rol_(&a); }
-void rol(uint16_t addr) { rol_(&mem[addr-0x2000]); }
-
-void ror_(uint8_t *ptr) {
-    uint8_t tmp = st.c ? 0x80 : 0x00;
-    st.c = (*ptr & 0x01) ? 1 : 0;
-    *ptr = (*ptr >> 1) | tmp;
-    st.n = (*ptr & 0x80) ? 1 : 0;
-    st.z = (*ptr == 0) ? 1 : 0;
-    st.t = 0;
-}
-void rora() { ror_(&a); }
-void ror(uint16_t addr) { ror_(&mem[addr-0x2000]); }
-
-void ld8bd() {
-    pha();
-    for(y = 0x08; y!=0; y--) {
-        asla();
-        pha();
-        ror(0x31F4);
-        ror(0x31F5);
-        ldia(0x00);
-        adci(0xFF);
-        eori(0xFF);
-        pha();
-        andi(0x84);
-        eor(0x31F4);
-        sta(0x31F4);
-        pla();
-        andi(0x08);
-        eor(0x31F5);
-        sta(0x31F5);
-        pla();
-    }
-    pla();
-}
-
-void ld8a4() {
-    pha();
-    pha();
-    lda(0x31F4);
-    cmpi(0xe5);
-    pla();
-    adc(0x31F7);
-    sta(0x31F7);
-    lda(0x31f8);
-    adc(0x31F5);
-    sta(0x31F8);
-    pla();
-}
-
-void ld89b() {
-    pha();
-    eor(0x31F9);
-    sta(0x31F9);
-    pla();
-}
-
-void ld88f() {
-    pha();
-    ror(0x31FA);
-    adc(0x31FA);
-    sta(0x31FA);
-    pla();
-}
-
-void ld87f() {
-    pha();
-    do {
-        rola();
-        pha();
-        lda(0x31FB);
-        adci(0x00); 
-        sta(0x31FB);
-        pla();
-    } while(!st.z);
-    pla();
-}
-
-void password_encode() {
-    clx();
-    stx(0x31F4);
-    stx(0x31F5);
-    stx(0x31F7);
-    stx(0x31F8);
-    stx(0x31F9);
-    stx(0x31FB);
-    ldia(0x01);
-    sta(0x31FA); 
-    do {
-        ldia(password_str[x]);
-        ld8bd();
-        ld8a4();
-        ld89b();
-        ld88f();
-        ld87f();
-        inx();
-    } while(x < *password_len);
-}
-
-void password_extract() {
-    const size_t total_size = sizeof(blob)/sizeof(blob[0]);
-    const uint8_t *end = blob + total_size;
-
-    size_t capacity = 32;
-    password_infos = (password_info_t*)realloc(password_infos, capacity * sizeof(password_info_t));
-
-    for(uint8_t *ptr = blob; ptr < end; ++ptr, ++password_count) {
-        if(ptr[2] == 0) {
-            break;
-        } else {
-            if(password_count > capacity) {
-                capacity *= 2;
-                password_infos = (password_info_t*)realloc(password_infos, capacity * sizeof(password_info_t));
-            }
-            password_info_t *infos = password_infos + password_count;
-            infos->offset = ptr - blob;
-            infos->len = ptr[2];
-            ptr+=9;
-            for(; (ptr < end) && (*ptr != 0x2a); ++ptr) {
-            }
-        }
-    }
 }
