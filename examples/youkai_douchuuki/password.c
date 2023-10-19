@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -514,67 +515,61 @@ void password_encode(core_t *core) {
     } while(core->x < len);
 }
 
+#define MAX_STRING_SIZE 0x11
 #define JOB_COUNT 16
 
-atomic_bool g_searching = true;
-atomic_uint g_code_id = 0;
-pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
-atomic_uint g_code_count = 0;
-uint8_t g_code[256] = {0};
+typedef struct {
+    uint8_t id;
+    const password_info_t *info;
+} payload_t;
+
+static uint8_t g_matches[JOB_COUNT][MAX_STRING_SIZE];
+static atomic_bool g_search = true;
 
 void* job_routine(void *arg) {
-    core_t core = {0};
-    password_info_t *infos = (password_info_t*)arg;
-    uint8_t code[256];
+    static const float delta = (float)ALPHABET_SIZE / (float)JOB_COUNT;
+    payload_t *payload = (payload_t*)arg;
+    const password_info_t *password_info = payload->info;
+
+    uint8_t input[MAX_STRING_SIZE] = {0};
     uint8_t *str;
     uint8_t *len;
     uint8_t *hash;
 
-    while(g_searching) {
-        core_reset(&core);
+    float u = delta * (float)payload->id;
+    uint8_t start = (uint8_t)floor(u);
+    uint8_t end = ((uint8_t)floor(u+delta)) % ALPHABET_SIZE;
 
+    core_t core = {0};    
+    uint8_t *match = NULL;
+
+    input[0] = start;
+    while((input[0] != end) && (g_search)) {
+        core_reset(&core);
         str = mem_addr(&core, PASSWORD_STRING_ADDR);
         len = mem_addr(&core, PASSWORD_LENGTH_ADDR);
         hash = mem_addr(&core, PASSWORD_HASH_ADDR);
 
-        pthread_mutex_lock(&g_lock);
-        unsigned int id = g_code_id;
-        *len = infos[id].len;
-        for(unsigned int j=0; j<*len; j++) {
-            g_code[j] = (g_code[j]+1) % ALPHABET_SIZE;
-            if(g_code[j]) {
-                break;
-            }
+        for(unsigned int j=0; j<password_info->len; j++) {
+            str[j] = g_alphabet_code[input[j]];
         }
-        for(unsigned int j=0; j<*len; j++) {
-            code[j] = g_code[j];
-            str[j] = g_alphabet_code[code[j]];
-        }
-        pthread_mutex_unlock(&g_lock);
 
+        *len = password_info->len;
+    
         password_encode(&core);
-
-        if(memcmp(hash, g_blob+infos[id].offset, 8) == 0) {
-            pthread_mutex_lock(&g_lock);
-            wprintf(L"%zd: ", infos[id].offset);
-            for(unsigned int j=0; j<*len; j++) {
-                wprintf(L"%02x ", str[j]);
-            }
-            fputwc(L'\n', stdout);
-            for(unsigned int j=0; j<*len; j++) {
-                fputwc(g_alphabet_ch[code[j]], stdout);
-            }
-            fputwc(L'\n', stdout);
-            if(id == g_code_id) {
-                memset(g_code, 0, 256);
-                ++g_code_id;
-                g_searching = (g_code_id < g_code_count);
-            }
-            fflush(stdout);
-            pthread_mutex_unlock(&g_lock);
+        if(memcmp(hash, g_blob+password_info->offset, 8) == 0) {
+            g_search = false;
+            match = g_matches[payload->id];
+            memcpy(match, input, password_info->len);
+        } else {
+            uint8_t i = password_info->len;
+            do {
+                --i;
+                input[i] = (input[i] + 1) % ALPHABET_SIZE;
+            } while((i>0) && (input[i] == 0));
         }
     }
-    return NULL;
+    return match;
 }
 
 int main() {
@@ -632,18 +627,32 @@ int main() {
     fflush(stdout);
 
     // try to find them
-    g_code_id = 0;
-    g_code_count = password_count;
-
     pthread_t jobs[JOB_COUNT];
-    for(unsigned int i=0; i<JOB_COUNT; i++) {
-        pthread_create(jobs+i, NULL, job_routine, password_infos);
-    }
+    payload_t payload[JOB_COUNT];
+    for(unsigned int j=0; j<password_count; j++) {
+        g_search = true;
+        for(unsigned int i=0; i<JOB_COUNT; i++) {
+            payload[i].id = i;
+            payload[i].info = password_infos + j;
+            pthread_create(jobs+i, NULL, job_routine, payload+i);
+        }
 
-    for(unsigned int i=0; i<JOB_COUNT; i++) {
-        pthread_join(jobs[i], NULL);
+        for(unsigned int i=0; i<JOB_COUNT; i++) {
+            uint8_t *match;
+            pthread_join(jobs[i], (void**)&match);
+            if(match != NULL) {
+                wprintf(L"%zd ",password_infos[j].offset);
+                for(unsigned int k=0; k<password_infos[j].len; k++) {
+                    fputwc(g_alphabet_ch[match[k]], stdout);
+                }
+                fputwc(L' ', stdout);
+                for(size_t k=0; k<8; k++) {
+                    wprintf(L"%02x ", g_blob[password_infos[j].offset]);
+                }
+                fputwc(L'\n', stdout);
+            }
+        }
     }
-
     free(password_infos);
 
     return EXIT_SUCCESS;
