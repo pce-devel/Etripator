@@ -1,6 +1,8 @@
+#include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 #include <wchar.h>
 #include <stdbool.h>
@@ -211,8 +213,8 @@ typedef struct {
 } core_t;
 
 #define RAM_START 0x2000
-#define RAM_STACK_START 0x2100
-#define RAM_STACK_END 0x2200
+#define RAM_STACK_START 0x0100
+#define RAM_STACK_END 0x0200
 
 #define PASSWORD_STRING_ADDR 0x31DC
 #define PASSWORD_LENGTH_ADDR 0x31F6
@@ -548,15 +550,15 @@ void* job_routine(void *arg) {
 
         if(memcmp(hash, g_blob+infos[id].offset, 8) == 0) {
             pthread_mutex_lock(&g_lock);
-            printf("%lld: ", infos[id].offset);
+            wprintf(L"%zd: ", infos[id].offset);
             for(unsigned int j=0; j<*len; j++) {
-                printf("%02x ", str[j]);
+                wprintf(L"%02x ", str[j]);
             }
-            fputc('\n', stdout);
+            fputwc(L'\n', stdout);
             for(unsigned int j=0; j<*len; j++) {
                 fputwc(g_alphabet_ch[code[j]], stdout);
             }
-            fputc('\n', stdout);
+            fputwc(L'\n', stdout);
             if(id == g_code_id) {
                 memset(g_code, 0, 256);
                 ++g_code_id;
@@ -601,7 +603,7 @@ int main() {
             for(size_t k=0; k<8; k++) {
                 printf("%02x ", hash[k]);
             }
-            fputc('\n', stdout);
+            fputwc(L'\n', stdout);
 
             if(i < password_count) {
                 --password_count;
@@ -613,9 +615,9 @@ int main() {
     }
 
     // display remaining entries infos
-    printf("remaining entries:\n");
+    wprintf(L"remaining entries:\n");
     for(size_t i=0; i<password_count; i++) {
-        printf("%lld %d\n", password_infos[i].offset, password_infos[i].len);
+        wprintf(L"%lld %d\n", password_infos[i].offset, password_infos[i].len);
     }
 
     // try to find them
