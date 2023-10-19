@@ -647,7 +647,7 @@ int main() {
                 }
                 fputwc(L' ', stdout);
                 for(size_t k=0; k<8; k++) {
-                    wprintf(L"%02x ", g_blob[password_infos[j].offset]);
+                    wprintf(L"%02x ", g_blob[password_infos[j].offset+k]);
                 }
                 fputwc(L'\n', stdout);
             }
