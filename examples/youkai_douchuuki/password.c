@@ -162,6 +162,7 @@ static const wchar_t g_alphabet_ch[ALPHABET_SIZE] = {
 
 // taken from https://tcrf.net/Youkai_Douchuki_(TurboGrafx-16)
 static const wchar_t *g_known_passwords[] = {
+    L"HARUHISA.UDAGAWA",
     L"PC-ENGINE",
     L"NAMCO",
     L"NAMCOT",
@@ -185,12 +186,11 @@ static const wchar_t *g_known_passwords[] = {
     L"UDADAGAWA",    
     L"818-6104",    
     L"HENTAIOSUGI",    
-    L"なむこむな!756-2311",
     L"KUMI.HANAOKA",
-    L"HARUHISA.UDAGAWA",
     L"NEC",
     L"KID",
-    L"MIZUNO"
+    L"MIZUNO",
+    L"なむこむな!756-2311"
 };
 
 static const size_t g_known_passwords_count = sizeof(g_known_passwords) / sizeof(g_known_passwords[0]);
@@ -237,7 +237,7 @@ void password_extract(const uint8_t *data, size_t size, password_info_t **out, s
         if(ptr[2] == 0) {
             break;
         } else {
-            if(n > capacity) {
+            if(n >= capacity) {
                 capacity *= 2;
                 infos = (password_info_t*)realloc(infos, capacity * sizeof(password_info_t));
             }
@@ -271,6 +271,12 @@ void string_to_code(const wchar_t *in, uint8_t *out, uint8_t *len) {
 
 void core_reset(core_t *core) {
     memset(core, 0, sizeof(core_t));
+    core->sp = 0xff;
+}
+
+void core_clear_registers(core_t *core) {
+    core->a = core->x = core->y = 0;
+    memset(&core->st, 0, sizeof(status_t));
     core->sp = 0xff;
 }
 
@@ -508,7 +514,7 @@ void password_encode(core_t *core) {
     } while(core->x < len);
 }
 
-#define JOB_COUNT 8
+#define JOB_COUNT 16
 
 atomic_bool g_searching = true;
 atomic_uint g_code_id = 0;
@@ -532,7 +538,7 @@ void* job_routine(void *arg) {
         hash = mem_addr(&core, PASSWORD_HASH_ADDR);
 
         pthread_mutex_lock(&g_lock);
-        int id = g_code_id;
+        unsigned int id = g_code_id;
         *len = infos[id].len;
         for(unsigned int j=0; j<*len; j++) {
             g_code[j] = (g_code[j]+1) % ALPHABET_SIZE;
@@ -564,6 +570,7 @@ void* job_routine(void *arg) {
                 ++g_code_id;
                 g_searching = (g_code_id < g_code_count);
             }
+            fflush(stdout);
             pthread_mutex_unlock(&g_lock);
         }
     }
@@ -575,7 +582,7 @@ int main() {
 
     password_info_t *password_infos = NULL;
     size_t password_count = 0;
-
+    
     password_extract(g_blob, g_blob_size, &password_infos, &password_count); 
 
     // remove known passwords
@@ -587,10 +594,12 @@ int main() {
         core_reset(&core);
 
         string_to_code(g_known_passwords[j], str, len);
+
         bool found = false;
         size_t i;
         for(i=0; i<password_count; i++) {
             if(password_infos[i].len == *len) {
+                core_clear_registers(&core);
                 password_encode(&core);
                 if(memcmp(hash, g_blob+password_infos[i].offset, 8) == 0) {
                     found = true;
@@ -599,15 +608,15 @@ int main() {
             }
         }
         if(found) {
-            wprintf(L"%lld \"%ls\" ", password_infos[i].offset, g_known_passwords[j]);
+            wprintf(L"%zd \"%ls\" ", password_infos[i].offset, g_known_passwords[j]);
             for(size_t k=0; k<8; k++) {
-                printf("%02x ", hash[k]);
+                wprintf(L"%02x ", hash[k]);
             }
             fputwc(L'\n', stdout);
 
             if(i < password_count) {
                 --password_count;
-                memmove(&password_infos[i], &password_infos[password_count], sizeof(password_info_t));
+                memmove(password_infos+i, password_infos+password_count, sizeof(password_info_t));
             }
         } else {
             wprintf(L"%ls not found\n", g_known_passwords[j]);
@@ -616,9 +625,11 @@ int main() {
 
     // display remaining entries infos
     wprintf(L"remaining entries:\n");
-    for(size_t i=0; i<password_count; i++) {
-        wprintf(L"%lld %d\n", password_infos[i].offset, password_infos[i].len);
+    for(unsigned int i=0; i<password_count; i++) {
+        wprintf(L"%zd %d\n", password_infos[i].offset, password_infos[i].len);
     }
+
+    fflush(stdout);
 
     // try to find them
     g_code_id = 0;
