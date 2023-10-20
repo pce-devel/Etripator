@@ -191,7 +191,8 @@ static const wchar_t *g_known_passwords[] = {
     L"NEC",
     L"KID",
     L"MIZUNO",
-    L"なむこむな!756-2311"
+    L"なむこむな!756-2311",
+    L"SPEED-UP"
 };
 
 static const size_t g_known_passwords_count = sizeof(g_known_passwords) / sizeof(g_known_passwords[0]);
@@ -645,7 +646,11 @@ int main() {
                 for(unsigned int k=0; k<password_infos[j].len; k++) {
                     fputwc(g_alphabet_ch[match[k]], stdout);
                 }
-                fputwc(L' ', stdout);
+                wprintf(L" - ");
+                for(unsigned int k=0; k<password_infos[j].len; k++) {
+                    wprintf(L"%02x ", match[k]);
+                }
+                wprintf(L"- ");
                 for(size_t k=0; k<8; k++) {
                     wprintf(L"%02x ", g_blob[password_infos[j].offset+k]);
                 }
