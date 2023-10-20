@@ -11,7 +11,9 @@
 #include <pthread.h>
 
 #define ALPHABET_SIZE 42
+#define MAX_STRING_SIZE 0x11
 
+// list of passwords from bank 0x01f at offset 0x1198
 static const uint8_t g_blob[] = {
     0xed,0x26,0x08,0xee,0x3d,0x23,0x1d,0x12,
     0x23,0xba,0xcf,0xb2,0x20,0xb6,0xbd,0xde,
@@ -141,6 +143,7 @@ static const uint8_t g_blob[] = {
 
 static const size_t g_blob_size = sizeof(g_blob) / sizeof(g_blob[0]);
 
+// password alphabhet (internal code numbers)
 static const uint8_t g_alphabet_code[ALPHABET_SIZE] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, // AHOV16
     0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, // BIPW27
@@ -161,7 +164,10 @@ static const wchar_t g_alphabet_ch[ALPHABET_SIZE] = {
     L'G',L'N',L'U',L'.',L'む',L'こ'
 };
 
-// taken from https://tcrf.net/Youkai_Douchuki_(TurboGrafx-16)
+// list of known passwords taken from:
+//  * https://tcrf.net/Youkai_Douchuki_(TurboGrafx-16)
+//  * https://ameblo.jp/gzzms1126/entry-12432089291.html
+//  * https://www.youtube.com/watch?v=xoe9yWfjTzU
 static const wchar_t *g_known_passwords[] = {
     L"HARUHISA.UDAGAWA",
     L"PC-ENGINE",
@@ -192,11 +198,17 @@ static const wchar_t *g_known_passwords[] = {
     L"KID",
     L"MIZUNO",
     L"なむこむな!756-2311",
-    L"SPEED-UP"
+    L"SPEED-UP",            // found this one after running the above code for 16 hours... Unfortunately it's been known for years :S
+    L"KOBAYASHI",
+    L"OHAYOUKAWADA",
+    L"S.62.08.22"
 };
 
 static const size_t g_known_passwords_count = sizeof(g_known_passwords) / sizeof(g_known_passwords[0]);
 
+// PC Engine "core"
+
+// status register
 typedef struct {
     uint8_t n : 1;
     uint8_t v : 1;
@@ -207,6 +219,7 @@ typedef struct {
     uint8_t c : 1;
 } status_t;
 
+// PC Engine "core"
 typedef struct {
     uint8_t mem[0x2000];
     uint8_t a, x, y;
@@ -222,11 +235,23 @@ typedef struct {
 #define PASSWORD_LENGTH_ADDR 0x31F6
 #define PASSWORD_HASH_ADDR 0x31F4
 
+void core_reset(core_t *core) {
+    memset(core, 0, sizeof(core_t));
+    core->sp = 0xff;
+}
+
+void core_clear_registers(core_t *core) {
+    core->a = core->x = core->y = 0;
+    memset(&core->st, 0, sizeof(status_t));
+    core->sp = 0xff;
+}
+
 typedef struct {
-    off_t offset;
-    uint8_t len;
+    off_t offset;   // offset of the password in the raw password blob
+    uint8_t len;    // password length
 } password_info_t;
 
+// go through the blob and extract password informations
 void password_extract(const uint8_t *data, size_t size, password_info_t **out, size_t *count) {
     const uint8_t *end = data + size;
     password_info_t *infos;
@@ -256,6 +281,7 @@ void password_extract(const uint8_t *data, size_t size, password_info_t **out, s
     *count = n;
 }
 
+// convert string to internal encoding
 void string_to_code(const wchar_t *in, uint8_t *out, uint8_t *len) {
     *len = 0;
     for(size_t i = 0; in[i] != L'\0'; ++i, *len+=1) {
@@ -271,22 +297,14 @@ void string_to_code(const wchar_t *in, uint8_t *out, uint8_t *len) {
     }
 }
 
-void core_reset(core_t *core) {
-    memset(core, 0, sizeof(core_t));
-    core->sp = 0xff;
-}
-
-void core_clear_registers(core_t *core) {
-    core->a = core->x = core->y = 0;
-    memset(&core->st, 0, sizeof(status_t));
-    core->sp = 0xff;
-}
-
+// returns a pointer to the core RAM.
+// the address should be a logical one within the RAM address range.
 uint8_t* mem_addr(core_t *core, uint16_t addr) { return &core->mem[addr-RAM_START]; }
+
+// PC Engine instructions
 
 void in_(core_t *core, uint8_t *ptr) {
     *ptr += 1;
-    core->st.t = 0;
     core->st.n = (*ptr & 0x80) ? 1 : 0;
     core->st.z = (*ptr == 0) ? 1 : 0;
 }
@@ -297,7 +315,6 @@ void inc(core_t *core, uint16_t addr) { in_(core, mem_addr(core, addr)); }
 
 void eor_(core_t *core, uint8_t val) {
     core->a ^= val;
-    core->st.t = 0;
     core->st.n = (core->a & 0x80) ? 1 : 0;
     core->st.z = (core->a == 0) ? 1 : 0;
 }
@@ -306,7 +323,6 @@ void eor(core_t *core, uint16_t addr) { eor_(core, *mem_addr(core, addr)); }
 
 void and_(core_t *core, uint8_t val) {
     core->a &= val;
-    core->st.t = 0;
     core->st.n = (core->a & 0x80) ? 1 : 0;
     core->st.z = (core->a == 0) ? 1 : 0;
 }
@@ -316,7 +332,6 @@ void and(core_t *core, uint16_t addr) { and_(core, *mem_addr(core, addr)); }
 void adc_(core_t *core, uint8_t val) {
     uint16_t r = core->a + val + core->st.c;
     core->a = (uint8_t)r;
-    core->st.t = 0;
     core->st.c = (r >= 256) ? 1 : 0;
     core->st.n = (r & 0x80) ? 1 : 0;
     core->st.z = (core->a == 0) ? 1 : 0;
@@ -325,7 +340,6 @@ void adci(core_t *core, uint8_t val) { adc_(core, val); }
 void adc(core_t *core, uint16_t addr) { adc_(core, *mem_addr(core, addr)); }
 
 void cmp_(core_t *core, uint8_t *ptr, uint8_t val) {
-    core->st.t = 0;
     core->st.z = (*ptr == val) ? 1 : 0;
     core->st.c = (*ptr >= val) ? 1 : 0;
     core->st.n = ((*ptr - val) & 0x80) ? 1 : 0;
@@ -340,7 +354,6 @@ void cpy(core_t *core, uint16_t addr) { cmp_(core, &core->y, *mem_addr(core, add
 
 void cl_(core_t *core, uint8_t *reg) {
     *reg = 0;
-    core->st.t = 0;
 }
 void cla(core_t *core) { cl_(core, &core->a); }
 void clx(core_t *core) { cl_(core, &core->x); }
@@ -348,7 +361,6 @@ void cly(core_t *core) { cl_(core, &core->y); }
 
 void ld_(core_t *core, uint8_t val, uint8_t *dst) {
     *dst = val;
-    core->st.t = 0;
     core->st.n = (*dst & 0x80) ? 1 : 0;
     core->st.z = (*dst == 0) ? 1 : 0;
 }
@@ -362,7 +374,6 @@ void ldy(core_t *core, uint16_t addr) { ld_(core, *mem_addr(core, addr), &core->
 void st_(core_t *core, uint8_t *src, uint16_t dst) {
     uint8_t *ptr = mem_addr(core, dst);
     *ptr = *src;
-    core->st.t = 0;
 }
 void sta(core_t *core, uint16_t addr) { st_(core, &core->a, addr); }
 void stx(core_t *core, uint16_t addr) { st_(core, &core->x, addr); }
@@ -371,7 +382,6 @@ void sty(core_t *core, uint16_t addr) { st_(core, &core->y, addr); }
 void ph_(core_t *core, uint8_t *src) {
     core->mem[RAM_STACK_START+core->sp] = *src;
     --core->sp;
-    core->st.t = 0;
 }
 void pha(core_t *core) { ph_(core, &core->a); }
 void phx(core_t *core) { ph_(core, &core->x); }
@@ -380,7 +390,6 @@ void phy(core_t *core) { ph_(core, &core->y); }
 void pl_(core_t *core, uint8_t *addr) {
     ++core->sp;
     *addr = core->mem[RAM_STACK_START+core->sp];
-    core->st.t = 0;
     core->st.n = (*addr & 0x80) ? 1 : 0;
     core->st.z = (*addr == 0) ? 1 : 0;
 }
@@ -390,7 +399,6 @@ void ply(core_t *core) { pl_(core, &core->y); }
 
 void dec(core_t *core, uint8_t *addr) {
     *addr -= 1;
-    core->st.t = 0;
     core->st.n = (*addr & 0x80) ? 1 : 0;   
     core->st.z = (*addr == 0) ? 1 : 0;
 }
@@ -403,7 +411,6 @@ void asla(core_t *core) {
     core->a <<= 1;
     core->st.n = (core->a & 0x80) ? 1 : 0;
     core->st.z = (core->a == 0) ? 1 : 0;
-    core->st.t = 0;
 }
 
 void rol_(core_t *core, uint8_t *ptr) {
@@ -412,7 +419,6 @@ void rol_(core_t *core, uint8_t *ptr) {
     core->a = (*ptr << 1) | tmp;
     core->st.n = (*ptr & 0x80) ? 1 : 0;
     core->st.z = (*ptr == 0) ? 1 : 0;
-    core->st.t = 0;
 }
 void rola(core_t *core) { rol_(core, &core->a); }
 void rol(core_t *core, uint16_t addr) { rol_(core, mem_addr(core, addr)); }
@@ -423,10 +429,11 @@ void ror_(core_t *core, uint8_t *ptr) {
     *ptr = (*ptr >> 1) | tmp;
     core->st.n = (*ptr & 0x80) ? 1 : 0;
     core->st.z = (*ptr == 0) ? 1 : 0;
-    core->st.t = 0;
 }
 void rora(core_t *core) { ror_(core, &core->a); }
 void ror(core_t *core, uint16_t addr) { ror_(core, mem_addr(core, addr)); }
+
+// password.encode routines and subroutines
 
 void ld8bd(core_t *core) {
     pha(core);
@@ -516,7 +523,8 @@ void password_encode(core_t *core) {
     } while(core->x < len);
 }
 
-#define MAX_STRING_SIZE 0x11
+// bruteforce password search 
+
 #define JOB_COUNT 16
 
 typedef struct {
@@ -604,7 +612,11 @@ int main() {
             }
         }
         if(found) {
-            wprintf(L"%zd \"%ls\" ", password_infos[i].offset, g_known_passwords[j]);
+            wprintf(L"%zd \"%ls\" - ", password_infos[i].offset, g_known_passwords[j]);
+            for(unsigned int k=0; k<password_infos[i].len; k++) {
+                wprintf(L"%02x ", str[k]);
+            }
+            wprintf(L"- ");
             for(size_t k=0; k<8; k++) {
                 wprintf(L"%02x ", hash[k]);
             }
