@@ -632,6 +632,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 			switch (opcode->type) {
 			case PCE_OP_nn_ZZ_X:                                /* #$aa, <$zp, X */
 				extra = ", X";
+				/* fall through */
 			case PCE_OP_nn_ZZ:                                  /* #$aa, <$zp */
 				offset = 0x2000 + data[1];
 				page = memmap_page(map, offset);
@@ -642,6 +643,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 				break;
 			case PCE_OP_nn_hhll_X:                              /* #$aa, $hhll, X */
 				extra = ", X";
+				/* fall through */
 			case PCE_OP_nn_hhll:                                /* #$aa, $hhll */
 				offset = (data[1] << 8) + data[2];
 				page = memmap_page(map, offset);
@@ -653,10 +655,12 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 
 			case PCE_OP_ZZ_Y:                                   /* <zp, Y */
 				extra = ", Y";
+				/* fall through */
 			case PCE_OP_ZZ_X:                                   /* <zp, X */
 				if (none == extra) {
 					extra = ", X";
 				}
+				/* fall through */
 			case PCE_OP_ZZ:                                     /* <zp    */
 				offset = 0x2000 + data[0];
 				page = memmap_page(map, offset);
@@ -668,10 +672,12 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 
 			case PCE_OP__ZZ__Y_:                                /* [zp], Y */
 				extra = "], Y";
+				/* fall through */
 			case PCE_OP__ZZ_X__:                                /* [zp, X] */
 				if (none == extra) {
 					extra = ", X";
 				}
+				/* fall through */
 			case PCE_OP__ZZ__:                                  /* [zp] */
 				if (none == extra) {
 					extra = "]";
@@ -686,6 +692,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 
 			case PCE_OP__hhll_X__:                              /* [hhll, X] */
 				extra = ", X]";
+				/* fall through */
 			case PCE_OP__hhll__:                                /* [hhll] */
 				if (none == extra) {
 					extra = "]";
@@ -700,10 +707,12 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 
 			case PCE_OP_hhll_X:                                 /* hhll, X */
 				extra = ", X";
+				/* fall through */
 			case PCE_OP_hhll_Y:                                 /* hhll, Y */
 				if (none == extra) {
 					extra = ", Y";
 				}
+				/* fall through */
 			case PCE_OP_hhll:                                   /* hhll */
 				offset = (data[0] << 8) | data[1];
 				page = memmap_page(map, offset);
