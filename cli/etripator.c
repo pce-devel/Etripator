@@ -289,7 +289,6 @@ int main(int argc, const char **argv) {
                     // The previous section overlaps the current one.
                     // We skip it as it has already been processed.
                     fclose(out);
-                    out = NULL;
                     continue;
                 }
             }
@@ -332,7 +331,6 @@ int main(int argc, const char **argv) {
         }
 
         fclose(out);
-        out = NULL;
     }
 
     /* Open main asm file */
