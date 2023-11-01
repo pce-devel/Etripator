@@ -22,16 +22,6 @@ void tear_down(void* fixture) {
     free(fixture);
 }
 
-/*
-label_repository_t* label_repository_create();
-void label_repository_destroy(label_repository_t* repository);
-int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page);
-int label_repository_find(label_repository_t* repository, uint16_t logical, uint8_t page, char** name);
-int label_repository_size(label_repository_t* repository);
-int label_repository_get(label_repository_t* repository, int index, uint16_t* logical, uint8_t* page, char** name);
-int label_repository_delete(label_repository_t* repository, uint16_t first, uint16_t end, uint8_t page);
-*/
-
 MunitResult label_add_test(const MunitParameter params[], void* fixture) {
     (void)params;
     (void)fixture;
@@ -99,7 +89,7 @@ MunitResult label_delete_test(const MunitParameter params[], void* fixture) {
     munit_assert_int(ret, !=, 0);
     ret = label_repository_add(repository, "label02", 0x0220, 0x1a, NULL);
     munit_assert_int(ret, !=, 0);
-    ret = label_repository_add(repository, "label03", 0x0330, 0x1b, NULL);
+    ret = label_repository_add(repository, "label03", 0x0330, 0x1b, "description");
     munit_assert_int(ret, !=, 0);
     ret = label_repository_add(repository, "label04", 0x0440, 0x1a, NULL);
     munit_assert_int(ret, !=, 0);
@@ -130,6 +120,7 @@ MunitResult label_delete_test(const MunitParameter params[], void* fixture) {
     ret = label_repository_find(repository, 0x0330, 0x1b, &label);
     munit_assert_int(ret, !=, 0);
     munit_assert_string_equal(label.name, "label03");
+    munit_assert_string_equal(label.description, "description");
     ret = label_repository_find(repository, 0x0220, 0x1a, &label);
     munit_assert_int(ret, !=, 0);
     munit_assert_string_equal(label.name, "label02");
