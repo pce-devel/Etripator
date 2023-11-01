@@ -182,7 +182,7 @@ git submodule update --init --recursive
 ```
 
 You will also need to have [jansson](https://github.com/akheron/jansson) installed on your system.
-This can be acheived using via the package manager (apt, brew, chocolate, pacman, ...) or by building it from source.
+This can be acheived using a package manager (apt, brew, chocolate, pacman, ...) or by building it from source.
 
 ```
 wget https://github.com/akheron/jansson/archive/v2.12.zip
@@ -208,7 +208,7 @@ cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install
 
 If you build jansson as shown earlier you may configure the project with
 ```
-cmake ../.. -DCMAKE_BUILD_TYPE=Release  -DCMAKE_INSTALL_PREFIX=../install \
+cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install \
     -DJANSSON_INCLUDE_DIR=../../jansson-2.12/build/install/include \
     -DJANSSON_LIBRARY=../../jansson-2.12/build/install/lib/jansson.lib 
 ```
