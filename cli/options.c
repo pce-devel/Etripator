@@ -37,6 +37,8 @@
 
 #include <argparse/argparse.h>
 
+#include <message.h>
+
 struct payload_t {
     size_t capacity;
     size_t size;
@@ -66,6 +68,8 @@ int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
         NULL
     };
 
+    int ret = 0;
+
     char *dummy;
     struct payload_t labels_payload = { 0, 0, &option->labels_in };
     struct payload_t comments_payload = {0, 0, &option->comments_in};
@@ -79,6 +83,7 @@ int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
         OPT_STRING(0, "labels-out", &option->labels_out, "extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl", NULL, 0, 0),
         OPT_STRING(0, "comments", &dummy, "comments description filename", opt_callback, (intptr_t)&comments_payload, 0),
         OPT_BOOLEAN(0, "address", &option->address, "print statement address as comment", NULL, 0, 0),
+        OPT_INTEGER(0, "sector_size", &option->sector_size, "2352 bytes sectors (cd only)", NULL, 0, 0),
         OPT_END(),
     };
 
@@ -93,30 +98,37 @@ int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
     option->labels_out = NULL;
     option->comments_in = NULL;
     option->address = 0;
-    
+    option->sector_size = 2048;
+
     argparse_init(&argparse, options, usages, 0);
     argparse_describe(&argparse, "\nEtripator : a PC Engine disassembler", "  ");
     argc = argparse_parse(&argparse, argc, argv);
     if(!argc) {
-        argparse_usage(&argparse);
-        return 0;
-    }
-    if(argc != 2) {
+        // ...
+    } else if((option->sector_size != 2048) && (option->sector_size != 2352)) {
+       ERROR_MSG("invalid sector size (must be 2048 or 2352).");
+    } else if(argc != 2) {
         if((option->extract_irq) && (argc == 1)) {
             /* Config file is optional with automatic irq vector extraction. */
             option->cfg_filename =  NULL;
             option->rom_filename = argv[0];
+            ret = 1;
         }
         else {
-            argparse_usage(&argparse);
-            return 0;
+            // ...
         }
     }
     else {
         option->cfg_filename = argv[0];
         option->rom_filename = argv[1];
+        ret = 1;
     }
-    return 1;
+
+    if(ret == 0) {
+        argparse_usage(&argparse);
+    }
+
+    return ret;
 }
 
 /* Release allocated resources during command line parsing */
