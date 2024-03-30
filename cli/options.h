@@ -42,6 +42,7 @@
 typedef struct {
     int extract_irq;
     int cdrom;
+    int sector_size;
     int address;
     const char *cfg_filename;
     const char *rom_filename;
