@@ -279,8 +279,9 @@ int main(int argc, const char **argv) {
         }
 
         if ((0 != option.cdrom) || (section[i].offset != ((section[i].page << 13) | (section[i].logical & 0x1fff)))) {
+            size_t offset = section[i].offset;
             /* Copy CDROM data */
-            ret = cd_load(option.rom_filename, section[i].offset, section[i].size, section[i].page, section[i].logical, &map);
+            ret = cd_load(option.rom_filename, section[i].offset, section[i].size, option.sector_size, section[i].page, section[i].logical, &map);
             if (0 == ret) {
                 ERROR_MSG("Failed to load CD data (section %d)", i);
                 goto error_4;

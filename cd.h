@@ -48,14 +48,15 @@ int cd_memmap(memmap_t *map);
 
 /**
  * Load CDROM data from file.
- * \param [in]  filename CDROM data filename.
- * \param [in]  start    CDROM data offset.
- * \param [in]  len      CDROM data length (in bytes).
- * \param [in]  page     Memory page.
- * \param [in]  offset   memory page offset.
- * \param [out] memmap   Memory map.
+ * \param [in]  filename    CDROM data filename.
+ * \param [in]  start       CDROM data offset.
+ * \param [in]  len         CDROM data length (in bytes).
+ * \param [in]  sector_size CD sector size.
+ * \param [in]  page        Memory page.
+ * \param [in]  offset      memory page offset.
+ * \param [out] memmap      Memory map.
  * \return 1 upon success, 0 if an error occured.
  */
-int cd_load(const char* filename, size_t start, size_t len, uint8_t page, size_t offset, memmap_t* map);
+int cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, memmap_t* map);
 
 #endif // ETRIPATOR_CD_H
