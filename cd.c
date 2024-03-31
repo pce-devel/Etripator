@@ -63,20 +63,41 @@ int cd_memmap(memmap_t *map) {
     return ret;
 }
 /* Load CDROM data from file. */
-int cd_load(const char* filename, size_t start, size_t len, uint8_t page, size_t offset, memmap_t* map) {
+int cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, memmap_t* map) {
     int ret = 0;
     FILE *in = fopen(filename, "rb");
     if(in == NULL) {
         ERROR_MSG("Unable to open %s : %s", filename, strerror(errno));
-    } else if(fseek(in, (long int)start, SEEK_SET)) {
-        ERROR_MSG("Offset out of bound : %s", strerror(errno));
     } else {
-        size_t addr = offset & 0x1fff;
-        if(fread(map->page[page] + addr, 1, len, in) != len) {
-            ERROR_MSG("Failed to read %d bytes : %s", len, strerror(errno));
-        } else {
-            ret = 1;
+        size_t remaining = len;
+        size_t physical = (offset & 0x1FFFU) | (page << 0x0D);
+        for(ret=1; ret && remaining; ) {
+            size_t count = 2048 - (start % 2048);
+            if(count > remaining) {
+                count = remaining;
+            }
+
+            size_t sector_id = start / 2048;
+            size_t sector_offset = start % 2048;
+            
+            size_t file_offset = (sector_id * sector_size) + sector_offset;
+
+            size_t current_page = physical >> 0x0D;
+            size_t current_addr = physical & 0x1FFF;
+
+            ret = 0;
+            if(fseek(in, (long int)file_offset, SEEK_SET)) {
+                ERROR_MSG("Offset out of bound : %s", strerror(errno));
+            } else if(fread(map->page[current_page] + current_addr, 1, count, in) != count) {
+                ERROR_MSG("Failed to read %d bytes : %s", count, strerror(errno));
+            } else {
+                ret = 1;
+            }
+            start += count;
+            physical += count;
+            remaining -= count;
         }
+  
     }    
     if(in) {
         fclose(in);

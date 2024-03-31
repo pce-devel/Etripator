@@ -111,6 +111,9 @@ static int section_parse(const json_t *obj, section_t *out) {
         return 0;
     }
     out->logical = (uint16_t)num;
+
+    out->offset = (out->page << 13) | (out->logical & 0x1fff);
+
     /* offset */
     num = -1;
     tmp = json_object_get(obj, "offset");
@@ -118,14 +121,11 @@ static int section_parse(const json_t *obj, section_t *out) {
         if (!json_validate_int(tmp, &num)) {
             ERROR_MSG("Invalid or missing offset value.");
             return 0;
+        } else {
+            out->offset = (uint32_t)num;
         }
     }
-    if (num >= 0) {
-        out->offset = (uint32_t)num;
-    }
-    else {
-        out->offset = (out->page << 13) | (out->logical & 0x1fff);
-    }
+
     /* size */
     tmp = json_object_get(obj, "size");
     if (tmp) {
