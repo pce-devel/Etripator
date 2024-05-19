@@ -108,6 +108,9 @@ int label_output(cli_opt_t *option, label_repository_t *repository) {
     return 1;
 }
 
+static console_msg_printer_t g_console_printer;
+static file_msg_printer_t g_file_printer;
+
 /* ---------------------------------------------------------------- */
 int main(int argc, const char **argv) {
     cli_opt_t option;
@@ -116,9 +119,6 @@ int main(int argc, const char **argv) {
     FILE *main_file;
     int i;
     int ret, failure;
-
-    console_msg_printer_t console_printer;
-    file_msg_printer_t file_printer;
 
     memmap_t map;
 
@@ -129,14 +129,14 @@ int main(int argc, const char **argv) {
 
     msg_printer_init();
 
-    file_msg_printer_init(&file_printer);
-    console_msg_printer_init(&console_printer);
+    file_msg_printer_init(&g_file_printer);
+    console_msg_printer_init(&g_console_printer);
 
-    if (msg_printer_add(&file_printer.super)) {
+    if (msg_printer_add(&g_file_printer.super)) {
         fprintf(stderr, "Failed to setup file printer.\n");
         return EXIT_FAILURE;
     }
-    if (msg_printer_add(&console_printer.super)) {
+    if (msg_printer_add(&g_console_printer.super)) {
         fprintf(stderr, "Failed to setup console printer.\n");
         return EXIT_FAILURE;
     }
