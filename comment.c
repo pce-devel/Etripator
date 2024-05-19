@@ -215,12 +215,15 @@ int comment_repository_load(const char* filename, comment_repository_t* reposito
                         ERROR_MSG("Invalid or missing page.");
                     } else {
                         // text (same format as section/label description)
-                        const char* text = json_load_description(value, "text");
-                        if((num < 0) || (num > 0xff)) {
+                        char* text = json_load_description(value, "text");
+                        if(text == NULL) {
+                            ERROR_MSG("Invalid or missing text.");
+                        } else if((num < 0) || (num > 0xff)) {
                             ERROR_MSG("Page value out of range.");
                         } else if(comment_repository_add(repository, logical, (uint8_t)num, text)) {
                             ret = 1;
                         }
+                        free(text);
                     }
                 }
             }
