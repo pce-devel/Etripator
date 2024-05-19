@@ -207,7 +207,7 @@ int section_load(const char *filename, section_t **out, int *n) {
 
     root = json_load_file(filename, 0, &err);
     if(!root) {
-        ERROR_MSG("Failed to parse %s: %s", filename, err.text);
+        ERROR_MSG("Failed to parse %s:%d:%d: %s", filename, err.line, err.column, err.text);
         return 0;
     }
 
