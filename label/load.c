@@ -54,7 +54,7 @@ int label_repository_load(const char* filename, label_repository_t* repository) 
     int ret = 0, index = 0;
     root = json_load_file(filename, 0, &err);
     if(!root) {
-        ERROR_MSG("Failed to parse %s: %s", filename, err.text);
+        ERROR_MSG("Failed to parse %s:%d:%d: %s", filename, err.line, err.column, err.text);
     } else {
         if(!json_is_array(root)) {
             ERROR_MSG("Array expected.");

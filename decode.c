@@ -39,7 +39,7 @@
 
 #include <stdarg.h>
 
-#define ETRIPATOR_LAST_COLUMN 40
+#define ETRIPATOR_LAST_COLUMN 80U
 
 static const char *spacing = "          ";
 
