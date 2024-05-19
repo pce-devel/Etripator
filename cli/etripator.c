@@ -88,9 +88,11 @@ int label_output(cli_opt_t *option, label_repository_t *repository) {
         }
 #else
         struct timeval tv;
+        time_t t;
         struct tm *now;
         gettimeofday(&tv, NULL);
-        now = localtime(&tv.tv_sec);
+        t = tv.tv_sec;
+        now = localtime(&t);
         strftime(dateString, 128, "%Y%m%d%H%M%S", now);
 #endif   
         cwk_path_get_basename(option->rom_filename, &filename, &length);
