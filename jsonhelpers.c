@@ -41,8 +41,14 @@
 int json_validate_int(const json_t* obj, int* out) {
     int ret = 0;
     if(json_is_string(obj)) {
+        const char *str = json_string_value(obj);
+        for(; (*str!='\0') && isspace(*str); str++) {
+        }
+        if(*str=='$') {
+            str++;
+        }
         errno = 0;
-        *out = strtoul(json_string_value(obj), NULL, 16);
+        *out = strtoul(str, NULL, 16);
         if(errno == 0) {
             ret = 1;
         }
