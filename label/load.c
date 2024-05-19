@@ -90,9 +90,7 @@ int label_repository_load(const char* filename, label_repository_t* repository) 
                             } else if(label_repository_add(repository, key, logical, (uint8_t)num, description)) {
                                 ret = 1;
                             }
-                            if(description) {
-                                free(description);
-                            }
+                            free(description);
                         }
                     }
                 }
