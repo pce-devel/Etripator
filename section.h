@@ -38,6 +38,93 @@
 
 #include "config.h"
 
+#if 0
+
+/// Section types.
+typedef enum {
+    /// Unknown or invalid section type.
+    UnknownSectionType = -1,
+    /// Data type.
+    /// This a "meta" section type. A data section contains either
+    ///   * Raw binary data
+    ///   * Strings
+    ///   * Addresses
+    /// @see DataType for a more detailed description.
+    DataSectionType = 0,
+    /// The section contains executable code. @see CodeSection
+    CodeSectionType,
+    /// Number of supported section types.
+    SectionTypeCount
+} SectionType;
+
+/// Data section types.
+typedef enum {
+    /// Raw binary data.
+    RawDataType = 0,
+    /// String data.
+    StringDataType,
+    /// Address list (usually jump table)
+    JumpTableType,
+    /// Number of supported data section types.
+    DataTypeCount
+} DataType,
+
+/// Raw binary data
+typedef struct {
+    /// Must be equal to RawDataType.
+    DataType type;
+    ///
+} RawData;
+
+typedef struct {
+    DataType type;
+    // [todo]
+} StringData;
+
+typedef struct {
+    DataType type;
+} JumpTable;
+
+typedef struct {
+    SectionType type;
+    union {
+        RawDataSection raw;
+        StringDataSection string;
+        JumpTableDataSection jump_table;
+    };
+} DataSection;
+
+typedef struct {
+    SectionType type;
+    // [todo]
+} CodeSection;
+
+/*
+typedef struct {
+    SectionType type;
+    MemoryAddress
+    {
+        uint16_t page;
+        uint16_t logical;
+    } address;
+    
+    MemoryConfiguration  ???;
+    
+    size_t size;
+} SectionBase;
+
+*/
+
+
+
+typedef union {
+    SectionType type;
+    CodeSection code;
+    DataSection data;
+} Section;
+
+#endif
+
 /**
  * Section type.
  */

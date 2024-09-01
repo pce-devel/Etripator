@@ -40,7 +40,7 @@
 int cd_memmap(memmap_t *map) {
     int i, ret = 0;
     /* Allocate CD RAM */
-    if(!mem_create(&map->mem[PCE_MEM_CD_RAM], 8 * 8192)) {
+    if(!memory_create(&map->mem[PCE_MEM_CD_RAM], 8 * 8192)) {
         ERROR_MSG("Failed to allocate cd memory!\n");
         memmap_destroy(map);
     } else {
@@ -49,7 +49,7 @@ int cd_memmap(memmap_t *map) {
             map->page[0x80 + i] = &map->mem[PCE_MEM_CD_RAM].data[i * 8192];
         }
         /* Allocate System Card RAM */
-        if (!mem_create(&map->mem[PCE_MEM_SYSCARD_RAM], 24 * 8192)) {
+        if (!memory_create(&map->mem[PCE_MEM_SYSCARD_RAM], 24 * 8192)) {
             ERROR_MSG("Failed to allocate system card memory!\n");
             memmap_destroy(map);
         } else {

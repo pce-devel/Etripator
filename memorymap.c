@@ -38,9 +38,12 @@
 /* Initializes memory map.  */
 int memmap_init(memmap_t *map) {
     int i, ret = 0;
-    memset(map, 0, sizeof(memmap_t));
+    
+    memset(map, 0, sizeof(memmap_t)); // [todo] function
+
+
     /* Allocate main (or work) RAM */
-    if(!mem_create(&map->mem[PCE_MEM_BASE_RAM], 8192)) {
+    if(!memory_create(&map->mem[PCE_MEM_BASE_RAM], 8192)) {
         ERROR_MSG("Failed to allocate main memory!\n");
     } else {
         /* Main RAM is mapped to pages 0xf8-0xfb (included). */
@@ -64,7 +67,7 @@ int memmap_init(memmap_t *map) {
 void memmap_destroy(memmap_t *map) {
     int i;
     for(i=0; i<PCE_MEM_COUNT; i++) {
-        mem_destroy(&map->mem[i]);
+        memory_destroy(&map->mem[i]);
     }
     memset(map, 0, sizeof(memmap_t));
 }
