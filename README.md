@@ -189,27 +189,24 @@ This can be acheived using a package manager (apt, brew, chocolate, pacman, ...)
 wget https://github.com/akheron/jansson/archive/v2.12.zip
 unzip v2.12.zip
 cd jansson-2.12
-mkdir -p build/cmake
-mkdir -p build/install
-cd build/cmake
-cmake ../.. -DJANSSON_BUILD_DOCS=OFF \
-            -DJANSSON_WITHOUT_TESTS=ON \
-            -DCMAKE_INSTALL_PREFIX=../install 
-cmake --build . --target install
-cd ../../..
+mkdir -p build
+cmake -Bbuild/cmake -S . \
+      -DJANSSON_BUILD_DOCS=OFF \
+      -DJANSSON_WITHOUT_TESTS=ON \
+      -DCMAKE_INSTALL_PREFIX=build/install 
+cmake --build build/cmake --target install
 ```
 
 Now on to building etripator. 
 ```
 cd etripator
-mkdir -p build/cmake
-cd build/cmake
-cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install
+mkdir -p build
+cmake -Bbuild/cmake -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=cmake/install
 ```
 
 If you build jansson as shown earlier you may configure the project with
 ```
-cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install \
+cmake -Bbuild/cmake -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=build/install \
     -DJANSSON_INCLUDE_DIR=../../jansson-2.12/build/install/include \
     -DJANSSON_LIBRARY=../../jansson-2.12/build/install/lib/jansson.lib 
 ```
@@ -218,7 +215,7 @@ cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install \
 
 If everything went right, you can now compile the project with:
 ```
-cmake --build . --config Release --target install
+cmake --build build/cmake --target install
 ```
 
 ## Authors
