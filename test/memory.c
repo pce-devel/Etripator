@@ -40,8 +40,6 @@
 
 #include <memory.h>
 
-console_msg_printer_t g_msg_printer;
-
 void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
     return NULL;
 }
@@ -106,13 +104,12 @@ static const MunitSuite memory_suite = {
 };
 
 int main (int argc, char* const* argv) {
-    msg_printer_init();    
-    console_msg_printer_init(&g_msg_printer);
-    msg_printer_add((msg_printer_t*)&g_msg_printer);
+    message_printer_init();    
+    console_message_printer_init();
 
     int ret = munit_suite_main(&memory_suite, NULL, argc, argv);
 
-    msg_printer_destroy();
+    message_printer_destroy();
 
     return ret;
 }

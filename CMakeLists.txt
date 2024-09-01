@@ -28,7 +28,7 @@ find_package(Jansson)
 set(CMAKE_C_STANDARDS 11)
 
 add_subdirectory(externals)
-
+#[[
 set(etripator_SRC
     message.c 
     message/file.c
@@ -84,7 +84,7 @@ set_target_properties(etripator_cli
 )
 target_include_directories(etripator_cli PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(etripator_cli etripator argparse)
-
+#]]
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
 set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
 
@@ -100,4 +100,4 @@ add_custom_target(doc
 
 add_subdirectory(test)
 
-install(TARGETS etripator_cli DESTINATION bin)
+# install(TARGETS etripator_cli DESTINATION bin)
