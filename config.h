@@ -42,8 +42,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <stdint.h>
+#include <stdbool.h>
+
 #include <time.h>
 
 #include <sys/types.h>

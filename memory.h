@@ -37,30 +37,35 @@
 #define ETRIPATOR_MEMORY_H
 
 #include "config.h"
-/**
- * Memory block.
- */
+
+/// @defgroup Memory Memory block
+///@{
+
+/// Memory block.
 typedef struct {
-    size_t   len;  /**< Byte array length. **/
-    uint8_t *data; /**< Byte array. **/
-} mem_t;
-/**
- * Create memory block.
- * \param [out] mem Memory block.
- * \param [in]  len Memory block size (in bytes).
- * \return 1 upon success, 0 if an error occured.
- */
-int mem_create(mem_t *mem, size_t len);
-/**
- * Destroy memory block.
- * \param [in] mem Memory block.
- */
-void mem_destroy(mem_t *mem);
-/**
- * Fill memory block bytes with a given byte value.
- * \param [in] mem Memory block.
- * \param [in] c Byte value.
- */
-void mem_fill(mem_t *mem, uint8_t c);
+    size_t   length; ///< Byte array length.
+    uint8_t *data; ///< Byte array.
+} Memory;
+
+/// Creates a new memory block.
+/// \param [out] memory Memory block.
+/// \param [in]  length Memory block size (in bytes).
+/// \return true if the memory block was successfully created.
+/// \return false if an error occured.
+///         @note memory is left untouched if an error occured.
+bool memory_create(Memory *memory, size_t length);
+
+/// Releases memory block resources.
+/// \param [in out] mem Memory block.
+void memory_destroy(Memory *memory);
+
+/// Fills a memory block with a given byte value.
+/// \param [in out] mem Memory block.
+/// \param [in] c Byte value.
+/// \return true if the memory block was successfully filled.
+/// \return false if the memory block is invalid (0 size or unallocated).
+bool memory_fill(Memory *memory, uint8_t c);
+
+/// @}
 
 #endif // ETRIPATOR_MEMORY_H

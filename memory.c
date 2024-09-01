@@ -35,30 +35,47 @@
 */
 #include "memory.h"
 #include "message.h"
-/* Create memory block. */
-int mem_create(mem_t *mem, size_t len) {
-    mem->data = (uint8_t*)malloc(len);
-    if(!mem->data) {
-        ERROR_MSG("Unable to allocate memory : %s.\n", strerror(errno));
-        mem->len = 0;
-        return 0;
-    }
-    mem->len = len;
-    return 1;
-}
-/* Destroy memory block. */
-void mem_destroy(mem_t *mem) {
-    if(mem) {
-        mem->len = 0;
-        if(mem->data) {
-            free(mem->data);
-            mem->data = NULL;
+
+// Creates a new memory block.
+bool memory_create(Memory *memory, size_t length) {
+    assert(memory != NULL);
+
+    bool ret = false;
+    if(length == 0) {
+        ERROR_MSG("Invalid length");
+    } else {
+        uint8_t *buffer = (uint8_t*)malloc(length);
+        if(buffer == NULL) {
+            ERROR_MSG("Unable to allocate %zu bytes: %s.", length, strerror(errno));
+        } else {
+            memory->data = buffer;
+            memory->length = length;
+            ret = true;
         }
     }
+    return ret;
 }
-/* Fill memory block bytes with a given byte value. */
-void mem_fill(mem_t *mem, uint8_t c) {
-    if(mem->data && mem->len) {
-        memset(mem->data, (int)mem->len, c);
+
+// Releases memory block resources.
+void memory_destroy(Memory *memory) {
+    assert(memory != NULL);
+    assert(memory->data != NULL);
+
+    free(memory->data);
+    memory->data = NULL;
+    memory->length = 0;
+}
+
+// Fills a memory block with a given byte value.
+bool memory_fill(Memory *memory, uint8_t c) {
+    assert(memory != NULL);
+    bool ret = false;
+    if(memory->data != NULL) {
+        const size_t n = memory->length;
+        for(size_t i=0; i<n; i++) {
+            memory->data[i] = c;
+        }
+        ret = true;
     }
+    return ret;
 }

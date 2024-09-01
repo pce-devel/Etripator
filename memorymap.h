@@ -53,7 +53,7 @@ enum {
  * PC Engine memory map.
  */
 typedef struct {
-    mem_t mem[PCE_MEM_COUNT];
+    Memory mem[PCE_MEM_COUNT];
     uint8_t *page[0x100];
     uint8_t mpr[8];
 } memmap_t;

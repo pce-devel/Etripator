@@ -68,13 +68,13 @@ static int rom_load_data(const char *filename, memmap_t *map) {
         }
         if(size) {
             /* Allocate rom storage */
-            if (!mem_create(&map->mem[PCE_MEM_ROM], (size + 0x1fff) & ~0x1fff)) {
+            if (!memory_create(&map->mem[PCE_MEM_ROM], (size + 0x1fff) & ~0x1fff)) {
                 ERROR_MSG("Failed to allocate ROM storage : %s", strerror(errno));
             } else {
                 /* Fill rom with 0xff */
-                memset(map->mem[PCE_MEM_ROM].data, 0xff, map->mem[PCE_MEM_ROM].len);
+                (void)memory_fill(&map->mem[PCE_MEM_ROM], 0xFF);
                 /* Read ROM data */
-                size_t count = (size < map->mem[PCE_MEM_ROM].len) ? size : map->mem[PCE_MEM_ROM].len;
+                size_t count = (size < map->mem[PCE_MEM_ROM].length) ? size : map->mem[PCE_MEM_ROM].length;
                 size_t nread = fread(map->mem[PCE_MEM_ROM].data, 1, count, in);
                 if (nread != count) {
                     ERROR_MSG("Failed to read ROM data from %s : %s", filename, strerror(errno));
@@ -93,18 +93,18 @@ int rom_load(const char *filename, memmap_t *map) {
     FILE *in;
     int ret = 0;
     if(rom_load_data(filename, map) == 0) {
-        mem_destroy(&map->mem[PCE_MEM_ROM]);
+        memory_destroy(&map->mem[PCE_MEM_ROM]);
     } else {
         unsigned int i;
         /* Initialize ROM pages. */
-        if (map->mem[PCE_MEM_ROM].len == 0x60000) {
+        if (map->mem[PCE_MEM_ROM].length == 0x60000) {
             for (i = 0; i < 64; i++) {
                 map->page[i] = &map->mem[PCE_MEM_ROM].data[(i & 0x1f) * 8192];
             }
             for (i = 64; i < 128; i++) {
                 map->page[i] = &map->mem[PCE_MEM_ROM].data[((i & 0x0f) + 32) * 8192];
             }
-        } else if (map->mem[PCE_MEM_ROM].len == 0x80000) {
+        } else if (map->mem[PCE_MEM_ROM].length == 0x80000) {
             for (i = 0; i < 64; i++) {
                 map->page[i] = &map->mem[PCE_MEM_ROM].data[(i & 0x3f) * 8192];
             }
@@ -113,7 +113,7 @@ int rom_load(const char *filename, memmap_t *map) {
             }
         } else {
             for (i = 0; i < 128; i++) {
-                uint8_t bank = (uint8_t)(i % (map->mem[PCE_MEM_ROM].len / 8192));
+                uint8_t bank = (uint8_t)(i % (map->mem[PCE_MEM_ROM].length / 8192));
                 map->page[i] = &map->mem[PCE_MEM_ROM].data[bank * 8192];
             }
         }
