@@ -38,80 +38,83 @@
 
 #include "config.h"
 
-/**
- * \brief Message types
- */
+/// @defgroup Message Message printing
+///@{
+
+// Message types.
 typedef enum {
-	MSG_TYPE_ERROR=0,
-	MSG_TYPE_WARNING,
-	MSG_TYPE_INFO
-} msg_type_t;
+    MESSAGE_TYPE_ERROR = 0,
+    MESSAGE_TYPE_WARNING,
+    MESSAGE_TYPE_INFO,
+    MESSAGE_TYPE_DEBUG,
+    MESSAGE_TYPE_COUNT,
+} MessageType;
 
-/**
- * \brief Initializes and allocates any resources necessary for the message printer.
- * \param [in] impl Message printer.
- * \return 0 upon success.
- */
-typedef int (*msg_printer_open_t)(void* impl);
+struct MessagePrinter;
 
-/**
- * \brief Deletes, clean up resources used by the message printer.
- * \param [in] impl Message printer.
- * \return 0 upon success.
- */
-typedef int (*msg_printer_close_t)(void* impl);
+/// Initializes and allocates any resources necessary for the message printer.
+/// \param [in out] printer Message printer.
+/// \return true if the message printer was successfully opened.
+/// \return false if an error occured.
+typedef bool (*MessagePrinterOpen)(struct MessagePrinter* printer);
 
-/**
- * \brief Prints message.
- * \param [in] impl Message printer.
- * \param [in] type      Message type.
- * \param [in] file      Name of the file where the print message command was issued.
- * \param [in] line      Line number in the file where the print message command was issued.
- * \param [in] function  Function where the print message command was issued.
- * \param [in] format    Format string.
- * \param [in] args      Argument lists.
- * \return 0 upon success.
- */
-typedef int (*msg_printer_output_t)(void* impl, msg_type_t type, const char* file, size_t line, const char* function, const char* format, va_list args);
+/// Releases resources used by the message printer.
+/// \param [in] printer Message printer.
+/// \return true if the resources used by the message printer were successfully released.
+/// \return false if an error occured.
+typedef bool (*MessagePrinterClose)(struct MessagePrinter* printer);
 
-/**
- * \brief
- */
-typedef struct msg_printer_t_ {
-    msg_printer_open_t open;
-    msg_printer_close_t close;
-    msg_printer_output_t output;
-    struct msg_printer_t_* next;
-} msg_printer_t;
+/// \brief Prints message.
+/// \param [in] printer  Message printer.
+/// \param [in] type     Message type.
+/// \param [in] file     Name of the file where the print message command was issued.
+/// \param [in] line     Line number in the file where the print message command was issued.
+/// \param [in] function Function where the print message command was issued.
+/// \param [in] format   Format string.
+/// \param [in] args     Argument lists.
+/// \return true if the message was successfully formatted and printed.
+/// \return false if an error occured.
+typedef bool (*MessagePrinterOutput)(struct MessagePrinter* printer, MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args);
 
-#define ERROR_MSG(format, ...) print_msg(MSG_TYPE_ERROR, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+/// Message printer implementation.
+typedef struct MessagePrinter {
+    MessagePrinterOpen open;
+    MessagePrinterClose close;
+    MessagePrinterOutput output;
+    struct MessagePrinter* next;
+} MessagePrinter;
 
-#define WARNING_MSG(format, ...) print_msg(MSG_TYPE_WARNING, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#define ERROR_MSG(format, ...) message_print(MESSAGE_TYPE_ERROR, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
 
-#define INFO_MSG(format, ...) print_msg(MSG_TYPE_INFO, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#define WARNING_MSG(format, ...) message_print(MESSAGE_TYPE_WARNING, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
 
-/**
- * Setup global message printer list.
- */
-void msg_printer_init();
-/**
- * Releases the resources used by message printers.
- */
-void msg_printer_destroy();
-/**
- * Adds a new message printer to the global list.
- * \param [in] printer Message printer to be added to the list.
- * \return 0 upon success.
- */
-int msg_printer_add(msg_printer_t *printer);
-/**
- * Dispatch messages to printers.
- * \param type      Message type.
- * \param file      Name of the file where the print message command was issued.
- * \param line      Line number in the file where the print message command was issued.
- * \param function  Function where the print message command was issued.
- * \param format    Format string.
- */
-void print_msg(msg_type_t type, const char* file, size_t line, const char* function, const char* format, ...);
+#define INFO_MSG(format, ...) message_print(MESSAGE_TYPE_INFO, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+
+#if NDEBUG
+#    define DEBUG_MSG(format, ...)
+#else
+#    define DEBUG_MSG(format, ...) message_print(MESSAGE_TYPE_DEBUG, __FILE__, __LINE__, __FUNCTION__, format, ##__VA_ARGS__)
+#endif
+
+/// Setup global message printer list.
+void message_printer_init();
+/// Releases resources used by message printers.
+void message_printer_destroy();
+
+/// Opens and adds a new message printer to the global list.
+/// \param [in] printer Message printer to be added to the list.
+/// \return true if the message printer was successfully added to the list.
+/// \return false if the message printer failed to open and could not be added to the message printer list.
+bool message_printer_add(MessagePrinter *printer);
+
+/// Dispatch message to printers.
+/// \param type      Message type.
+/// \param file      Name of the file where the print message command was issued.
+/// \param line      Line number in the file where the print message command was issued.
+/// \param function  Function where the print message command was issued.
+/// \param format    Format string.
+void message_print(MessageType type, const char* file, size_t line, const char* function, const char* format, ...);
+
+/// @}
 
 #endif // ETRIPATOR_MESSAGE_H

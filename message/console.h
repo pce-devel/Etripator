@@ -38,17 +38,9 @@
 
 #include "../message.h"
 
-typedef struct {
-    msg_printer_t super;
-    int use_escape_code; 
-} console_msg_printer_t;
-
-/**
- * \brief Setups console message writer.
- * \param [in] printer Console message printer.
- * \return 0 upon success.
- */
-int console_msg_printer_init(console_msg_printer_t *printer);
+/// Setups file message writer.
+/// \return true always.
+bool console_message_printer_init();
 
 #endif // ETRIPATOR_MESSAGE_FILE_H
 

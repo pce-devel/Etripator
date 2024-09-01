@@ -36,95 +36,86 @@
 #include "../config.h"
 #include "console.h"
 
-/**
- * \brief Tests if the console has support for colors and other things.
- * \param [in] impl Console message printer.
- * \return 0 upon success.
- */
-static int console_msg_printer_open(void* impl) {
-    console_msg_printer_t* printer = (console_msg_printer_t*)impl;
-    printer->use_escape_code = isatty(fileno(stdout)) ? 1 : 0;
-    if(!printer->use_escape_code) {
-        fprintf(stderr, "Escape code disabled.\n");
-    }
-    return 0;
+static bool g_use_escape_code = false;
+
+/// Tests if the console has support for colors and other things.
+/// \param [in] printer Console message printer.
+/// \return true always.
+static bool console_message_printer_open(MessagePrinter* printer __attribute__((unused))) {
+    g_use_escape_code = isatty(fileno(stdout)) ? true : false;
+    return true;
 }
 
-/**
- * \brief Closes console msg printer.
- * \param [in] impl Console message printer.
- * \return 0 upon success.
- */
-static int console_msg_printer_close(void* impl) {
-    (void)impl; // Unused atm.
-    return 0;
+/// Do nothing.
+/// \param [in] printer Message printer.
+/// \return true always.
+static bool console_message_printer_close(MessagePrinter *printer __attribute__((unused))) {
+    return true;
 }
 
-/**
- * \brief Prints message to console.
- * \param userData  User data.
- * \param [in] impl Console message printer.
- * \param [in] type      Message type.
- * \param [in] file      Name of the file where the print message command was issued.
- * \param [in] line      Line number in the file where the print message command was issued.
- * \param [in] function  Function where the print message command was issued.
- * \param [in] format    Format string.
- * \param [in] args      Argument lists.
- * \return 0 upon success.
- */
-static int console_msg_printer_output(void* impl, msg_type_t type, const char* file, size_t line, const char* function, const char* format, va_list args) {
-    static const char *msg_type_name[] = {
+/// Prints message to console.
+/// \param [in] printer  Console message printer.
+/// \param [in] type     Message type.
+/// \param [in] file     Name of the file where the print message command was issued.
+/// \param [in] line     Line number in the file where the print message command was issued.
+/// \param [in] function Function where the print message command was issued.
+/// \param [in] format   Format string.
+/// \param [in] args     Argument lists.
+/// \return true upon success.
+static bool console_message_printer_output(MessagePrinter *printer, MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    static const char *message_type_name[] = {
         "[Error]",
         "[Warning]",
         "[Info]"
     };
-    static const char *msg_type_prefix[] = {
+    static const char *message_type_prefix[] = {
         "\x1b[1;31m",
         "\x1b[1;33m",
         "\x1b[1;32m"
     };
 
-    int ret = 1;
-    if(!impl) {
+    bool ret = true;
+    if(printer == NULL) {
         fprintf(stderr, "Invalid console logger.\n");
+        ret = false;
+    } else if(g_use_escape_code) {
+        fprintf(stderr, "%s%s\x1b[0m %s:%zd \x1b[0;33m %s \x1b[1;37m : "
+                      , message_type_prefix[type]
+                      , message_type_name[type]
+                      , file
+                      , line
+                      , function
+        );
     } else {
-        console_msg_printer_t* printer = (console_msg_printer_t*)impl;
-        if(printer->use_escape_code) {
-            fprintf(stderr, "%s%s\x1b[0m %s:%zd \x1b[0;33m %s \x1b[1;37m : "
-                          , msg_type_prefix[type]
-                          , msg_type_name[type]
-                          , file
-                          , line
-                          , function
-            );
-        } else {
-            fprintf(stderr, "%s %s:%zd %s : "
-                          , msg_type_name[type]
-                          , file
-                          , line
-                          , function
-            );
-        }
-
-        vfprintf(stderr, format, args);
-    
-        if(printer->use_escape_code) {
-            fprintf(stderr, "\x1b[0m\n");
-        } else {
-            fputc('\n', stderr);
-        }
-        fflush(stderr);
-        ret = 0;
+        fprintf(stderr, "%s %s:%zd %s : "
+                      , message_type_name[type]
+                      , file
+                      , line
+                      , function
+        );
     }
+
+    vfprintf(stderr, format, args);
+    
+    if(g_use_escape_code) {
+        fprintf(stderr, "\x1b[0m\n");
+    } else {
+        fputc('\n', stderr);
+    }
+    fflush(stderr);
     return ret;
 }
 
+static MessagePrinter g_console_message_printer = {
+    .open   = console_message_printer_open,
+    .close  = console_message_printer_close,
+    .output = console_message_printer_output,
+    .next   = NULL,
+};
+
 /* Setups console message writer. */
-int console_msg_printer_init(console_msg_printer_t *printer) {
-    printer->super.open   = console_msg_printer_open;
-    printer->super.close  = console_msg_printer_close;
-    printer->super.output = console_msg_printer_output; 
-    printer->use_escape_code = 0;
-    return 0;
+bool console_message_printer_init() {
+    g_use_escape_code = false;
+    return message_printer_add(&g_console_message_printer);
 }
 
