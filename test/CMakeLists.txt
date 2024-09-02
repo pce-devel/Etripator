@@ -29,6 +29,14 @@ function(add_unit_test)
 endfunction()
 
 add_unit_test(
+    NAME message
+    SOURCES 
+        message.c 
+    LIBRARIES cwalk
+    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+)
+
+add_unit_test(
     NAME memory
     SOURCES 
         memory.c 

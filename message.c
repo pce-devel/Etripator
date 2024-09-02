@@ -33,7 +33,6 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "config.h"
 #include "message.h"
 
 #include <cwalk.h>
@@ -61,9 +60,10 @@ bool message_printer_add(MessagePrinter *printer) {
     bool ret = false;
     if((printer != NULL) && (printer->open != NULL)) {
         ret = printer->open(printer);
-        printer->next = g_message_printer_head;
-        g_message_printer_head = printer;
-        ret = true;
+        if(ret) {
+            printer->next = g_message_printer_head;
+            g_message_printer_head = printer;
+        }
     }
     return ret;
 }
