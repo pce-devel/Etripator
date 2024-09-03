@@ -39,22 +39,19 @@
 static bool g_use_escape_code = false;
 
 /// Tests if the console has support for colors and other things.
-/// \param [in] printer Console message printer.
 /// \return true always.
-static bool console_message_printer_open(MessagePrinter* printer __attribute__((unused))) {
+static bool console_message_printer_open() {
     g_use_escape_code = isatty(fileno(stdout)) ? true : false;
     return true;
 }
 
 /// Do nothing.
-/// \param [in] printer Message printer.
 /// \return true always.
-static bool console_message_printer_close(MessagePrinter *printer __attribute__((unused))) {
+static bool console_message_printer_close() {
     return true;
 }
 
 /// Prints message to console.
-/// \param [in] printer  Console message printer.
 /// \param [in] type     Message type.
 /// \param [in] file     Name of the file where the print message command was issued.
 /// \param [in] line     Line number in the file where the print message command was issued.
@@ -62,7 +59,7 @@ static bool console_message_printer_close(MessagePrinter *printer __attribute__(
 /// \param [in] format   Format string.
 /// \param [in] args     Argument lists.
 /// \return true upon success.
-static bool console_message_printer_output(MessagePrinter *printer, MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+static bool console_message_printer_output(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
     static const char *message_type_name[] = {
         "[Error]",
         "[Warning]",
@@ -75,10 +72,7 @@ static bool console_message_printer_output(MessagePrinter *printer, MessageType 
     };
 
     bool ret = true;
-    if(printer == NULL) {
-        fprintf(stderr, "Invalid console logger.\n");
-        ret = false;
-    } else if(g_use_escape_code) {
+    if(g_use_escape_code) {
         fprintf(stderr, "%s%s\x1b[0m %s:%zd \x1b[0;33m %s \x1b[1;37m : "
                       , message_type_prefix[type]
                       , message_type_name[type]
