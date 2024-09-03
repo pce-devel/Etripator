@@ -53,19 +53,16 @@ typedef enum {
 struct MessagePrinter;
 
 /// Initializes and allocates any resources necessary for the message printer.
-/// \param [in out] printer Message printer.
 /// \return true if the message printer was successfully opened.
 /// \return false if an error occured.
-typedef bool (*MessagePrinterOpen)(struct MessagePrinter* printer);
+typedef bool (*MessagePrinterOpen)();
 
 /// Releases resources used by the message printer.
-/// \param [in] printer Message printer.
 /// \return true if the resources used by the message printer were successfully released.
 /// \return false if an error occured.
-typedef bool (*MessagePrinterClose)(struct MessagePrinter* printer);
+typedef bool (*MessagePrinterClose)();
 
 /// \brief Prints message.
-/// \param [in] printer  Message printer.
 /// \param [in] type     Message type.
 /// \param [in] file     Name of the file where the print message command was issued.
 /// \param [in] line     Line number in the file where the print message command was issued.
@@ -74,7 +71,7 @@ typedef bool (*MessagePrinterClose)(struct MessagePrinter* printer);
 /// \param [in] args     Argument lists.
 /// \return true if the message was successfully formatted and printed.
 /// \return false if an error occured.
-typedef bool (*MessagePrinterOutput)(struct MessagePrinter* printer, MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args);
+typedef bool (*MessagePrinterOutput)(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args);
 
 /// Message printer implementation.
 typedef struct MessagePrinter {

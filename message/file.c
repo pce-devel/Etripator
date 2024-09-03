@@ -39,35 +39,28 @@
 static const char* g_log_filename = "etripator.log";
 
 /// Check if the log file can be opened and written to.
-/// \param [in] printer Message printer implementation.
 /// \return true if the log file was successfully opened.
 /// \return false if an error occured.
-static bool file_message_printer_open(MessagePrinter* printer) {
+static bool file_message_printer_open() {
     bool ret = false;
-    if(printer == NULL) {       
-        fprintf(stderr, "Invalid file message printer");
+    int fd = open(g_log_filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+    if(fd < 0) {
+        fprintf(stderr, "Failed to open log file %s: %s\n", g_log_filename, strerror(errno));
+    } else if(close(fd) < 0) {
+        fprintf(stderr, "Failed to close log file %s: %s\n", g_log_filename, strerror(errno));
     } else {
-        int fd = open(g_log_filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-        if(fd < 0) {
-            fprintf(stderr, "Failed to open log file %s: %s\n", g_log_filename, strerror(errno));
-        } else if(close(fd) < 0) {
-            fprintf(stderr, "Failed to close log file %s: %s\n", g_log_filename, strerror(errno));
-        } else {
-            ret = true;
-        }
+        ret = true;
     }
     return ret;
 }
 
 /// Do nothing.
-/// \param [in] printer Message printer implementation.
 /// \return true always.
-static bool file_message_printer_close(MessagePrinter *printer __attribute__((unused))) {
+static bool file_message_printer_close() {
     return true;
 }
 
 /// Prints message to file.
-/// \param [in] printer  Msg printer implementation.
 /// \param [in] type     Message type.
 /// \param [in] file     Name of the file where the print message command was issued.
 /// \param [in] line     Line number in the file where the print message command was issued.
@@ -76,7 +69,7 @@ static bool file_message_printer_close(MessagePrinter *printer __attribute__((un
 /// \param [in] args     Argument lists.
 /// \return true if the message was successfully written to the log file.
 /// \return false if an error occured.
-static bool file_message_printer_output(MessagePrinter* printer, MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+static bool file_message_printer_output(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
     static const char *message_type_name[MESSAGE_TYPE_COUNT] = {
         "[Error]",
         "[Warning]",
@@ -84,24 +77,20 @@ static bool file_message_printer_output(MessagePrinter* printer, MessageType typ
         "[Debug]"
     };
     bool ret = false;
-    if(printer == NULL) {
-        fprintf(stderr, "Invalid file logger.\n");
+    FILE *out = fopen(g_log_filename, "a+");
+    if(out == NULL) {
+        fprintf(stderr, "Failed to open log file %s: %s\n", g_log_filename, strerror(errno));   
     } else {
-        FILE *out = fopen(g_log_filename, "a+");
-        if(out == NULL) {
-            fprintf(stderr, "Failed to open log file %s: %s\n", g_log_filename, strerror(errno));   
+        fprintf(out, "%s %s:%zd %s : ", message_type_name[type], file, line, function);
+        vfprintf(out, format, args);
+        fputc('\n', out);
+        fflush(out);
+        if(ferror(out)) {
+            fprintf(stderr, "Failed to output log to %s: %s\n", g_log_filename, strerror(errno));
         } else {
-            fprintf(out, "%s %s:%zd %s : ", message_type_name[type], file, line, function);
-            vfprintf(out, format, args);
-            fputc('\n', out);
-            fflush(out);
-            if(ferror(out)) {
-                fprintf(stderr, "Failed to output log to %s: %s\n", g_log_filename, strerror(errno));
-            } else {
-                ret = true;
-            }
-            fclose(out);
+            ret = true;
         }
+        fclose(out);
     }
     return ret;
 }

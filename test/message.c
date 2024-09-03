@@ -101,11 +101,124 @@ MunitResult message_add_test(const MunitParameter params[] __attribute__((unused
     return MUNIT_OK;
 }
 
+static int dummy_close_call_count;
+
+static bool dummy_close(MessagePrinter *printer __attribute__((unused))) {
+    dummy_close_call_count++;
+    return true;
+}
+
+MunitResult message_destroy_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    message_printer_init();
+    munit_assert_ptr_null(g_message_printer_head);
+    
+    MessagePrinter printer[4] = {
+        [0] = { .open = dummy_open_0, .close = dummy_close },
+        [1] = { .open = dummy_open_0, .close = dummy_close  },
+        [2] = { .open = dummy_open_0, .close = dummy_close  },
+        [3] = { .open = dummy_open_0, .close = dummy_close  },
+    };
+
+    dummy_open_0_call_count = 0;
+    dummy_close_call_count = 0;
+
+    message_printer_init();
+    munit_assert_true(message_printer_add(&printer[0]));
+    munit_assert_true(message_printer_add(&printer[1]));
+    munit_assert_true(message_printer_add(&printer[2]));
+    munit_assert_true(message_printer_add(&printer[3]));
+
+    munit_assert_ptr_equal(g_message_printer_head, &printer[3]);
+
+    munit_assert_uint(dummy_open_0_call_count, ==, 4);
+    munit_assert_uint(dummy_close_call_count, ==, 0);
+
+    message_printer_destroy();
+    munit_assert_uint(dummy_close_call_count, ==, 4);
+    munit_assert_null(g_message_printer_head);
+
+    return MUNIT_OK;
+}
+
+static unsigned int dummy_print_index = 0;
+static size_t dummy_print_line = 0;
+static unsigned int dummy_print_history[4] = {-1};
+
+static bool dummy_print_0(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    dummy_print_history[dummy_print_index++] = 0;
+    munit_assert_uint(type, ==, MESSAGE_TYPE_INFO);
+    munit_assert_size(line, ==, dummy_print_line);
+    return true;
+}
+static bool dummy_print_1(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    dummy_print_history[dummy_print_index++] = 1;
+    munit_assert_uint(type, ==, MESSAGE_TYPE_INFO);
+    munit_assert_size(line, ==, dummy_print_line);
+    return true;
+}
+static bool dummy_print_2(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    dummy_print_history[dummy_print_index++] = 2;
+    munit_assert_uint(type, ==, MESSAGE_TYPE_INFO);
+    munit_assert_size(line, ==, dummy_print_line);
+    return true;
+}
+static bool dummy_print_3(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    dummy_print_history[dummy_print_index++] = 3;
+    munit_assert_uint(type, ==, MESSAGE_TYPE_INFO);
+    munit_assert_size(line, ==, dummy_print_line);
+    return true;
+}
+
+MunitResult message_print_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    message_printer_init();
+    munit_assert_ptr_null(g_message_printer_head);
+    
+    MessagePrinter printer[4] = {
+        [0] = { .open = dummy_open_0, .close = dummy_close, .output = dummy_print_0 },
+        [1] = { .open = dummy_open_0, .close = dummy_close, .output = dummy_print_1 },
+        [2] = { .open = dummy_open_0, .close = dummy_close, .output = dummy_print_2 },
+        [3] = { .open = dummy_open_0, .close = dummy_close, .output = dummy_print_3 },
+    };
+
+    dummy_open_0_call_count = 0;
+    dummy_close_call_count = 0;
+    dummy_print_index = 0;
+
+    for(unsigned int i=0; i<4; i++) {
+        dummy_print_history[i] = -1;
+    }
+
+    message_printer_init();
+    munit_assert_true(message_printer_add(&printer[0]));
+    munit_assert_true(message_printer_add(&printer[1]));
+    munit_assert_true(message_printer_add(&printer[2]));
+    munit_assert_true(message_printer_add(&printer[3]));
+
+    munit_assert_ptr_equal(g_message_printer_head, &printer[3]);
+
+    munit_assert_uint(dummy_open_0_call_count, ==, 4);
+    munit_assert_uint(dummy_close_call_count, ==, 0);
+
+    dummy_print_line = __LINE__; INFO_MSG("test");
+    munit_assert_uint(dummy_print_index, ==, 4);
+    munit_assert_uint(dummy_print_history[0], ==, 3);
+    munit_assert_uint(dummy_print_history[1], ==, 2);
+    munit_assert_uint(dummy_print_history[2], ==, 1);
+    munit_assert_uint(dummy_print_history[3], ==, 0);
+
+    message_printer_destroy();
+    munit_assert_uint(dummy_close_call_count, ==, 4);
+    munit_assert_null(g_message_printer_head);
+
+    return MUNIT_OK;
+}
+
+
 static MunitTest message_tests[] = {
     { "/init", message_init_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { "/add", message_add_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    // [todo] destroy
-    // [todo] print
+    { "/destroy", message_destroy_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/print", message_print_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 

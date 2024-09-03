@@ -49,7 +49,7 @@ void message_printer_init() {
 void message_printer_destroy() {
     for(MessagePrinter *it = g_message_printer_head; it != NULL; it = it->next) {
         if(it->close) {
-            it->close(it);
+            it->close();
         }
     }
     g_message_printer_head = NULL;
@@ -59,7 +59,7 @@ void message_printer_destroy() {
 bool message_printer_add(MessagePrinter *printer) {
     bool ret = false;
     if((printer != NULL) && (printer->open != NULL)) {
-        ret = printer->open(printer);
+        ret = printer->open();
         if(ret) {
             printer->next = g_message_printer_head;
             g_message_printer_head = printer;
@@ -82,7 +82,7 @@ void message_print(MessageType type, const char* file, size_t line, const char* 
         if(it->output != NULL) {
             va_list args; 
             va_start(args, format);
-            (void)it->output(it, type, filename, line, function, format, args);
+            (void)it->output(type, filename, line, function, format, args);
             va_end(args);
         }
     }
