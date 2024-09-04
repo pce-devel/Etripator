@@ -33,56 +33,84 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "memorymap.h"
+#include "memory_map.h"
 #include "message.h"
-/* Initializes memory map.  */
-int memmap_init(memmap_t *map) {
-    int i, ret = 0;
-    
-    memset(map, 0, sizeof(memmap_t)); // [todo] function
 
+// Resets memory map.
+static void memory_map_clear(MemoryMap *map) {
+    for(unsigned int i=0; i<PCE_MEMORY_COUNT; i++) {
+        map->memory[i].length = 0;
+        map->memory[i].data = NULL;
+    }
+    for(unsigned int i=0; i<PCE_MPR_COUNT; i++) {
+        map->mpr[i] = 0xFFU;
+    }
+    for(unsigned int i=0; i<PCE_PAGE_COUNT; i++) {
+        map->page[i].id = PCE_MEMORY_NONE;
+        map->page[i].bank = 0;
+    }  
+}
 
-    /* Allocate main (or work) RAM */
-    if(!memory_create(&map->mem[PCE_MEM_BASE_RAM], 8192)) {
-        ERROR_MSG("Failed to allocate main memory!\n");
+// Initializes memory map.
+bool memory_map_init(MemoryMap *map) {
+    bool ret = false;
+
+    memory_map_clear(map);
+
+    // Allocate main (or work) RAM.
+    if(!memory_create(&map->memory[PCE_MEMORY_BASE_RAM], PCE_BANK_SIZE)) {
+        ERROR_MSG("Failed to allocate main memory!");
     } else {
-        /* Main RAM is mapped to pages 0xf8-0xfb (included). */
-        /* Pages 0xf9 to 0xfb mirror page 0xf8. */
-        for(i=0xf8; i<=0xfb; i++) {
-            map->page[i] = &(map->mem[PCE_MEM_BASE_RAM].data[0]);
+        // Main RAM is mapped to pages 0xF8 to 0xFB (included).
+        // Pages 0xF9 to 0xFB mirror page 0xF8. */
+        for(unsigned int i=0xf8; i<=0xfb; i++) {
+            map->page[i].id = PCE_MEMORY_BASE_RAM;
+            map->page[i].bank = 0;
         }
         
-        /* ROM and syscard RAM will be initialized later. */
-
-        /* Clear mprs. */
-        memset(map->mpr, 0, 8);
-        map->mpr[0] = 0xff;
-        map->mpr[1] = 0xf8;
-    
-        ret = 1;
+        // ROM and syscard RAM will be initialized later.
+        ret = true;
     }
     return ret;
 }
-/* Releases resources used by the memory map. */
-void memmap_destroy(memmap_t *map) {
-    int i;
-    for(i=0; i<PCE_MEM_COUNT; i++) {
-        memory_destroy(&map->mem[i]);
+
+// Releases resources used by the memory map.
+void memory_map_destroy(MemoryMap *map) {
+    assert(map != NULL);
+    for(unsigned i=0; i<PCE_MEMORY_COUNT; i++) {
+        memory_destroy(&map->memory[i]);
     }
-    memset(map, 0, sizeof(memmap_t));
-}
-/* Get the memory page associated to a logical address. */
-uint8_t memmap_page(memmap_t* map, uint16_t logical) {
-    uint8_t id = (logical >> 13) & 0x07;
-    return map->mpr[id];
-}
-/* Reads a single byte from memory. */
-uint8_t memmap_read(memmap_t *map, size_t logical) {
-    uint8_t i = memmap_page(map, (uint16_t)logical);
-    return (map->page[i]) ? map->page[i][logical & 0x1fff] : 0xff;
-}
-/* Update mprs. */
-void memmap_mpr(memmap_t *map, const uint8_t *mpr) {
-    memcpy(map->mpr, mpr, 8);
+    memory_map_clear(map);
 }
 
+// Get the memory page associated to a logical address.
+uint8_t memory_map_page(MemoryMap* map, uint16_t logical) {
+    assert(map != NULL);
+    uint8_t id = (logical >> 13) & 0x07U;
+    return map->mpr[id];
+}
+
+// Reads a single byte from memory. 
+uint8_t memory_map_read(MemoryMap *map, size_t logical) {
+    assert(map != NULL);
+    const uint8_t id = memory_map_page(map, (uint16_t)logical);
+    const Page *page = &map->page[id];
+    
+    uint8_t ret = 0xFFU;
+    if(page->id != PCE_MEMORY_NONE) {
+        const size_t offset = (logical & 0x1FFFU) + (page->bank * PCE_BANK_SIZE);
+        const Memory *mem = &map->memory[page->id];
+        if(offset < mem->length) {
+            ret = mem->data[offset];
+        }
+    }
+    return ret;
+}
+
+// Update mprs.
+void memory_map_mpr(MemoryMap *map, const uint8_t mpr[PCE_MPR_COUNT]) {
+    assert(map != NULL);
+    for(unsigned int i=0; i<PCE_MPR_COUNT; i++) {
+        map->mpr[i] = mpr[i];
+    }
+}

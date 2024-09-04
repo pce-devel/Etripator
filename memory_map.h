@@ -38,56 +38,60 @@
 
 #include "memory.h"
 
-/**
- * PC Engine memory 
- */
+/// PC Engine memory blocks.
 enum {
-    PCE_MEM_ROM = 0,
-    PCE_MEM_BASE_RAM,
-    PCE_MEM_CD_RAM,
-    PCE_MEM_SYSCARD_RAM,
-    PCE_MEM_COUNT
+    PCE_MEMORY_NONE = -1,
+    PCE_MEMORY_ROM = 0,
+    PCE_MEMORY_BASE_RAM,
+    PCE_MEMORY_CD_RAM,
+    PCE_MEMORY_SYSCARD_RAM,
+    PCE_MEMORY_COUNT
 };
 
-/**
- * PC Engine memory map.
- */
-typedef struct {
-    Memory mem[PCE_MEM_COUNT];
-    uint8_t *page[0x100];
-    uint8_t mpr[8];
-} memmap_t;
+#define PCE_PAGE_COUNT 0x100U
 
-/**
- * Initializes memory map.
- * \param map Memory map.
- * \return 1 upon success, 0 if an error occured.
- */
-int memmap_init(memmap_t *map);
-/**
- * Releases resources used by the memory map.
- * \param map Memory map.
- */
-void memmap_destroy(memmap_t *map);
-/**
- * Get the memory page associated to a logical address.
- * \param map Memory map.
- * \param logical Logical address.
- * \return Memory page.
- */
-uint8_t memmap_page(memmap_t* map, uint16_t logical);
-/**
- * Reads a single byte from memory.
- * \param [in] map     Memory map.
- * \param [in] logical Logical address.
- * \return Byte read.
- */
-uint8_t memmap_read(memmap_t *map, size_t logical);
-/**
- * Update mprs.
- * \param [in][out] map Memory map.
- * \param [in]      mpr Memory page registers.
- */
-void memmap_mpr(memmap_t *map, const uint8_t *mpr);
+#define PCE_MPR_COUNT 8U
+
+#define PCE_BANK_SIZE 8192U
+
+/// PC Engine memory page description.
+typedef struct {
+    int id;         // name the PCE_MEMORY_* enum ?
+    size_t bank;
+} Page;
+
+/// PC Engine memory map.
+typedef struct {
+    Memory memory[PCE_MEMORY_COUNT];
+    Page page[PCE_PAGE_COUNT];
+    uint8_t mpr[PCE_MPR_COUNT];
+} MemoryMap;
+
+/// Initializes memory map.
+/// \param [in out] map Memory map.
+/// \return true 
+/// \return false
+bool memory_map_init(MemoryMap *map);
+
+/// Releases resources used by the memory map.
+/// \param [in out] map Memory map.
+void memory_map_destroy(MemoryMap *map);
+
+/// Get the memory page associated to a logical address.
+/// \param [in] map Memory map.
+/// \param [in] logical Logical address.
+/// \return Memory page.
+uint8_t memory_map_page(MemoryMap* map, uint16_t logical);
+
+/// Reads a single byte from memory.
+/// \param [in] map     Memory map.
+/// \param [in] logical Logical address.
+/// \return The value stored at the specified logical address.
+uint8_t memory_map_read(MemoryMap *map, size_t logical);
+
+/// Update the whole mprs list
+/// \param [in out] map Memory map.
+/// \param [in]     mpr Memory page registers.
+void memory_map_mpr(MemoryMap *map, const uint8_t mpr[PCE_MPR_COUNT]);
 
 #endif // ETRIPATOR_MEMORY_MAP_H

@@ -33,47 +33,56 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "memory.h"
-#include "message.h"
+#include <munit.h>
 
-// Creates a new memory block.
-bool memory_create(Memory *memory, size_t length) {
-    assert(memory != NULL);
+#include <message.h>
+#include <message/console.h>
 
-    bool ret = false;
-    if(length == 0) {
-        ERROR_MSG("Invalid length");
-    } else {
-        uint8_t *buffer = (uint8_t*)malloc(length);
-        if(buffer == NULL) {
-            ERROR_MSG("Unable to allocate %zu bytes: %s.", length, strerror(errno));
-        } else {
-            memory->data = buffer;
-            memory->length = length;
-            ret = true;
-        }
-    }
-    return ret;
+#include <memory_map.h>
+
+void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+    return NULL;
 }
 
-// Releases memory block resources.
-void memory_destroy(Memory *memory) {
-    assert(memory != NULL);
-    free(memory->data);
-    memory->data = NULL;
-    memory->length = 0;
+void tear_down(void* fixture __attribute__((unused))) {
 }
 
-// Fills a memory block with a given byte value.
-bool memory_fill(Memory *memory, uint8_t c) {
-    assert(memory != NULL);
-    bool ret = false;
-    if(memory->data != NULL) {
-        const size_t n = memory->length;
-        for(size_t i=0; i<n; i++) {
-            memory->data[i] = c;
-        }
-        ret = true;
-    }
+MunitResult memory_map_read_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    MemoryMap map = {0};
+
+    munit_assert_true(memory_map_init(&map));
+
+    map.mpr[1] = 0xF8U;
+
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0000] = 0xC5;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0100] = 0x7E;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x1000] = 0xA9;
+
+    munit_assert_uint8(memory_map_read(&map, 0x2000U), ==, 0xC5);
+    munit_assert_uint8(memory_map_read(&map, 0x2100U), ==, 0x7E);
+    munit_assert_uint8(memory_map_read(&map, 0x3000U), ==, 0xA9);
+
+    memory_map_destroy(&map);
+
+    return MUNIT_OK;
+}
+
+static MunitTest memory_map_tests[] = {
+    { "/read", memory_map_read_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
+};
+
+static const MunitSuite memory_map_suite = {
+    "Memory map test suite", memory_map_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
+};
+
+int main (int argc, char* const* argv) {
+    message_printer_init();    
+    console_message_printer_init();
+
+    int ret = munit_suite_main(&memory_map_suite, NULL, argc, argv);
+
+    message_printer_destroy();
+
     return ret;
 }
