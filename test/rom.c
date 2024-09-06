@@ -33,34 +33,59 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_CD_H
-#define ETRIPATOR_CD_H
+#include <munit.h>
 
-#include "config.h"
-#include "memory_map.h"
+#include <fff.h>
 
-#define PCE_CD_RAM_BANK_COUNT 8U
-#define PCE_SYSCARD_RAM_BANK_COUNT 24U
+#include <message.h>
+#include <message/console.h>
 
-#define PCE_CD_RAM_FIRST_PAGE 0x80U
-#define PCE_SYSCARD_RAM_FIRST_PAGE 0x68U
+#include <rom.h>
 
-/// Adds CD RAM to memory map.
-/// \param map Memory map.
-/// \return true if the CD RAM and SYSCARD RAM memory areas were successfully created.
-/// \return false if an error occured.
-bool cd_memory_map(MemoryMap *map);
+DEFINE_FFF_GLOBALS;
 
-/// Load CDROM data from file.
-/// \param [in]  filename    CDROM data filename.
-/// \param [in]  start       CDROM data offset.
-/// \param [in]  len         CDROM data length (in bytes).
-/// \param [in]  sector_size CD sector size.
-/// \param [in]  page        Memory page.
-/// \param [in]  offset      Memory page offset.
-/// \param [out] map         Memory map.
-/// \return true
-/// \return false
-int cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, MemoryMap* map);
+FAKE_VALUE_FUNC(FILE*, __wrap_fopen, const char*, const char*)
+FAKE_VALUE_FUNC(int, __wrap_fileno, FILE*)
+FAKE_VALUE_FUNC(int, __wrap_fstat, int, struct stat*)
+FAKE_VALUE_FUNC(int, __wrap_fseek, FILE*, long, int)
+FAKE_VALUE_FUNC(size_t, __wrap_fread, void*, size_t, size_t, FILE*)
+FAKE_VALUE_FUNC(int, __wrap_fclose, FILE*)
 
-#endif // ETRIPATOR_CD_H
+void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+    RESET_FAKE(__wrap_fopen);
+    RESET_FAKE(__wrap_fileno);
+    RESET_FAKE(__wrap_fstat);
+    RESET_FAKE(__wrap_fseek);
+    RESET_FAKE(__wrap_fread);
+    RESET_FAKE(__wrap_fclose);
+    
+    return NULL;
+}
+
+void tear_down(void* fixture __attribute__((unused))) {
+}
+
+MunitResult rom_load_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    // [todo]
+    return MUNIT_OK;
+}
+
+static MunitTest rom_tests[] = {
+    { "/load", rom_load_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
+};
+
+static const MunitSuite rom_suite = {
+    "ROM test suite", rom_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
+};
+
+int main (int argc, char* const* argv) {
+    message_printer_init();    
+    console_message_printer_init();
+
+    int ret = munit_suite_main(&rom_suite, NULL, argc, argv);
+
+    message_printer_destroy();
+
+    return ret;
+}

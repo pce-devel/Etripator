@@ -119,7 +119,7 @@ bool rom_load(const char* filename, MemoryMap* map) {
                 map->page[i].bank = i % (map->memory[PCE_MEMORY_ROM].length / PCE_BANK_SIZE);
             }
         }
-        ret = 1;
+        ret = true;
     }
     return ret;
 }

@@ -33,34 +33,61 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_CD_H
-#define ETRIPATOR_CD_H
+#include <munit.h>
 
-#include "config.h"
-#include "memory_map.h"
+#include <message.h>
+#include <message/console.h>
 
-#define PCE_CD_RAM_BANK_COUNT 8U
-#define PCE_SYSCARD_RAM_BANK_COUNT 24U
+#include <cd.h>
 
-#define PCE_CD_RAM_FIRST_PAGE 0x80U
-#define PCE_SYSCARD_RAM_FIRST_PAGE 0x68U
+void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+    return NULL;
+}
 
-/// Adds CD RAM to memory map.
-/// \param map Memory map.
-/// \return true if the CD RAM and SYSCARD RAM memory areas were successfully created.
-/// \return false if an error occured.
-bool cd_memory_map(MemoryMap *map);
+void tear_down(void* fixture __attribute__((unused))) {
+}
 
-/// Load CDROM data from file.
-/// \param [in]  filename    CDROM data filename.
-/// \param [in]  start       CDROM data offset.
-/// \param [in]  len         CDROM data length (in bytes).
-/// \param [in]  sector_size CD sector size.
-/// \param [in]  page        Memory page.
-/// \param [in]  offset      Memory page offset.
-/// \param [out] map         Memory map.
-/// \return true
-/// \return false
-int cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, MemoryMap* map);
+MunitResult cd_memory_map_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    MemoryMap map = {};
 
-#endif // ETRIPATOR_CD_H
+    munit_assert_true(memory_map_init(&map));
+    munit_assert_true(cd_memory_map(&map));
+
+    munit_assert_not_null(map.memory[PCE_MEMORY_CD_RAM].data);
+    munit_assert_size(map.memory[PCE_MEMORY_CD_RAM].length, ==, PCE_CD_RAM_BANK_COUNT*PCE_BANK_SIZE);
+    for(size_t i=0; i<PCE_CD_RAM_BANK_COUNT; i++) {
+        munit_assert_int(map.page[PCE_CD_RAM_FIRST_PAGE+i].id, ==, PCE_MEMORY_CD_RAM);
+        munit_assert_size(map.page[PCE_CD_RAM_FIRST_PAGE+i].bank, ==, i);
+    }
+
+    munit_assert_not_null(map.memory[PCE_MEMORY_SYSCARD_RAM].data);
+    munit_assert_size(map.memory[PCE_MEMORY_SYSCARD_RAM].length, ==, PCE_SYSCARD_RAM_BANK_COUNT*PCE_BANK_SIZE);
+    for(size_t i=0; i<PCE_SYSCARD_RAM_BANK_COUNT; i++) {
+        munit_assert_int(map.page[PCE_SYSCARD_RAM_FIRST_PAGE+i].id, ==, PCE_MEMORY_SYSCARD_RAM);
+        munit_assert_size(map.page[PCE_SYSCARD_RAM_FIRST_PAGE+i].bank, ==, i);
+    }
+
+    memory_map_destroy(&map);
+
+    return MUNIT_OK;
+}
+
+static MunitTest cd_tests[] = {
+    { "/memory_map", cd_memory_map_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
+};
+
+static const MunitSuite cd_suite = {
+    "ROM test suite", cd_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
+};
+
+int main (int argc, char* const* argv) {
+    message_printer_init();    
+    console_message_printer_init();
+
+    int ret = munit_suite_main(&cd_suite, NULL, argc, argv);
+
+    message_printer_destroy();
+
+    return ret;
+}
