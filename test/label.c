@@ -39,25 +39,17 @@
 #include "message/console.h"
 #include "message/file.h"
 
-void* setup(const MunitParameter params[], void* user_data) {
-    (void) params;
-    (void) user_data;
-    
-    console_msg_printer_t *printer = (console_msg_printer_t*)malloc(sizeof(console_msg_printer_t));
-    
-    msg_printer_init();    
-    console_msg_printer_init(printer);
-    msg_printer_add((msg_printer_t*)printer);
-
-    return (void*)printer;
+void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+    message_printer_init();    
+    console_message_printer_init();
+    return NULL;
 }
 
-void tear_down(void* fixture) {
-    msg_printer_destroy();
-    free(fixture);
+void tear_down(void* fixture __attribute__((unused))) {
+    message_printer_destroy();
 }
 
-MunitResult label_add_test(const MunitParameter params[], void* fixture) {
+MunitResult label_add_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
     (void)params;
     (void)fixture;
 
