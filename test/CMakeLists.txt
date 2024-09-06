@@ -89,3 +89,14 @@ add_unit_test(
     LIBRARIES cwalk
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
+
+add_unit_test(
+    NAME label
+    SOURCES 
+        label.c 
+        ${PROJECT_SOURCE_DIR}/label.c
+        ${PROJECT_SOURCE_DIR}/message.c
+        ${PROJECT_SOURCE_DIR}/message/console.c
+    LIBRARIES cwalk
+    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+)
