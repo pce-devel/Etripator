@@ -66,7 +66,6 @@ bool cd_memory_map(MemoryMap *map) {
     return ret;
 }
 
-#if 0
 /// Load CDROM data from file.
 bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, MemoryMap* map) {
     bool ret = false;
@@ -90,10 +89,14 @@ bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size,
             size_t current_page = physical >> 0x0D;
             size_t current_addr = physical & 0x1FFF;
 
+            size_t bank_offset = current_addr + (map->page[current_page].bank * PCE_BANK_SIZE);
+
+            // [todo] test that map->page[current_page].id != PCE_MEMORY_NONE
+
             ret = false;
-            if(fseek(in, (long int)file_offset, SEEK_SET)) {
+            if(fseek(in, (long int)file_offset, SEEK_SET) < 0) {
                 ERROR_MSG("Offset out of bound : %s", strerror(errno));
-            } else if(fread(map->page[current_page] + current_addr, 1, count, in) != count) {
+            } else if(fread(map->memory[map->page[current_page].id].data+bank_offset, 1, count, in) != count) {
                 ERROR_MSG("Failed to read %d bytes : %s", count, strerror(errno));
             } else {
                 ret = true;
@@ -109,4 +112,3 @@ bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size,
     }
     return ret;
 }
-#endif
