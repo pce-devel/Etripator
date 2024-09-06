@@ -36,42 +36,47 @@
 #include "cd.h"
 #include "message.h"
 
-/* Adds CD RAM to memory map. */
-int cd_memmap(memmap_t *map) {
-    int i, ret = 0;
-    /* Allocate CD RAM */
-    if(!memory_create(&map->mem[PCE_MEM_CD_RAM], 8 * 8192)) {
-        ERROR_MSG("Failed to allocate cd memory!\n");
-        memmap_destroy(map);
+/// Adds CD RAM to memory map.
+bool cd_memory_map(MemoryMap *map) {
+    int i;
+    bool ret = false;
+    // Allocate CD RAM 
+    if(!memory_create(&map->memory[PCE_MEMORY_CD_RAM], PCE_CD_RAM_BANK_COUNT * PCE_BANK_SIZE)) {
+        ERROR_MSG("Failed to allocate cd memory!");
+    // Allocate System Card RAM
+    } else if (!memory_create(&map->memory[PCE_MEMORY_SYSCARD_RAM], PCE_SYSCARD_RAM_BANK_COUNT * PCE_BANK_SIZE)) {
+        ERROR_MSG("Failed to allocate system card memory!");
     } else {
-        /* CD RAM is mapped to pages 0x80-0x88 (included). */
-        for (i = 0; i <= 8; i++) {
-            map->page[0x80 + i] = &map->mem[PCE_MEM_CD_RAM].data[i * 8192];
+        // CD RAM is mapped to pages 0x80-0x88 (included).
+        for (i = 0; i <= PCE_CD_RAM_BANK_COUNT; i++) {
+            map->page[PCE_CD_RAM_FIRST_PAGE + i].id = PCE_MEMORY_CD_RAM;
+            map->page[PCE_CD_RAM_FIRST_PAGE + i].bank = i;
         }
-        /* Allocate System Card RAM */
-        if (!memory_create(&map->mem[PCE_MEM_SYSCARD_RAM], 24 * 8192)) {
-            ERROR_MSG("Failed to allocate system card memory!\n");
-            memmap_destroy(map);
-        } else {
-            /* System Card RAM is mapped to pages 0x68-0x86. */
-            for (i = 0; i < 24; i++) {
-                map->page[0x68 + i] = &map->mem[PCE_MEM_SYSCARD_RAM].data[i * 8192];
-            }
-            ret = 1;
+        // System Card RAM is mapped to pages 0x68-0x86.
+        for (i = 0; i < PCE_SYSCARD_RAM_BANK_COUNT; i++) {
+            map->page[PCE_SYSCARD_RAM_FIRST_PAGE + i].id = PCE_MEMORY_SYSCARD_RAM;
+            map->page[PCE_SYSCARD_RAM_FIRST_PAGE + i].bank = i;
         }
+        ret = true;
+    }
+
+    if(ret == false) {
+        memory_map_destroy(map);
     }
     return ret;
 }
-/* Load CDROM data from file. */
-int cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, memmap_t* map) {
-    int ret = 0;
+
+#if 0
+/// Load CDROM data from file.
+bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, MemoryMap* map) {
+    bool ret = false;
     FILE *in = fopen(filename, "rb");
     if(in == NULL) {
         ERROR_MSG("Unable to open %s : %s", filename, strerror(errno));
     } else {
         size_t remaining = len;
         size_t physical = (offset & 0x1FFFU) | (page << 0x0D);
-        for(ret=1; ret && remaining; ) {
+        for(ret=true; ret && remaining; ) {
             size_t count = 2048 - (start % 2048);
             if(count > remaining) {
                 count = remaining;
@@ -85,13 +90,13 @@ int cd_load(const char* filename, size_t start, size_t len, size_t sector_size, 
             size_t current_page = physical >> 0x0D;
             size_t current_addr = physical & 0x1FFF;
 
-            ret = 0;
+            ret = false;
             if(fseek(in, (long int)file_offset, SEEK_SET)) {
                 ERROR_MSG("Offset out of bound : %s", strerror(errno));
             } else if(fread(map->page[current_page] + current_addr, 1, count, in) != count) {
                 ERROR_MSG("Failed to read %d bytes : %s", count, strerror(errno));
             } else {
-                ret = 1;
+                ret = true;
             }
             start += count;
             physical += count;
@@ -104,3 +109,4 @@ int cd_load(const char* filename, size_t start, size_t len, size_t sector_size, 
     }
     return ret;
 }
+#endif
