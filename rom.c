@@ -59,7 +59,7 @@ static bool rom_load_data(const char *filename, MemoryMap *map) {
             if (size & 0x200U) {
                 // Jump header
                 size &= ~0x200U;
-                if (fseek(in, 0x200U, SEEK_SET)) {
+                if (fseek(in, 0x200U, SEEK_SET) < 0) {
                     ERROR_MSG("Failed to jump rom header in %s: %s", filename, strerror(errno));
                 }
             }
@@ -76,7 +76,7 @@ static bool rom_load_data(const char *filename, MemoryMap *map) {
                 size_t count = (size < memory->length) ? size : memory->length;
                 size_t nread = fread(memory->data, 1, count, in);
                 if (nread != count) {
-                    ERROR_MSG("Failed to read ROM data from %s : %s", filename, strerror(errno));
+                    ERROR_MSG("Failed to read ROM data from %s (expected %zu, read %zu): %s", filename, count, nread, strerror(errno));
                     memory_destroy(memory);
                 } else {
                     ret = true;
@@ -90,6 +90,8 @@ static bool rom_load_data(const char *filename, MemoryMap *map) {
 
 // Load ROM from file and update memory map.
 bool rom_load(const char* filename, MemoryMap* map) {
+    assert(filename != NULL);
+    assert(map != NULL);
     FILE *in;
     bool ret = false;
     if(rom_load_data(filename, map)) {

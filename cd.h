@@ -61,6 +61,6 @@ bool cd_memory_map(MemoryMap *map);
 /// \param [out] map         Memory map.
 /// \return true
 /// \return false
-int cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, MemoryMap* map);
+bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, MemoryMap* map);
 
 #endif // ETRIPATOR_CD_H

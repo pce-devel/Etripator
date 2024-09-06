@@ -72,13 +72,15 @@ MunitResult cd_memory_map_test(const MunitParameter params[] __attribute__((unus
     return MUNIT_OK;
 }
 
+// [todo] cd_load
+
 static MunitTest cd_tests[] = {
     { "/memory_map", cd_memory_map_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
 static const MunitSuite cd_suite = {
-    "ROM test suite", cd_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
+    "CDROM test suite", cd_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
 };
 
 int main (int argc, char* const* argv) {
