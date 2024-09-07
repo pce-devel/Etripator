@@ -38,23 +38,20 @@
 
 #define LABEL_ARRAY_INC 16
 
-/**
- * Label repository.
- */
-struct label_repository_impl {
-    size_t size;            /**< Size of label repository */
-    size_t last;            /**< Last element in the repository */
-    label_t *labels;        /**< Labels */
+/// Label repository.
+struct LabelRepositoryImpl {
+    size_t size;            //< Size of label repository.
+    size_t last;            //< Last element in the repository.
+    Label *labels;        //< Labels.
 };
 
-/**
- * Get label index by its address.
- * \param [in]  repository  Label repository.
- * \param [in]  logical     Logical address.
- * \param [in]  page        Memory page.
- * \return label index or -1 if the label was not found.
- */
-static int label_repository_index(label_repository_t* repository, uint16_t logical, uint8_t page) {
+/// Get label index by its address.
+/// \param [in]  repository  Label repository.
+/// \param [in]  logical     Logical address.
+/// \param [in]  page        Memory page.
+/// \return label index.
+/// \return  -1 if the label was not found.
+static int label_repository_index(LabelRepository *repository, uint16_t logical, uint8_t page) {
     size_t i;
     for(i=0; i<repository->last; i++) {
         if( (repository->labels[i].page == page) &&
@@ -65,53 +62,45 @@ static int label_repository_index(label_repository_t* repository, uint16_t logic
     return -1;
 }
 
-/* Create label repository. */
-label_repository_t* label_repository_create() {
-    label_repository_t *repository;
-    repository = (label_repository_t*)malloc(sizeof(label_repository_t));
+// Create label repository.
+LabelRepository* label_repository_create() {
+    LabelRepository *repository = (LabelRepository*)malloc(sizeof(LabelRepository));
     if(repository == NULL) {
         ERROR_MSG("Failed to create label repository: %s", strerror(errno));
-        return NULL;
-    }
-    
-    repository->last  = 0;
-
-    repository->labels = NULL;
-
-    repository->size = LABEL_ARRAY_INC;
-    repository->labels = (label_t*)malloc(repository->size * sizeof(label_t));
-    if(repository->labels == NULL) {
-        ERROR_MSG("Failed to create label: %s", strerror(errno));
-        label_repository_destroy(repository);
-        free(repository);
-        return NULL;
-    }
-    
+    } else {
+        repository->last  = 0;
+        repository->labels = NULL;
+        repository->size = LABEL_ARRAY_INC;
+        repository->labels = (Label*)malloc(repository->size * sizeof(Label));
+        if(repository->labels == NULL) {
+            ERROR_MSG("Failed to create label: %s", strerror(errno));
+            label_repository_destroy(repository);
+            free(repository);
+            repository = NULL;
+        }
+    }    
     return repository;
 }
 
-/*  Delete label repository. */
-void label_repository_destroy(label_repository_t* repository) {
+//  Delete label repository.
+void label_repository_destroy(LabelRepository* repository) {
     repository->size  = 0;
     repository->last  = 0;
 
     if(repository->labels != NULL) {
-        for(int i=0; i<repository->last; i++) {
-            if(repository->labels[i].name) {
-                free(repository->labels[i].name);
-            }
-            if(repository->labels[i].description) {
-                free(repository->labels[i].description);
-            }
+        for(size_t i=0; i<repository->last; i++) {
+            free(repository->labels[i].name);
+            free(repository->labels[i].description);
         }
         free(repository->labels);
         repository->labels = NULL;
     }
 }
 
-/* Add label to repository. */
-int label_repository_add(label_repository_t* repository, const char* name, uint16_t logical, uint8_t page, const char *description) {
-    int ret = 1;
+// Add label to repository.
+bool label_repository_add(LabelRepository* repository, const char* name, uint16_t logical, uint8_t page, const char *description) {
+    assert(repository != NULL);
+    bool ret = true;
     int index = label_repository_index(repository, logical, page);
     if(index >= 0) {
 #if 0
@@ -125,12 +114,12 @@ int label_repository_add(label_repository_t* repository, const char* name, uint1
     } else {
         /* Expand arrays if necessary */
         if(repository->last >= repository->size) {
-            label_t *ptr;
+            Label *ptr;
             repository->size += LABEL_ARRAY_INC;                
-            ptr = (label_t*)realloc(repository->labels, repository->size * sizeof(label_t));
+            ptr = (Label*)realloc(repository->labels, repository->size * sizeof(Label));
             if(ptr == NULL) {
                 label_repository_destroy(repository);
-                ret = 0;
+                ret = false;
             } else {
                 repository->labels = ptr;
             }
@@ -150,35 +139,39 @@ int label_repository_add(label_repository_t* repository, const char* name, uint1
     return ret;
 }
 
-/* Find a label by its address. */
-int label_repository_find(label_repository_t* repository, uint16_t logical, uint8_t page, label_t *out) {
+// Find a label by its address.
+bool label_repository_find(LabelRepository* repository, uint16_t logical, uint8_t page, Label *out) {
     int index = label_repository_index(repository, logical, page);
-    if(index < 0) {
-        memset(out, 0, sizeof(label_t));
-        return 0;
-    }
-    memcpy(out, &repository->labels[index], sizeof(label_t));
-    return 1;
-}
-
-/* Get the number of labels stored in the repository. */
-int label_repository_size(label_repository_t* repository) {
-    return repository ? (int)repository->last : 0;
-}
-
-/* Retrieve the label at the specified index. */
-int label_repository_get(label_repository_t* repository, int index, label_t *out) {
-    if((repository != NULL) && ((index >= 0) && (index < (int)repository->last))) {    
-        memcpy(out, &repository->labels[index], sizeof(label_t));
-        return 1;
+    bool ret = (index >= 0);
+    if(ret) {
+        memcpy(out, &repository->labels[index], sizeof(Label));
     } else {
-        memset(out, 0, sizeof(label_t));
-        return 0;
+        memset(out, 0, sizeof(Label));
     }
+    return ret;
 }
-/* Delete labels */
-int label_repository_delete(label_repository_t* repository, uint16_t first, uint16_t end, uint8_t page) {
-    size_t i;        
+
+/// Get the number of labels stored in the repository.
+int label_repository_size(LabelRepository* repository) {
+    assert(repository != NULL);
+    return (int)repository->last;
+}
+
+// Retrieve the label at the specified index.
+bool label_repository_get(LabelRepository* repository, int index, Label *out) {
+    bool ret = false;
+    if((repository != NULL) && ((index >= 0) && (index < (int)repository->last))) {
+        ret = true;
+        memcpy(out, &repository->labels[index], sizeof(Label));
+    } else {
+        memset(out, 0, sizeof(Label));
+    }
+    return ret;
+}
+
+/// Delete labels.
+void label_repository_delete(LabelRepository* repository, uint16_t first, uint16_t end, uint8_t page) {
+    size_t i;
     for(i=0; i<repository->last; i++) {
         if( (repository->labels[i].page == page) &&
             (repository->labels[i].logical >= first) && 
@@ -191,10 +184,9 @@ int label_repository_delete(label_repository_t* repository, uint16_t first, uint
                 if(repository->labels[i].description) {
                     free(repository->labels[i].description);
                 }
-                memcpy(&repository->labels[i], &repository->labels[repository->last], sizeof(label_t));
+                memcpy(&repository->labels[i], &repository->labels[repository->last], sizeof(Label));
                 i--;
             }
         }
     }
-    return 1;
 }
