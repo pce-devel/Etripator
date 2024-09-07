@@ -100,3 +100,14 @@ add_unit_test(
     LIBRARIES cwalk
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
+
+add_unit_test(
+    NAME comment
+    SOURCES 
+        comment.c 
+        ${PROJECT_SOURCE_DIR}/comment.c
+        ${PROJECT_SOURCE_DIR}/message.c
+        ${PROJECT_SOURCE_DIR}/message/console.c
+    LIBRARIES cwalk
+    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+)

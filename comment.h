@@ -38,80 +38,67 @@
 
 #include "config.h"
 
-/**
- * Comment.
- */
+/// Comment.
 typedef struct {
-    uint16_t logical;   /**< Logical address */
-    uint8_t  page;      /**< Memory page */
-    char*    text;      /**< Comment text */
-} comment_t;
+    uint16_t logical; //< Logical address.
+    uint8_t  page;    //< Memory page.
+    char*    text;    //< Comment text.
+} Comment;
 
-typedef struct comment_repository_impl comment_repository_t;
+typedef struct CommentRepositoryImpl CommentRepository;
 
-/**
- * Create comment repository.
- * \return A pointer to a comment repository or NULL if an error occured.
- */
-comment_repository_t* comment_repository_create();
+/// Create comment repository.
+/// \return A pointer to a comment repository.
+/// \return NULL if an error occured.
+CommentRepository* comment_repository_create();
 
-/**
- * Release comment repository resources.
- * \param [in,out] repository Comment repository.
- */
-void comment_repository_destroy(comment_repository_t* repository);
+/// Release comment repository resources.
+/// \param [in,out] repository Comment repository.
+void comment_repository_destroy(CommentRepository* repository);
 
-/**
- * Add comment to repository.
- * \param [in,out] repository  Comment repository.
- * \param [in]     logical     Logical address.
- * \param [in]     page        Memory page.
- * \param [in]     text        Comment text.
- */
-int comment_repository_add(comment_repository_t* repository, uint16_t logical, uint8_t page, const char *text);
+/// Add comment to repository.
+/// \param [in,out] repository  Comment repository.
+/// \param [in]     logical     Logical address.
+/// \param [in]     page        Memory page.
+/// \param [in]     text        Comment text.
+/// \return true if the comment was successfully added to the repository.
+/// \return false if an error occured.
+bool comment_repository_add(CommentRepository* repository, uint16_t logical, uint8_t page, const char *text);
 
-/**
- * Find a comment by its address.
- * \param [in]  repository  Comment repository.
- * \param [in]  logical     Logical address.
- * \param [in]  page        Memory page.
- * \param [out] out         Associated comment (if any).
- * \return 1 if a comment was found, 0 otherwise.
- */
-int comment_repository_find(comment_repository_t* repository, uint16_t logical, uint8_t page, comment_t *out);
+/// Find a comment by its address.
+/// \param [in]  repository  Comment repository.
+/// \param [in]  logical     Logical address.
+/// \param [in]  page        Memory page.
+/// \param [out] out         Associated comment (if any).
+/// \return true if a comment was found.
+/// \return 0 otherwise.
+bool comment_repository_find(CommentRepository* repository, uint16_t logical, uint8_t page, Comment *out);
 
-/**
- * Get the number of comments stored in the repository.
- * \param [in] repository Comment repository.
- * \return Comment count.
- */
-int comment_repository_size(comment_repository_t* repository);
+/// Get the number of comments stored in the repository.
+/// \param [in] repository Comment repository.
+/// \return Comment count.
+int comment_repository_size(CommentRepository* repository);
 
-/**
- * Retrieve the comment at the specified index.
- * \param [in]  repository Comment repository.
- * \param [in]  index      Comment index.
- * \param [out] out        Comment (if any).
- * \return 1 if a comment exists for the specified index, 0 otherwise.
- */
-int comment_repository_get(comment_repository_t* repository, int index, comment_t *out);
+/// Retrieve the comment at the specified index.
+/// \param [in]  repository Comment repository.
+/// \param [in]  index      Comment index.
+/// \param [out] out        Comment (if any).
+/// \return true if a comment exists for the specified index.
+/// \return false otherwise.
+bool comment_repository_get(CommentRepository* repository, int index, Comment *out);
 
-/**
- * Delete comments.
- * \param [in]  repository  Comment repository.
- * \param [in]  first       Start of the logical address range.
- * \param [in]  end         End of the logical address range.
- * \param [in]  page        Memory page.
- */
-int comment_repository_delete(comment_repository_t* repository, uint16_t first, uint16_t end, uint8_t page);
+/// Delete comments.
+/// \param [in]  repository  Comment repository.
+/// \param [in]  first       Start of the logical address range.
+/// \param [in]  end         End of the logical address range.
+/// \param [in]  page        Memory page.
+void comment_repository_delete(CommentRepository* repository, uint16_t first, uint16_t end, uint8_t page);
 
-/**
- * Load comments from file.
- * \param [in]  filename Input filename.
- * \param [out] repository Comment repository.
- * \return 1 if the comments contained in the file was succesfully added to the repository.
- *         0 if an error occured.
- */
-int comment_repository_load(const char* filename, comment_repository_t* repository);
+/// Load comments from file.
+/// \param [in]  filename Input filename.
+/// \param [out] repository Comment repository.
+/// \return true if the comments contained in the file was succesfully added to the repository.
+/// \return false if an error occured.
+bool comment_repository_load(CommentRepository* repository, const char* filename);
 
 #endif // ETRIPATOR_COMMENT_H

@@ -37,118 +37,67 @@
 #include "comment.h"
 #include "message.h"
 #include "message/console.h"
-#include "message/file.h"
 
-void* setup(const MunitParameter params[], void* user_data) {
-    (void) params;
-    (void) user_data;
-    
-    console_msg_printer_t *printer = (console_msg_printer_t*)malloc(sizeof(console_msg_printer_t));
-    
-    msg_printer_init();    
-    console_msg_printer_init(printer);
-    msg_printer_add((msg_printer_t*)printer);
-
-    return (void*)printer;
+void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+    message_printer_init();    
+    console_message_printer_init();
+    return NULL;
 }
 
-void tear_down(void* fixture) {
-    msg_printer_destroy();
-    free(fixture);
+void tear_down(void* fixture __attribute__((unused))) {
+    message_printer_destroy();
 }
 
-MunitResult comment_add_test(const MunitParameter params[], void* fixture) {
-    (void)params;
-    (void)fixture;
-    
-    int ret;
-    comment_t comment;
-    comment_repository_t *repository;
-    
-    repository = comment_repository_create();
+MunitResult comment_add_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    Comment comment = {0};
+    CommentRepository *repository = comment_repository_create();
     munit_assert_not_null(repository);
 
-    ret = comment_repository_add(repository, 0x0002, 0x00, "comment #0");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_add(repository, 0x0001, 0x00, "comment #1");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_add(repository, 0x0003, 0x00, "comment #3");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_add(repository, 0x0001, 0x01, "comment #2");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_find(repository, 0x0001, 0x01, &comment);
-    munit_assert_int(ret, !=, 0);
+    munit_assert_true(comment_repository_add(repository, 0x0002, 0x00, "comment #0"));
+    munit_assert_true(comment_repository_add(repository, 0x0001, 0x00, "comment #1"));
+    munit_assert_true(comment_repository_add(repository, 0x0003, 0x00, "comment #3"));
+    munit_assert_true(comment_repository_add(repository, 0x0001, 0x01, "comment #2"));
+    
+    munit_assert_true(comment_repository_find(repository, 0x0001, 0x01, &comment));
     munit_assert_int(comment.logical, ==, 0x0001);
-    munit_assert_int(comment.page,  ==, 0x01);
+    munit_assert_int(comment.page, ==, 0x01);
     munit_assert_string_equal(comment.text, "comment #2");
 
-    ret = comment_repository_find(repository, 0x0001, 0x00, &comment);
-    munit_assert_int(ret, !=, 0);
+    munit_assert_true(comment_repository_find(repository, 0x0001, 0x00, &comment));
     munit_assert_int(comment.logical, ==, 0x0001);
-    munit_assert_int(comment.page,  ==, 0x00);
+    munit_assert_int(comment.page, ==, 0x00);
     munit_assert_string_equal(comment.text, "comment #1");
 
-    ret = comment_repository_find(repository, 0x0003, 0x00, &comment);
-    munit_assert_int(ret, !=, 0);
+    munit_assert_true(comment_repository_find(repository, 0x0003, 0x00, &comment));
     munit_assert_int(comment.logical, ==, 0x0003);
-    munit_assert_int(comment.page,  ==, 0x00);
+    munit_assert_int(comment.page, ==, 0x00);
     munit_assert_string_equal(comment.text, "comment #3");
 
-    ret = comment_repository_size(repository);
-    munit_assert_int(ret, ==, 4);
+    munit_assert_int(comment_repository_size(repository), ==, 4);
 
     comment_repository_destroy(repository);
     
     return MUNIT_OK;
 }
 
-MunitResult comment_delete_test(const MunitParameter params[], void* fixture) {
-    (void)params;
-    (void)fixture;
-
-    int ret;
-    comment_t comment;
-    comment_repository_t *repository;
-    
-    repository = comment_repository_create();
+MunitResult comment_delete_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    Comment comment = {0};
+    CommentRepository *repository = comment_repository_create();
     munit_assert_not_null(repository);
 
-    ret = comment_repository_add(repository, 0x0002, 0x03, "comment #7");
-    munit_assert_int(ret, !=, 0);
+    munit_assert_true(comment_repository_add(repository, 0x0002, 0x03, "comment #7"));
+    munit_assert_true(comment_repository_add(repository, 0x0002, 0x01, "comment #6"));
+    munit_assert_true(comment_repository_add(repository, 0x0002, 0x02, "comment #5"));
+    munit_assert_true(comment_repository_add(repository, 0x000a, 0x00, "comment #4"));
+    munit_assert_true(comment_repository_add(repository, 0x0008, 0x00, "comment #3"));
+    munit_assert_true(comment_repository_add(repository, 0x0004, 0x00, "comment #2"));
+    munit_assert_true(comment_repository_add(repository, 0x0002, 0x00, "comment #1"));
+    munit_assert_true(comment_repository_add(repository, 0x0000, 0x00, "comment #0"));
+    munit_assert_int(comment_repository_size(repository), ==, 8);
 
-    ret = comment_repository_add(repository, 0x0002, 0x01, "comment #6");
-    munit_assert_int(ret, !=, 0);
+    comment_repository_delete(repository, 0x0001, 0x0009, 0x00);
 
-    ret = comment_repository_add(repository, 0x0002, 0x02, "comment #5");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_add(repository, 0x000a, 0x00, "comment #4");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_add(repository, 0x0008, 0x00, "comment #3");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_add(repository, 0x0004, 0x00, "comment #2");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_add(repository, 0x0002, 0x00, "comment #1");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_add(repository, 0x0000, 0x00, "comment #0");
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_size(repository);
-    munit_assert_int(ret, ==, 8);
-
-    ret = comment_repository_delete(repository, 0x0001, 0x0009, 0x00);
-    munit_assert_int(ret, !=, 0);
-
-    ret = comment_repository_size(repository);
-    munit_assert_int(ret, ==, 5);
+    munit_assert_int(comment_repository_size(repository), ==, 5);
 
     comment_repository_destroy(repository);
     

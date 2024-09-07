@@ -63,7 +63,7 @@ void label_repository_destroy(LabelRepository* repository);
 /// \param [in]     logical     Logical address.
 /// \param [in]     page        Memory page.
 /// \param [in]     description Description (optional if name is set, mandatory otherwise).
-/// \return true if the entry was successfully added in the repository.
+/// \return true if the entry was successfully added to the repository.
 /// \return false if an error occured.
 bool label_repository_add(LabelRepository* repository, const char* name, uint16_t logical, uint8_t page, const char *description);
 
