@@ -95,10 +95,17 @@ bool comment_repository_get(CommentRepository* repository, int index, Comment *o
 void comment_repository_delete(CommentRepository* repository, uint16_t first, uint16_t end, uint8_t page);
 
 /// Load comments from file.
+/// \param [in, out] repository Comment repository.
 /// \param [in]  filename Input filename.
-/// \param [out] repository Comment repository.
 /// \return true if the comments contained in the file was succesfully added to the repository.
 /// \return false if an error occured.
 bool comment_repository_load(CommentRepository* repository, const char* filename);
+
+/// Save comments to file.
+/// \param [in] repository Comment repository.
+/// \param [in] filename Output filename.
+/// \return true if the comments were succesfully saved.
+/// \return false if an error occured.
+bool comment_repository_save(CommentRepository* repository, const char* filename);
 
 #endif // ETRIPATOR_COMMENT_H
