@@ -106,8 +106,11 @@ add_unit_test(
     SOURCES 
         comment.c 
         ${PROJECT_SOURCE_DIR}/comment.c
+        ${PROJECT_SOURCE_DIR}/comment/load.c
+        ${PROJECT_SOURCE_DIR}/comment/save.c
         ${PROJECT_SOURCE_DIR}/message.c
+        ${PROJECT_SOURCE_DIR}/jsonhelpers.c
         ${PROJECT_SOURCE_DIR}/message/console.c
-    LIBRARIES cwalk
+    LIBRARIES cwalk jansson
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )

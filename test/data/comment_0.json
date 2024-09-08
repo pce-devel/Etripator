@@ -1,0 +1,9 @@
+[
+    { "logical": "EABC", "page": "0", "text": "single line comment" },
+    { "logical": "C105", "page": "3", "text": [
+            "line 0",
+            "line 1",
+            "line 2"
+        ]
+    }
+]

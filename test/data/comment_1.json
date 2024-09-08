@@ -1,0 +1,4 @@
+[
+    { "logical": "CAFE", "page": "0a", "text": "hello!" },
+    { "logical": "F00D", "page": "40", "text": { "foo": "bar" } }
+]
