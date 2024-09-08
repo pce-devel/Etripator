@@ -112,7 +112,14 @@ MunitResult comment_load_test(const MunitParameter params[] __attribute__((unuse
     munit_assert_int(comment_repository_size(repository), ==, 0);
 
     munit_assert_false(comment_repository_load(repository, "data/comment_1.json"));
-    munit_assert_int(comment_repository_size(repository), ==, 0);
+    munit_assert_int(comment_repository_size(repository), ==, 1);
+
+    munit_assert_true(comment_repository_get(repository, 0, &comment));
+    munit_assert_uint16(comment.logical, ==, 0xCAFEU);
+    munit_assert_uint8(comment.page, ==, 0x0AU);
+    munit_assert_string_equal(comment.text, "hello!");
+
+    comment_repository_destroy(repository);
 
     munit_assert_true(comment_repository_load(repository, "data/comment_0.json"));
     munit_assert_int(comment_repository_size(repository), ==, 2);
