@@ -40,25 +40,23 @@
 
 #define MAX_LABEL_NAME 128
 
-/**
- * Load labels from file.
- * \param [in]  filename Input filename.
- * \param [out] repository Label repository.
- * \return 1 if the labels contained in the file were succesfully added to the repository.
- *         0 if an error occured.
- */
-int label_repository_load(const char* filename, label_repository_t* repository) {
-    json_t* root;
+// Load labels from file.
+bool label_repository_load(LabelRepository* repository, const char* filename) {
+    assert(repository != NULL);
+    assert(filename != NULL);
+
+    bool ret = false;
+
     json_error_t err;
-    json_t* value;
-    int ret = 0, index = 0;
-    root = json_load_file(filename, 0, &err);
+    json_t* root = json_load_file(filename, 0, &err);
     if(!root) {
         ERROR_MSG("Failed to parse %s:%d:%d: %s", filename, err.line, err.column, err.text);
     } else {
+        json_t* value = NULL;
+        int index = 0;
         if(!json_is_array(root)) {
             ERROR_MSG("Array expected.");
-        } else for (index = 0, ret = 1; ret && (index < json_array_size(root)) && (value = json_array_get(root, index)); index++) {
+        } else for (index = 0, ret = true; ret && (index < json_array_size(root)) && (value = json_array_get(root, index)); index++) {
             ret = 0;
             if(!json_is_object(value)) {
                 ERROR_MSG("Expected object.");
@@ -74,7 +72,7 @@ int label_repository_load(const char* filename, label_repository_t* repository) 
                     tmp = json_object_get(value, "logical");
                     if(!json_validate_int(tmp, &num)) {
                         ERROR_MSG("Invalid or missing logical address.");
-                    } else if((num < 0) || (num > 0xffff)) {
+                    } else if((num < 0) || (num > 0xFFFF)) {
                         ERROR_MSG("Logical address out of range.");
                     } else {
                         uint16_t logical = (uint16_t)num;
@@ -88,7 +86,7 @@ int label_repository_load(const char* filename, label_repository_t* repository) 
                             if((num < 0) || (num > 0xff)) {
                                 ERROR_MSG("Page value out of range.");
                             } else if(label_repository_add(repository, key, logical, (uint8_t)num, description)) {
-                                ret = 1;
+                                ret = true;
                             }
                             free(description);
                         }
