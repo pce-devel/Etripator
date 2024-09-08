@@ -121,9 +121,62 @@ MunitResult label_delete_test(const MunitParameter params[] __attribute__((unuse
     return MUNIT_OK;
 }
 
+MunitResult label_load_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    Label label = {};
+    LabelRepository* repository = label_repository_create();
+    munit_assert_not_null(repository);
+
+    munit_assert_false(label_repository_load(repository, "/not_here/label.json"));
+    munit_assert_int(label_repository_size(repository), ==, 0);
+
+    munit_assert_false(label_repository_load(repository, "data/label_1.json"));
+    munit_assert_int(label_repository_size(repository), ==, 1);
+    
+    munit_assert_true(label_repository_get(repository, 0, &label));
+    munit_assert_uint16(label.logical, ==, 0x5030U);
+    munit_assert_uint8(label.page, ==, 4);
+    munit_assert_string_equal(label.name, "ok");
+    munit_assert_null(label.description);
+
+    label_repository_destroy(repository);    
+
+    munit_assert_true(label_repository_load(repository, "data/label_0.json"));
+    munit_assert_int(label_repository_size(repository), ==, 3);
+
+    munit_assert_true(label_repository_find(repository, 0x31DC, 0xF8, &label));
+    munit_assert_uint16(label.logical, ==, 0x31DCU);
+    munit_assert_uint8(label.page, ==, 0xF8);
+    munit_assert_string_equal(label.name, "var");
+    munit_assert_null(label.description);
+
+    munit_assert_true(label_repository_find(repository, 0xEABC, 0x00, &label));
+    munit_assert_uint16(label.logical, ==, 0xEABCU);
+    munit_assert_uint8(label.page, ==, 0x00);
+    munit_assert_string_equal(label.name, "do_something");
+    munit_assert_string_equal(label.description, "do something");
+    
+    munit_assert_true(label_repository_find(repository, 0xD6F7, 0x1F, &label));
+    munit_assert_uint16(label.logical, ==, 0xD6F7U);
+    munit_assert_uint8(label.page, ==, 0x1F);
+    munit_assert_string_equal(label.name, "run");
+    munit_assert_string_equal(label.description, "line0\nline1\nline2\nline3");
+
+    label_repository_destroy(repository);    
+
+    return MUNIT_OK;
+}
+
+MunitResult label_save_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    // [todo]
+    return MUNIT_OK;
+}
+
+
 static MunitTest Labelests[] = {
     { "/add", label_add_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { "/delete", label_delete_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/load", label_load_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/save", label_save_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 

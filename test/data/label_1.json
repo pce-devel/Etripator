@@ -1,0 +1,4 @@
+[
+    { "name": "ok", "logical": "5030", "page": "04" },
+    { "name": "broken", "logical": "cafe", "page": ["5a"], "description": "!" }
+]

@@ -95,9 +95,11 @@ add_unit_test(
     SOURCES 
         label.c 
         ${PROJECT_SOURCE_DIR}/label.c
+        ${PROJECT_SOURCE_DIR}/label/load.c
         ${PROJECT_SOURCE_DIR}/message.c
+        ${PROJECT_SOURCE_DIR}/jsonhelpers.c
         ${PROJECT_SOURCE_DIR}/message/console.c
-    LIBRARIES cwalk
+    LIBRARIES cwalk jansson
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
 
