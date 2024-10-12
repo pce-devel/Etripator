@@ -22,7 +22,7 @@ The options are :
 * **--help** or **-h** : displays help.
 * **--out** or **-o < file >** : main asm file containing includes for all sections as long the irq vector table if the irq-detect  option is enabled.
 * **--labels** or **-l < file >** : labels definition filename.
-* **--labels-out <file>** : extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl.\n"
+* **--labels-out <file>** : extracted labels output filename. Otherwise the labels will be written to `"<in>.YYMMDDhhmmss.lbl"`
 * **--comments <file>** : comments description filename.
 * **--address** : print statement logical address and page in an inline comment.
 * **cfg** :  configuration file. It is optional if irq detection is enabled.
