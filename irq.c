@@ -36,7 +36,7 @@
 #include "irq.h"
 #include "message.h"
 
-#define PCE_IRQ_TABLE 0xfff6
+#define PCE_IRQ_TABLE 0xFFF6U
 #define PCE_IRQ_COUNT 5
 
 static char* g_irq_names[PCE_IRQ_COUNT] = {
@@ -47,46 +47,58 @@ static char* g_irq_names[PCE_IRQ_COUNT] = {
     "irq_reset"
 };
 
-/* Get irq code offsets from rom. */
-int irq_read(memmap_t* map, section_t **section, int *count) {
-    int i;
-    uint8_t addr[2];
-    size_t  filename_len;
-    
-    uint16_t offset = PCE_IRQ_TABLE;
-    int j = *count;
-    section_t *tmp = (section_t*)realloc(*section, (j+PCE_IRQ_COUNT) * sizeof(section_t));
-    if(NULL == tmp) {
-        ERROR_MSG("Failed to allocate extra IRQ sections.");
-        return 0;
-    }
-    *section = tmp;
-    *count += PCE_IRQ_COUNT;
-    
-    for(i=0; i<PCE_IRQ_COUNT; ++i) {
-        /* Read offset */
-        addr[0] = memmap_read(map, offset++);
-        addr[1] = memmap_read(map, offset++);
-        
-        /* Initialize section */
-        tmp[j+i].name     = strdup(g_irq_names[i]);
-        tmp[j+i].type     = Code;
-        tmp[j+i].page     = 0;
-        tmp[j+i].logical  = (addr[1] << 8) | addr[0];
-        tmp[j+i].offset   = 0;
-        tmp[j+i].size     = 0;
-        memset(tmp[j+i].mpr, 0, 8);
-        tmp[j+i].mpr[0] = 0xff;
-        tmp[j+i].mpr[1] = 0xf8;
-        
-	    filename_len = strlen(g_irq_names[i]) + 5;
-        tmp[j+i].output = (char*)malloc(filename_len);
-        snprintf(tmp[j+i].output, filename_len, "%s.asm", g_irq_names[i]);
+// [todo] add an extra section for the address table
+// Get irq code offsets from rom.
+bool irq_read(MemoryMap* map, Section **section, int *count) {
+    assert(map != NULL);
+    assert(section != NULL);
+    assert(count != NULL);
 
-        tmp[j+1].description = NULL;
+    bool ret = false;
+    if(map->memory[PCE_MEMORY_ROM].data == NULL) {
+        ERROR_MSG("No ROM in memory map.");
+    } else if(map->memory[PCE_MEMORY_ROM].length < (PCE_IRQ_TABLE + PCE_IRQ_COUNT)) {
+        ERROR_MSG("ROM is abnormally small.");
+    } else {
+        Section *tmp = (Section*)realloc(*section, (*count+PCE_IRQ_COUNT) * sizeof(Section));
+        if(tmp == NULL) {
+            ERROR_MSG("Failed to allocate extra IRQ sections.");
+        } else {
+            int j = *count;
+            *section = tmp;
+            *count += PCE_IRQ_COUNT;
 
-        INFO_MSG("%s found at %04x", tmp[j+i].name, tmp[j+i].logical);
+            for(size_t i=0; i<PCE_IRQ_COUNT; i++, j++) {
+                // IRQ name.
+                const char *name = g_irq_names[i];
+                // Read offset.
+                uint8_t lo = memmap_read(map, offset++);
+                uint8_t hi = memmap_read(map, offset++);
+
+// [todo] code_add....
+                // Initialize section
+                tmp[j].name     = strdup(name);
+                tmp[j].type     = Code;
+                tmp[j].page     = 0;
+                tmp[j].logical  = (hi << 8) | lo;
+                tmp[j].size     = 0;
+
+                tmp[j].mpr[0] = 0xFFU;      // I/O
+                tmp[j].mpr[1] = 0xF8U;      // RAM
+                for(int k=2; k<PCE_MPR_COUNT; k++) {
+                    tmp[j].mpr[k] = 0x00;   // ROM
+                }
+
+                filename_len = strlen(name) + 5U; // .asm\0
+                tmp[j].output = (char*)malloc(filename_len);
+                snprintf(tmp[j].output, filename_len, "%s.asm", name);
+
+                tmp[j].description = NULL;
+
+                INFO_MSG("%s found at %04x", tmp[j].name, tmp[j].logical);
+            }
+        }
     }
-    
-    return 1;
+
+    return ret;
 }

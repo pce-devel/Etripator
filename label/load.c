@@ -82,8 +82,10 @@ bool label_repository_load(LabelRepository* repository, const char* filename) {
                             ERROR_MSG("Invalid or missing page.");
                         } else {
                             // description
-                            char* description = json_load_description(value, "description");
-                            if((num < 0) || (num > 0xff)) {
+                            char* description = NULL;
+                            if(json_load_description(value, "description", &description) != true) {
+                                ERROR_MSG("Failed to load label description");
+                            } else if((num < 0) || (num > 0xff)) {
                                 ERROR_MSG("Page value out of range.");
                             } else if(label_repository_add(repository, key, logical, (uint8_t)num, description)) {
                                 ret = true;
