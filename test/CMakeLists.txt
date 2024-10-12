@@ -116,3 +116,18 @@ add_unit_test(
     LIBRARIES cwalk jansson
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
+
+#[[
+add_unit_test(
+    NAME section
+    SOURCES 
+        section.c 
+        ${PROJECT_SOURCE_DIR}/section.c
+        ${PROJECT_SOURCE_DIR}/section/load.c
+        ${PROJECT_SOURCE_DIR}/message.c
+        ${PROJECT_SOURCE_DIR}/jsonhelpers.c
+        ${PROJECT_SOURCE_DIR}/message/console.c
+    LIBRARIES cwalk jansson
+    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+)
+#]]
