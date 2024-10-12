@@ -40,27 +40,30 @@
 #include "../jsonhelpers.h"
 #include "../label.h"
 
-/* Save labels to file. */
-int label_repository_save(const char* filename, label_repository_t* repository) {
+// Save labels to file
+bool label_repository_save(LabelRepository* repository, const char* filename) {
+    bool ret = false;
     FILE *stream = fopen(filename, "wb");
-    int i, count = label_repository_size(repository);
     if(stream == NULL) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
-        return 0;
-    }
-    fprintf(stream, "[\n");
-    for(i=0; i<count; i++) {
-        label_t label;
-        if(label_repository_get(repository, i, &label)) {
-            fprintf(stream, "\t{ \"name\":\"%s\", \"logical\":\"%04x\", \"page\":\"%02x\"", label.name, label.logical, label.page);
-            if(label.description) {
-                fputc(',', stream);
-                json_print_description(stream, "description", label.description);
+    } else {
+        int count = label_repository_size(repository);
+
+        fprintf(stream, "[\n");
+        for(i=0; i<count; i++) {
+            label_t label;
+            if(label_repository_get(repository, i, &label)) {
+                fprintf(stream, "\t{ \"name\":\"%s\", \"logical\":\"%04x\", \"page\":\"%02x\"", label.name, label.logical, label.page);
+                if(label.description) {
+                    fputc(',', stream);
+                    json_print_description(stream, "description", label.description);
+                }
+                fprintf(stream,"}%c\n", (i<(count-1)) ? ',' : ' ');
             }
-            fprintf(stream,"}%c\n", (i<(count-1)) ? ',' : ' ');
         }
+        fprintf(stream, "]\n");
+        fclose(stream);
+        ret = true;
     }
-    fprintf(stream, "]\n");
-    fclose(stream);
-    return 1;
+    return ret;
 }

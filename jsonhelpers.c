@@ -38,8 +38,10 @@
 #include <errno.h>
 #include <string.h>
 
-int json_validate_int(const json_t* obj, int* out) {
-    int ret = 0;
+bool json_validate_int(const json_t* obj, int* out) {
+    assert(obj != NULL);
+    assert(out != NULL);
+    bool ret = false;
     if(json_is_string(obj)) {
         const char *str = json_string_value(obj);
         for(; (*str!='\0') && isspace(*str); str++) {
@@ -50,44 +52,62 @@ int json_validate_int(const json_t* obj, int* out) {
         errno = 0;
         *out = strtoul(str, NULL, 16);
         if(errno == 0) {
-            ret = 1;
+            ret = true;
         }
     } else if(json_is_integer(obj)) {
         *out = (int)json_integer_value(obj);
-        ret = 1;
+        ret = true;
     }
     return ret;
 }
 
-char* json_load_description(const json_t* obj, const char *key) {
-    json_t *tmp = json_object_get(obj, key);
-    char *out = NULL;
-    if(json_is_string(tmp)) {
-        out = strdup(json_string_value(tmp));
-    } else if (json_is_array(tmp)) {
-        int index;
-        json_t* value;
+bool json_load_description(const json_t* obj, const char *key, char **out) {
+    assert(out != NULL);
+    assert(out && (*out == NULL));
 
-        size_t len = 0;
-        json_array_foreach(tmp, index, value) {
-            if(json_is_string(value)) {
-                const char *str = json_string_value(value);
-                if(out) {
-                    out[len-1] = '\n';
+    bool ret = false;
+    char *buffer = NULL;
+    json_t *tmp = json_object_get(obj, key);
+    
+    if(tmp == NULL) {
+        ret = true;
+    } else {
+        if(json_is_string(tmp)) {
+            buffer = strdup(json_string_value(tmp));
+        } else if (json_is_array(tmp)) {
+            int index;
+            json_t* value;
+            size_t len = 0;
+            json_array_foreach(tmp, index, value) {
+                if(json_is_string(value)) {
+                    const char *str = json_string_value(value);
+                    if(buffer != NULL) {
+                        buffer[len-1] = '\n';
+                    }
+                    size_t n = len + strlen(str) + 1;
+                    char *ptr = realloc(buffer, n);
+                    if(ptr == NULL) {
+                        free(buffer);
+                        buffer = NULL;
+                        break;
+                    }
+                    memcpy(ptr+len, str, strlen(str));
+                    ptr[n-1] = '\0';
+                    buffer = ptr;
+                    len = n;
                 }
-                size_t n = len + strlen(str) + 1;
-                char *ptr = realloc(out, n);
-                memcpy(ptr+len, str, strlen(str));
-                ptr[n-1] = '\0';
-                out = ptr;
-                len = n;
             }
         }
+        ret = (buffer != NULL);
     }
-    return out;
+    *out = buffer;
+    return ret;
 }
 
 void json_print_description(FILE *out, const char *key, const char *str) {
+    assert(out != NULL);
+    assert(key != NULL);
+    assert(str != NULL);
     fprintf(out, "\"%s\":[", key);
     while(*str) {
         fprintf(out, "\n\t\t\t\"");

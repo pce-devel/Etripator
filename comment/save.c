@@ -47,13 +47,13 @@ bool comment_repository_save(CommentRepository* repository, const char* filename
 
     bool ret = false;
 
-    int i, count = comment_repository_size(repository);
     FILE *stream = fopen(filename, "wb");
     if(stream == NULL) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
     } else {
+        int count = comment_repository_size(repository);
         fprintf(stream, "[\n");
-        for(i=0; i<count; i++) {
+        for(int i=0; i<count; i++) {
             Comment entry;
             if(comment_repository_get(repository, i, &entry)) {
                 fprintf(stream, "\t{ \"logical\":\"%04x\", \"page\":\"%02x\", \"text\": ", entry.logical, entry.page);

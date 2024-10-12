@@ -75,9 +75,11 @@ bool comment_repository_load(CommentRepository* repository, const char* filename
                         ERROR_MSG("Invalid or missing page.");
                     } else {
                         // text (same format as section/label description)
-                        char* text = json_load_description (value, "text");
-                        if(text == NULL) {
-                            ERROR_MSG("Invalid or missing text.");
+                        char* text = NULL;
+                        if(json_load_description (value, "text", &text) != true) {
+                            ERROR_MSG("Faile to retrieve text.");
+                        } else if(text == NULL) {
+                            ERROR_MSG("Empty text string");
                         } else if((num < 0) || (num > 0xFF)) {
                             ERROR_MSG("Page value out of range.");
                         } else if(comment_repository_add(repository, logical, (uint8_t)num, text)) {
