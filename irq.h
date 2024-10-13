@@ -37,39 +37,15 @@
 #define ETRIPATOR_IRQ_H
 
 #include "config.h"
-//#include "code.h"
-#include "memorymap.h"
-
-/// Section.
-typedef struct Section {
-    struct Section *previous; ///< Previous section.
-    struct Section *next;     ///< Next section.
-    uint8_t page;             ///< Memory page.
-    uint16_t logical;         ///< Logical address.
-    uint8_t mpr[8];           ///< MPR registers value.
-    int32_t size;             ///< Size (in bytes).
-    char *output;             ///< Output filename.
-    // [todo] function pointers
-    // [todo] bool decode(???)
-} Section;
-
-/*
-status_code decode(Section *section, MemoryMap *map, LabelRepository *repository, CommentRepository *comments
-                    , in: uint16_t current
-                    , out: uint16_t *out
-                    , in: void *payload
-);
-Section *section, MemoryMap *map, LabelRepository *repository, CommentRepository *comments => struct (opaque pointer)
-status_code: 
-    ERROR
-    OK
-*/
+#include "memory_map.h"
+#include "section.h"
 
 /// Get irq code offsets from rom.
 /// \param [in]  map Memory map.
 /// \param [out] section Section list.
+/// \param [out] count Number of extracted sections.
 /// \return true if the IRQ vectors where successfully extradcted.
 /// \return false otherwise (missing ROM, or offsets out of range).
-bool irq_read(MemoryMap* map, Section *section);
+bool irq_read(MemoryMap* map, Section **section, int *count);
 
 #endif // ETRIPATOR_IRQ_H

@@ -129,3 +129,14 @@ add_unit_test(
     LIBRARIES cwalk jansson
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
+
+add_unit_test(
+    NAME opcodes
+    SOURCES 
+        opcodes.c 
+        ${PROJECT_SOURCE_DIR}/opcodes.c
+        ${PROJECT_SOURCE_DIR}/message.c
+        ${PROJECT_SOURCE_DIR}/message/console.c
+    LIBRARIES cwalk jansson
+    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+)

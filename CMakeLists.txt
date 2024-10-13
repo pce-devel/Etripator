@@ -28,7 +28,7 @@ find_package(Jansson)
 set(CMAKE_C_STANDARDS 11)
 
 add_subdirectory(externals)
-#[[
+
 set(etripator_SRC
     message.c 
     message/file.c
@@ -45,7 +45,7 @@ set(etripator_SRC
     label/save.c
     irq.c
     memory.c
-    memorymap.c
+    memory_map.c
     rom.c
     cd.c
     ipl.c
@@ -64,7 +64,7 @@ set(etripator_HDR
     label.h
     irq.h
     memory.h
-    memorymap.h
+    memory_map.h
     rom.h
     cd.h
     ipl.h
@@ -75,7 +75,7 @@ set_target_properties(etripator PROPERTIES C_STANDARD 11)
 target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE} externals)
 target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
 target_link_libraries(etripator PUBLIC ${JANSSON_LIBRARIES} cwalk)
-
+#[[
 add_executable(etripator_cli cli/etripator.c cli/options.c)
 set_target_properties(etripator_cli 
     PROPERTIES

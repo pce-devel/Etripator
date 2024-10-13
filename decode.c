@@ -88,7 +88,7 @@ static void print_statement_address(FILE *out, int n, uint16_t logical, uint8_t 
     fprintf(out, "%*c; bank: $%03x logical: $%04x", last_column_spacing(n), ' ', page, logical);
 }
 
-static void print_label(FILE *out, label_t *label) {
+static void print_label(FILE *out, Label *label) {
     int n = last_column_spacing((int)strlen(label->name) + 1);
     /* Print description */
     print_comment(out, label->description);
@@ -97,7 +97,7 @@ static void print_label(FILE *out, label_t *label) {
 }
 
 /* Finds any jump address from the current section. */
-int label_extract(section_t *section, memmap_t *map, label_repository_t *repository) {
+bool label_extract(Section *section, MemoryMap *map, LabelRepository *repository) {
     int i;
     uint8_t inst;
     uint8_t data[6];
@@ -106,9 +106,9 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
     uint16_t logical;
     uint8_t page;
 
-    const opcode_t *opcode;
+    const Opcode *opcode;
 
-    if (section->type != Code) {
+    if (section->type != SECTION_TYPE_CODE) {
         return 1;
     }
 
@@ -160,7 +160,7 @@ int label_extract(section_t *section, memmap_t *map, label_repository_t *reposit
     return 1;
 }
 
-static int data_extract_binary(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository) {
+static int data_extract_binary(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository) {
     uint16_t logical;
     int32_t i;
     for (i = 0, logical = section->logical; i < section->size; i++, logical++) {
@@ -170,16 +170,16 @@ static int data_extract_binary(FILE *out, section_t *section, memmap_t *map, lab
     return 1;
 }
 
-static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository,
-                            comment_repository_t *comments, int extra_infos) {
+static int data_extract_hex(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository,
+                            CommentRepository *comments, int extra_infos) {
     const int32_t element_size = section->data.element_size;
     const int32_t elements_per_line = section->data.elements_per_line;
 
     int32_t i, j;
     uint16_t logical;
 
-    label_t label;
-    comment_t comment;
+    Label label;
+    Comment comment;
 
     uint8_t buffer[2] = {0};
     int32_t top = 0;
@@ -211,7 +211,7 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
             j = 0;
         }
 
-        comment_t dummy;
+        Comment dummy;
         if (comment_repository_find(comments, logical, page, &dummy)) {
             if (has_comment) {
                 if (top && (top < element_size)) {
@@ -223,7 +223,7 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
                 }
                 print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
             }
-            memcpy(&comment, &dummy, sizeof(comment_t));
+            memcpy(&comment, &dummy, sizeof(Comment));
             has_comment = 1;
             j = 0;
         }
@@ -288,8 +288,8 @@ static int data_extract_hex(FILE *out, section_t *section, memmap_t *map, label_
     return 1;
 }
 
-static int data_extract_string(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository,
-                               comment_repository_t *comments, int extra_infos) {
+static int data_extract_string(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository,
+                               CommentRepository *comments, int extra_infos) {
     const int32_t elements_per_line = section->data.elements_per_line;
 
     int32_t i, j;
@@ -303,13 +303,13 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
     uint16_t line_logical = 0;
     uint8_t line_page;
 
-    comment_t comment = {0};
+    Comment comment = {0};
 
     for (i = 0, j = 0, logical = section->logical; i < section->size; i++, logical++) {
         uint8_t data = memmap_read(map, logical);
         uint8_t page = memmap_page(map, logical);
 
-        label_t label = {0};
+        Label label = {0};
 
         has_label = label_repository_find(repository, logical, page, &label);
 
@@ -325,7 +325,7 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
             print_label(out, &label);
         }
 
-        comment_t dummy;
+        Comment dummy;
         if (comment_repository_find(comments, logical, page, &dummy)) {
             if (j) {
                 if (c) { // close string if neededs
@@ -337,7 +337,7 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
             if (has_comment) {
                 print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
             }
-            memcpy(&comment, &dummy, sizeof(comment_t));
+            memcpy(&comment, &dummy, sizeof(Comment));
             has_comment = 1;
         }
 
@@ -409,16 +409,16 @@ static int data_extract_string(FILE *out, section_t *section, memmap_t *map, lab
     return 1;
 }
 
-static int data_extract_jump_table(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository,
-                                   comment_repository_t *comments, int extra_infos) {
+static int data_extract_jump_table(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository,
+                                   CommentRepository *comments, int extra_infos) {
     const int32_t elements_per_line = section->data.elements_per_line;
 
     int32_t i, j;
     uint8_t page;
     uint16_t logical;
 
-    label_t label;
-    comment_t comment;
+    Label label;
+    Comment comment;
 
     size_t line_offset = ftell(out);
     uint8_t line_page = section->page;
@@ -444,12 +444,12 @@ static int data_extract_jump_table(FILE *out, section_t *section, memmap_t *map,
             j = 0;
         }
 
-        comment_t dummy;
+        Comment dummy;
         if (comment_repository_find(comments, logical, page, &dummy)) {
             if (has_comment) {
                 print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
             }
-            memcpy(&comment, &dummy, sizeof(comment_t));
+            memcpy(&comment, &dummy, sizeof(Comment));
             has_comment = 1;
             j = 0;
         }
@@ -498,25 +498,25 @@ static int data_extract_jump_table(FILE *out, section_t *section, memmap_t *map,
 }
 
 /* Process data section. The result will be output has a binary file or an asm file containing hex values or strings. */
-int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository,
-                 comment_repository_t *comments, int extra_infos) {
+bool data_extract(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository,
+                 CommentRepository *comments, int extra_infos) {
     switch (section->data.type) {
-    case Binary:
+    case DATA_TYPE_BINARY:
         return data_extract_binary(out, section, map, repository);
-    case Hex:
+    case DATA_TYPE_HEX:
         return data_extract_hex(out, section, map, repository, comments, extra_infos);
-    case String:
+    case DATA_TYPE_STRING:
         return data_extract_string(out, section, map, repository, comments, extra_infos);
-    case JumpTable:
+    case DATA_TYPE_JUMP_TABLE:
         return data_extract_jump_table(out, section, map, repository, comments, extra_infos);
     default:
-        return 0;
+        return false;
     }
 }
 
 /* Process code section. */
-int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository,
-           comment_repository_t *comments, int extra_infos) {
+int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, LabelRepository *repository,
+           CommentRepository *comments, int extra_infos) {
     int i, delta;
     uint8_t inst, data[6], is_jump;
     char eor;
@@ -525,9 +525,9 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
     uint8_t current_page;
     uint16_t current_logical;
     uint16_t next_logical;
-    label_t label;
+    Label label;
 
-    const opcode_t *opcode;
+    const Opcode *opcode;
 
     eor = 0;
 
@@ -794,7 +794,7 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 	}
 
 	/* display inline comments if any */
-	comment_t comment = {0};
+	Comment comment = {0};
 	int n = (int)(ftell(out) - start);
 	if(comment_repository_find(comments, current_logical, current_page, &comment)) {
 		print_inline_comment(out, n, comment.text);
@@ -806,10 +806,10 @@ int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, labe
 }
 
 /* Computes section size. */
-int32_t compute_size(section_t *sections, int index, int count, memmap_t *map) {
+int32_t compute_size(Section *sections, int index, int count, MemoryMap *map) {
     uint8_t i;
     uint8_t data[7];
-    section_t *current = &sections[index];
+    Section *current = &sections[index];
     uint32_t start = current->logical;
     uint32_t logical = start;
 
@@ -833,7 +833,7 @@ int32_t compute_size(section_t *sections, int index, int count, memmap_t *map) {
         }
         uint8_t page = memmap_page(map, logical);
         data[0] = memmap_read(map, logical);
-        const opcode_t *opcode = opcode_get(data[0]);
+        const Opcode *opcode = opcode_get(data[0]);
         for (i = 1; i < opcode->size; i++) {
             data[i] = memmap_read(map, logical + i);
         }
@@ -875,10 +875,10 @@ int32_t compute_size(section_t *sections, int index, int count, memmap_t *map) {
 }
 
 /* Output hardware IO port and RAM labels. */
-void label_dump(FILE *out, memmap_t *map, label_repository_t *repository) {
+void label_dump(FILE *out, MemoryMap *map, LabelRepository *repository) {
     int count = label_repository_size(repository);
     for (int i = 0; i < count; i++) {
-        label_t label;
+        Label label;
         if (label_repository_get(repository, i, &label)) {
             // IO port and RAM
             if ((label.page == 0xff) || (label.page == 0xf8)) {
