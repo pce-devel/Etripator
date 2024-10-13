@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -37,26 +37,30 @@
 #define ETRIPATOR_CD_H
 
 #include "config.h"
-#include "memorymap.h"
+#include "memory_map.h"
 
-/**
- * Adds CD RAM to memory map.
- * \param map Memory map.
- * \return 1 upon success, 0 if an error occured.
- */
-int cd_memmap(memmap_t *map);
+#define PCE_CD_RAM_BANK_COUNT 8U
+#define PCE_SYSCARD_RAM_BANK_COUNT 24U
 
-/**
- * Load CDROM data from file.
- * \param [in]  filename    CDROM data filename.
- * \param [in]  start       CDROM data offset.
- * \param [in]  len         CDROM data length (in bytes).
- * \param [in]  sector_size CD sector size.
- * \param [in]  page        Memory page.
- * \param [in]  offset      memory page offset.
- * \param [out] memmap      Memory map.
- * \return 1 upon success, 0 if an error occured.
- */
-int cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, memmap_t* map);
+#define PCE_CD_RAM_FIRST_PAGE 0x80U
+#define PCE_SYSCARD_RAM_FIRST_PAGE 0x68U
+
+/// Adds CD RAM to memory map.
+/// \param map Memory map.
+/// \return true if the CD RAM and SYSCARD RAM memory areas were successfully created.
+/// \return false if an error occured.
+bool cd_memory_map(MemoryMap *map);
+
+/// Load CDROM data from file.
+/// \param [in]  filename    CDROM data filename.
+/// \param [in]  start       CDROM data offset.
+/// \param [in]  len         CDROM data length (in bytes).
+/// \param [in]  sector_size CD sector size.
+/// \param [in]  page        Memory page.
+/// \param [in]  offset      Memory page offset.
+/// \param [out] map         Memory map.
+/// \return true
+/// \return false
+bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, MemoryMap* map);
 
 #endif // ETRIPATOR_CD_H

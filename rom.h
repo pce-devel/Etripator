@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,14 +36,13 @@
 #ifndef ETRIPATOR_ROM_H
 #define ETRIPATOR_ROM_H
 
-#include "memorymap.h"
+#include "memory_map.h"
 
-/**
- * Load ROM from file.
- * \param [in]  filename ROM filename.
- * \param [out] map      Memory map.
- * \return 1 upon success, 0 if an error occured.
- */
-int rom_load(const char* filename, memmap_t* map);
+/// Load ROM from file and update memory map.
+/// \param [in]  filename ROM filename.
+/// \param [out] map      Memory map.
+/// \return true if the ROM was successfully loaded.
+/// \return false if an error occured.
+bool rom_load(const char* filename, MemoryMap* map);
 
 #endif // ETRIPATOR_ROM_H

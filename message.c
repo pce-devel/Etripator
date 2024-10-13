@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,48 +33,56 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "config.h"
 #include "message.h"
 
 #include <cwalk.h>
 
-static msg_printer_t* g_msg_printer = NULL;
+static MessagePrinter* g_message_printer_head = NULL;
 
 /* Setup global message printer list.  */
-void msg_printer_init() {
-    g_msg_printer = NULL;
+void message_printer_init() {
+    g_message_printer_head = NULL;
     // nothing much atm...
 }
+
 /* Releases the resources used by message printers. */
-void msg_printer_destroy() {
-    msg_printer_t* printer;
-    for(printer=g_msg_printer; NULL != printer; printer=printer->next) {
-        printer->close(printer);
+void message_printer_destroy() {
+    for(MessagePrinter *it = g_message_printer_head; it != NULL; it = it->next) {
+        if(it->close) {
+            it->close();
+        }
     }
+    g_message_printer_head = NULL;
 }
+
 /* Adds a new message printer to the global list. */
-int msg_printer_add(msg_printer_t *printer) {
-    if(printer->open(printer)) {
-        return 1;
+bool message_printer_add(MessagePrinter *printer) {
+    bool ret = false;
+    if((printer != NULL) && (printer->open != NULL)) {
+        ret = printer->open();
+        if(ret) {
+            printer->next = g_message_printer_head;
+            g_message_printer_head = printer;
+        }
     }
-    printer->next = g_msg_printer;
-    g_msg_printer = printer;
-    return 0;
+    return ret;
 }
+
 /* Dispatch messages to printers. */
-void print_msg(msg_type_t type, const char* file, size_t line, const char* function, const char* format, ...) {
-    msg_printer_t* printer;
+void message_print(MessageType type, const char* file, size_t line, const char* function, const char* format, ...) {
+    assert(file != NULL);
+    assert(function != NULL);
     const char* filename;
     size_t length;
     cwk_path_get_basename(file, &filename, &length);
     if(filename == NULL) {
         filename = file;
     }
-    for(printer=g_msg_printer; NULL != printer; printer=printer->next) {
-        if(printer->output) {
+    for(MessagePrinter *it=g_message_printer_head; it != NULL; it = it->next) {
+        if(it->output != NULL) {
             va_list args; 
             va_start(args, format);
-            printer->output(printer, type, filename, line, function, format, args);
+            (void)it->output(type, filename, line, function, format, args);
             va_end(args);
         }
     }

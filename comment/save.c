@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,61 +33,59 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_MEMORY_MAP_H
-#define ETRIPATOR_MEMORY_MAP_H
+#include <errno.h>
+#include <string.h>
 
-#include "memory.h"
+#include "../message.h"
+#include "../jsonhelpers.h"
+#include "../comment.h"
 
-/**
- * PC Engine memory 
- */
-enum {
-    PCE_MEM_ROM = 0,
-    PCE_MEM_BASE_RAM,
-    PCE_MEM_CD_RAM,
-    PCE_MEM_SYSCARD_RAM,
-    PCE_MEM_COUNT
-};
+// Save comments to file.
+bool comment_repository_save(CommentRepository* repository, const char* filename) {
+    assert(filename != NULL);
+    assert(repository != NULL);
 
-/**
- * PC Engine memory map.
- */
-typedef struct {
-    mem_t mem[PCE_MEM_COUNT];
-    uint8_t *page[0x100];
-    uint8_t mpr[8];
-} memmap_t;
+    bool ret = false;
 
-/**
- * Initializes memory map.
- * \param map Memory map.
- * \return 1 upon success, 0 if an error occured.
- */
-int memmap_init(memmap_t *map);
-/**
- * Releases resources used by the memory map.
- * \param map Memory map.
- */
-void memmap_destroy(memmap_t *map);
-/**
- * Get the memory page associated to a logical address.
- * \param map Memory map.
- * \param logical Logical address.
- * \return Memory page.
- */
-uint8_t memmap_page(memmap_t* map, uint16_t logical);
-/**
- * Reads a single byte from memory.
- * \param [in] map     Memory map.
- * \param [in] logical Logical address.
- * \return Byte read.
- */
-uint8_t memmap_read(memmap_t *map, size_t logical);
-/**
- * Update mprs.
- * \param [in][out] map Memory map.
- * \param [in]      mpr Memory page registers.
- */
-void memmap_mpr(memmap_t *map, const uint8_t *mpr);
+    FILE *stream = fopen(filename, "wb");
+    if(stream == NULL) {
+        ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
+    } else {
+        int count = comment_repository_size(repository);
+        fprintf(stream, "[\n");
+        for(int i=0; i<count; i++) {
+            Comment entry;
+            if(comment_repository_get(repository, i, &entry)) {
+                fprintf(stream, "\t{ \"logical\":\"%04x\", \"page\":\"%02x\", \"text\": ", entry.logical, entry.page);
+                
+                bool multiline = false;
+                if(strchr(entry.text, '\n') != NULL) {
+                    multiline = true;
+                }
 
-#endif // ETRIPATOR_MEMORY_MAP_H
+                if(multiline) {
+                    fprintf(stream, "[\n");
+                    for(char *ptr=entry.text, *next=NULL; ptr!=NULL; ptr=next) {
+                        next = strchr(ptr, '\n');
+                        if(next != NULL) {
+                            fprintf(stream, "\t\"");
+                            fwrite(ptr, 1, next-ptr, stream);
+                            fprintf(stream, "\",\n");
+                        } else {
+                            fprintf(stream, "\"%s\"\n", ptr);
+                        }
+                    }
+                    fprintf(stream, "]\n");
+                } else {
+                    fprintf(stream, "\"%s\"", entry.text);
+                }
+
+                fprintf(stream,"}%c\n", (i<(count-1)) ? ',' : ' ');
+            }
+        }
+        fprintf(stream, "]\n");
+        fclose(stream);
+        ret = true;
+    }
+    return ret;
+}

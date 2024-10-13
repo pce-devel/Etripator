@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,8 +42,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <stdint.h>
+#include <stdbool.h>
+
 #include <time.h>
 
 #include <sys/types.h>

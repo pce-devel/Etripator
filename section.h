@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,98 +38,86 @@
 
 #include "config.h"
 
-/**
- * Section type.
- */
+/// Section type.
 typedef enum {
-    UnknownSectionType = -1,
-    Data,
-    Code,
-    SectionTypeCount
-} section_type_t;
+    SECTION_TYPE_UNKNOWN = -1,
+    SECTION_TYPE_DATA = 0,
+    SECTION_TYPE_CODE,
+    SECTION_TYPE_COUNT
+} SectionType;
 
-/**
- * Retrieves section type name.
- */
-const char* section_type_name(section_type_t type);
+/// Retrieves section type name
+/// \param [in] type Section type
+/// \return "data" if type is SECTION_TYPE_DATA
+/// \return "code" if type is SECTION_TYPE_CODE
+/// \return "unknown" otherwise
+const char* section_type_name(SectionType type);
 
-/**
- * Retrieves data type name.
- */
+/// Data type
 typedef enum {
-    UnknownDataType = -1,
-    Binary,
-    Hex,
-    String,
-    JumpTable,
-    DataTypeCount
-} data_type_t;
+    DATA_TYPE_UNKNOWN = -1,
+    DATA_TYPE_BINARY = 0,
+    DATA_TYPE_HEX,
+    DATA_TYPE_STRING,
+    DATA_TYPE_JUMP_TABLE,
+    DATA_TYPE_COUNT
+} DataType;
 
-/**
- * Retrieves data type name.
- */
-const char* data_type_name(data_type_t type);
+/// Retrieves data type name
+/// \param [in] type Data type
+/// \return "binary" if type is DATA_TYPE_BINARY
+/// \return "hex" if type is DATA_TYPE_HEX
+/// \return "string" if type is DATA_TYPE_STRING
+/// \return "jumptable if type is DATA_TYPE_JUMP_TABLE
+/// \return "unknown" otherwise
+const char* data_type_name(DataType type);
 
-/**
- * Data section configuration.
- */
+// Data section configuration
 typedef struct {
-    data_type_t type;          /**< type. **/
-    int32_t element_size;      /**< element size (string=0, byte=1, word=2). **/
-    int32_t elements_per_line; /**< number of elements per line. **/
-} data_config_t;
+    DataType type;             //< type
+    int32_t element_size;      //< element size (string=0, byte=1, word=2)
+    int32_t elements_per_line; //< number of elements per line
+} DataConfig;
 
-/**
- * Section description.
- */
+// Section description
 typedef struct {
-    char *name;          /**< name. **/
-    section_type_t type; /**< type. **/
-    uint8_t page;        /**< memory page. **/
-    uint16_t logical;    /**< logical address. **/
-    uint32_t offset;     /**< input offset. **/
-    int32_t size;        /**< size (in bytes). **/
-    uint8_t mpr[8];      /**< mpr registers value. **/ 
-    char *output;        /**< output filename. **/ 
-    data_config_t data;  /**< data configuration (only valid for *data* sections) **/
-    char *description;   /**< optional description. **/
-} section_t;
+    char *name;        //< Name
+    SectionType type;  //< Type
+    uint8_t page;      //< Memory page
+    uint16_t logical;  //< logical address
+    uint32_t offset;   //< input offset
+    int32_t size;      //< size (in bytes)
+    uint8_t mpr[8];    //< mpr registers value
+    char *output;      //< output filename
+    DataConfig data;   //< data configuration (only valid for *data* sections)
+    char *description; //< optional description
+} Section;
 
-/**
- * Reset a section to its default values.
- **/
-void section_reset(section_t *s);
+/// Reset a section to its default values.
+void section_reset(Section *s);
 
-/**
- * Group section per output filename and sort them in page/logical address order.
- * \param [in][out] ptr Sections.
- * \param [in] n Number of sections to sort.
- */
-void section_sort(section_t *ptr, size_t n);
+/// Group section per output filename and sort them in page/logical address order.
+/// \param [in out] ptr Sections.
+/// \param [in] n Number of sections to sort.
+void section_sort(Section *ptr, size_t n);
 
-/**
- * Delete sections.
- */
-void section_delete(section_t *ptr, int n);
+/// Delete sections.
+void section_delete(Section *ptr, int n);
 
-/**
- * Load sections from a JSON file.
- * \param [in]  filename Input filename.
- * \param [out] out Loaded sections.
- * \param [out] n Number of loaded sections. 
- * \return 1 if the sections contained in the file were succesfully loaded.
- *         0 if an error occured.
- */
-int section_load(const char *filename, section_t **out, int *n);
+// Load sections from a JSON file.
+// \param [out] out Loaded sections.
+// \param [out] n Number of loaded sections. 
+// \param [in]  filename Input filename.
+// \return true if the sections contained in the file were succesfully loaded.
+// \return false if an error occured.
+bool section_load(Section **out, int *n, const char *filename);
 
-/**
- * Save sections to a JSON file.
- * \param [in] filename Output filename.
- * \param [in] ptr Sections to be saved.
- * \param [in] count Number of sections. 
- * \return 1 if the sections were succesfully saved.
- *         0 if an error occured.
- */
-int section_save(const char *filename, section_t *ptr, int n);
+// Save sections to a JSON file.
+// \param [in] ptr Sections to be saved.
+// \param [in] count Number of sections. 
+// \param [in] filename Output filename.
+// \return true if the sections were succesfully saved.
+// \return false if an error occured.
+bool section_save(const Section *ptr, int n, const char *filename);
 
 #endif // ETRIPATOR_SECTION_H

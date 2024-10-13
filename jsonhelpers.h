@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,8 +40,8 @@
 
 #include <jansson.h>
 
-int json_validate_int(const json_t* obj, int* out);
-char* json_load_description(const json_t* obj, const char *key);
+bool json_validate_int(const json_t* obj, int* out);
+bool json_load_description(const json_t* obj, const char *key, char **out);
 void json_print_description(FILE *out, const char *key, const char *str);
 
 #endif // ETRIPATOR_JSON_HELPERS_H

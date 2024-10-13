@@ -45,7 +45,7 @@ set(etripator_SRC
     label/save.c
     irq.c
     memory.c
-    memorymap.c
+    memory_map.c
     rom.c
     cd.c
     ipl.c
@@ -64,7 +64,7 @@ set(etripator_HDR
     label.h
     irq.h
     memory.h
-    memorymap.h
+    memory_map.h
     rom.h
     cd.h
     ipl.h
@@ -75,7 +75,7 @@ set_target_properties(etripator PROPERTIES C_STANDARD 11)
 target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE} externals)
 target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
 target_link_libraries(etripator PUBLIC ${JANSSON_LIBRARIES} cwalk)
-
+#[[
 add_executable(etripator_cli cli/etripator.c cli/options.c)
 set_target_properties(etripator_cli 
     PROPERTIES
@@ -84,7 +84,7 @@ set_target_properties(etripator_cli
 )
 target_include_directories(etripator_cli PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(etripator_cli etripator argparse)
-
+#]]
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
 set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
 
@@ -100,4 +100,4 @@ add_custom_target(doc
 
 add_subdirectory(test)
 
-install(TARGETS etripator_cli DESTINATION bin)
+# install(TARGETS etripator_cli DESTINATION bin)

@@ -33,19 +33,63 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_IRQ_H
-#define ETRIPATOR_IRQ_H
+#include <munit.h>
 
-#include "config.h"
-#include "memory_map.h"
-#include "section.h"
+#include <message.h>
+#include <message/console.h>
 
-/// Get irq code offsets from rom.
-/// \param [in]  map Memory map.
-/// \param [out] section Section list.
-/// \param [out] count Number of extracted sections.
-/// \return true if the IRQ vectors where successfully extradcted.
-/// \return false otherwise (missing ROM, or offsets out of range).
-bool irq_read(MemoryMap* map, Section **section, int *count);
+#include <cd.h>
 
-#endif // ETRIPATOR_IRQ_H
+void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+    return NULL;
+}
+
+void tear_down(void* fixture __attribute__((unused))) {
+}
+
+MunitResult cd_memory_map_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    MemoryMap map = {};
+
+    munit_assert_true(memory_map_init(&map));
+    munit_assert_true(cd_memory_map(&map));
+
+    munit_assert_not_null(map.memory[PCE_MEMORY_CD_RAM].data);
+    munit_assert_size(map.memory[PCE_MEMORY_CD_RAM].length, ==, PCE_CD_RAM_BANK_COUNT*PCE_BANK_SIZE);
+    for(size_t i=0; i<PCE_CD_RAM_BANK_COUNT; i++) {
+        munit_assert_int(map.page[PCE_CD_RAM_FIRST_PAGE+i].id, ==, PCE_MEMORY_CD_RAM);
+        munit_assert_size(map.page[PCE_CD_RAM_FIRST_PAGE+i].bank, ==, i);
+    }
+
+    munit_assert_not_null(map.memory[PCE_MEMORY_SYSCARD_RAM].data);
+    munit_assert_size(map.memory[PCE_MEMORY_SYSCARD_RAM].length, ==, PCE_SYSCARD_RAM_BANK_COUNT*PCE_BANK_SIZE);
+    for(size_t i=0; i<PCE_SYSCARD_RAM_BANK_COUNT; i++) {
+        munit_assert_int(map.page[PCE_SYSCARD_RAM_FIRST_PAGE+i].id, ==, PCE_MEMORY_SYSCARD_RAM);
+        munit_assert_size(map.page[PCE_SYSCARD_RAM_FIRST_PAGE+i].bank, ==, i);
+    }
+
+    memory_map_destroy(&map);
+
+    return MUNIT_OK;
+}
+
+// [todo] cd_load
+
+static MunitTest cd_tests[] = {
+    { "/memory_map", cd_memory_map_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
+};
+
+static const MunitSuite cd_suite = {
+    "CDROM test suite", cd_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
+};
+
+int main (int argc, char* const* argv) {
+    message_printer_init();    
+    console_message_printer_init();
+
+    int ret = munit_suite_main(&cd_suite, NULL, argc, argv);
+
+    message_printer_destroy();
+
+    return ret;
+}
