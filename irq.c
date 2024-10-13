@@ -65,6 +65,7 @@ bool irq_read(MemoryMap* map, Section **section, int *count) {
             ERROR_MSG("Failed to allocate extra IRQ sections.");
         } else {
             int j = *count;
+            uint16_t offset = PCE_IRQ_TABLE;
             *section = tmp;
             *count += PCE_IRQ_COUNT;
 
@@ -72,13 +73,12 @@ bool irq_read(MemoryMap* map, Section **section, int *count) {
                 // IRQ name.
                 const char *name = g_irq_names[i];
                 // Read offset.
-                uint8_t lo = memmap_read(map, offset++);
-                uint8_t hi = memmap_read(map, offset++);
+                uint8_t lo = memory_map_read(map, offset++);
+                uint8_t hi = memory_map_read(map, offset++);
 
-// [todo] code_add....
                 // Initialize section
                 tmp[j].name     = strdup(name);
-                tmp[j].type     = Code;
+                tmp[j].type     = SECTION_TYPE_CODE;
                 tmp[j].page     = 0;
                 tmp[j].logical  = (hi << 8) | lo;
                 tmp[j].size     = 0;
@@ -89,7 +89,7 @@ bool irq_read(MemoryMap* map, Section **section, int *count) {
                     tmp[j].mpr[k] = 0x00;   // ROM
                 }
 
-                filename_len = strlen(name) + 5U; // .asm\0
+                size_t filename_len = strlen(name) + 5U; // .asm\0
                 tmp[j].output = (char*)malloc(filename_len);
                 snprintf(tmp[j].output, filename_len, "%s.asm", name);
 

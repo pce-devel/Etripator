@@ -118,6 +118,6 @@ bool section_load(Section **out, int *n, const char *filename);
 // \param [in] filename Output filename.
 // \return true if the sections were succesfully saved.
 // \return false if an error occured.
-bool section_save(Section *ptr, int n, const char *filename);
+bool section_save(const Section *ptr, int n, const char *filename);
 
 #endif // ETRIPATOR_SECTION_H

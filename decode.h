@@ -39,59 +39,52 @@
 #include "config.h"
 #include "label.h"
 #include "section.h"
-#include "memorymap.h"
+#include "memory_map.h"
 #include "comment.h"
 
-/**
- * Finds any jump address from the current section.
- * @param [in] section Current section.
- * @param [in] map Memory map.
- * @param [in out] repository Label repository.
- * @return 1 upon success, 0 otherwise.
- */
-int label_extract(section_t *section, memmap_t *map, label_repository_t *repository);
+/// Finds any jump address from the current section.
+/// \param [in] section Current section.
+/// \param [in] map Memory map.
+/// \param [in out] repository Label repository.
+/// \return true upon success.
+/// \return false if an error occured.
+bool label_extract(Section *section, MemoryMap *map, LabelRepository *repository);
 
-/**
- * Process data section. The result will be output has a binary file or an asm file containing hex values or strings.
- * @param [out] out File output.
- * @param [in] section Current section.
- * @param [in] map Memory map.
- * @param [in] repository Label repository.
- * @param [in] comments Comments repository.
- * @param [in] extra_infos Display extra informations as comments (if none set).
- * @return 1 upon success, 0 otherwise.
- */
-int data_extract(FILE *out, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos);
+/// Process data section. The result will be output has a binary file or an asm file containing hex values or strings.
+/// \param [out] out File output.
+/// \param [in] section Current section.
+/// \param [in] map Memory map.
+/// \param [in] repository Label repository.
+/// \param [in] comments Comments repository.
+/// \param [in] extra_infos Display extra informations as comments (if none set).
+/// \return true upon success.
+/// \return false if an error occured.
+bool data_extract(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository, CommentRepository *comments, int extra_infos);
 
-/**
- * Process code section.
- * @param [out] out File output.
- * @param [in out] logical Current logical address.
- * @param [in] section Current section.
- * @param [in] map Memory map.
- * @param [in] repository Label repository.
- * @param [in] comments Comments repository.
- * @param [in] extra_infos Display extra informations as comments (if none set).
- * @return 1 if rts, rti or brk instruction was decoded, 0 otherwise.
- */
-int decode(FILE *out, uint16_t *logical, section_t *section, memmap_t *map, label_repository_t *repository, comment_repository_t *comments, int extra_infos);
+/// Process code section.
+/// \param [out] out File output.
+/// \param [in out] logical Current logical address.
+/// \param [in] section Current section.
+/// \param [in] map Memory map.
+/// \param [in] repository Label repository.
+/// \param [in] comments Comments repository.
+/// \param [in] extra_infos Display extra informations as comments (if none set).
+/// \return true if rts, rti or brk instruction was decoded.
+/// \return false otherwise.
+int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, LabelRepository *repository, CommentRepository *comments, int extra_infos);
 
-/**
- * Computes section size.
- * @param [in] sections Section array.
- * @param [in] index Index of the current section.
- * @param [in] count Number of sections.
- * @param [in] map Memory map.
- * @return Section size. 
- */
-int32_t compute_size(section_t *sections, int index, int count, memmap_t *map);
+/// Computes section size.
+/// \param [in] sections Section array.
+/// \param [in] index Index of the current section.
+/// \param [in] count Number of sections.
+/// \param [in] map Memory map.
+/// \return Section size.
+int32_t compute_size(Section *sections, int index, int count, MemoryMap *map);
 
-/**
- * Output hardware IO port and RAM labels.
- * @param [out] out File output.
- * @param [in] map Memory map.
- * @param [in] repository Label repository.
- */
-void label_dump(FILE *out, memmap_t *map, label_repository_t *repository);
+/// Output hardware IO port and RAM labels.
+/// \param [out] out File output.
+/// \param [in] map Memory map.
+/// \param [in] repository Label repository.
+void label_dump(FILE *out, MemoryMap *map, LabelRepository *repository);
 
 #endif // ETRIPATOR_DECODE_H

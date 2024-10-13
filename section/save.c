@@ -41,45 +41,44 @@
 #include <errno.h>
 #include <stdlib.h>
 
-/* Save sections to a JSON file. */
-int section_save(const char *filename, section_t *ptr, int n) {
-    int i;
+// Save sections to a JSON file
+bool section_save(const Section *ptr, int n, const char *filename) {
+    bool ret = false;
     FILE *out = fopen(filename, "wb");
     if(!out) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
-        return 0;
+    } else {   
+        fprintf(out, "{\n");
+        for(int i=0; i<n; i++) {
+            fprintf(out, "    \"%s\": {\n", ptr[i].name);
+            fprintf(out, "        \"type\": \"%s\",\n", section_type_name(ptr[i].type));
+            fprintf(out, "        \"page\": \"%02x\",\n", ptr[i].page);
+            fprintf(out, "        \"logical\": \"%04x\",\n", ptr[i].logical);
+            fprintf(out, "        \"offset\": \"%x\",\n", ptr[i].offset);
+            fprintf(out, "        \"size\": %d,\n", ptr[i].size);
+            fprintf(out, "        \"mpr\": [");
+            for(int j=0; j<8; j++) {
+                fprintf(out, "\"%02x\"%x", ptr[i].mpr[j], (j<7) ? ',' : ']');
+            }
+            fprintf(out, "\n");
+            fprintf(out, "        \"output\": \"%s\"", ptr[i].output);
+            if(ptr[i].type == SECTION_TYPE_DATA) {
+                fprintf(out, ",\n        \"data\": {\n");
+                fprintf(out, "               \"type\": \"%s\",\n", data_type_name(ptr[i].data.type));
+                fprintf(out, "               \"element_size\": %d,\n", ptr[i].data.element_size);
+                fprintf(out, "               \"elements_per_line\": %d\n", ptr[i].data.elements_per_line);
+                fprintf(out, "            }\n");
+            }
+            if(ptr[i].description) {
+                fputc(',', out);
+                json_print_description(out, "description", ptr[i].description);
+            }
+            fprintf(out, "\n}\n");
+        }
+        fprintf(out, "}\n");
+        fclose(out);
+
+        ret = true;
     }
-    
-    fprintf(out, "{\n");
-    for(i=0; i<n; i++) {
-        int j;
-        fprintf(out, "    \"%s\": {\n", ptr[i].name);
-        fprintf(out, "        \"type\": \"%s\",\n", section_type_name(ptr[i].type));
-        fprintf(out, "        \"page\": \"%02x\",\n", ptr[i].page);
-        fprintf(out, "        \"logical\": \"%04x\",\n", ptr[i].logical);
-        fprintf(out, "        \"offset\": \"%x\",\n", ptr[i].offset);
-        fprintf(out, "        \"size\": %d,\n", ptr[i].size);
-        fprintf(out, "        \"mpr\": [");
-        for(j=0; j<8; j++) {
-            fprintf(out, "\"%02x\"%x", ptr[i].mpr[j], (j<7) ? ',' : ']');
-        }
-        fprintf(out, "\n");
-        fprintf(out, "        \"output\": \"%s\"", ptr[i].output);
-        if(ptr[i].type == Data) {
-            fprintf(out, ",\n        \"data\": {\n");
-            fprintf(out, "               \"type\": \"%s\",\n", data_type_name(ptr[i].data.type));
-            fprintf(out, "               \"element_size\": %d,\n", ptr[i].data.element_size);
-            fprintf(out, "               \"elements_per_line\": %d\n", ptr[i].data.elements_per_line);
-            fprintf(out, "            }\n");
-        }
-        if(ptr[i].description) {
-            fputc(',', out);
-            json_print_description(out, "description", ptr[i].description);
-        }
-        fprintf(out, "\n}\n");
-    }
-    fprintf(out, "}\n");
-    
-    fclose(out);
     return 1;
 }
