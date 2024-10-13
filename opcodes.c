@@ -66,7 +66,7 @@ static char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {
 };
 
 // PC engine opcodes
-static opcode_t pce_opcode[256] = {
+static Opcode pce_opcode[256] = {
   /* 00 */  { "brk ", 1 ,  0 },  // BRK                 
   /* 01 */  { "ora ", 2 , 11 },  // ORA  (ZZ, X)        
   /* 02 */  { "sxy ", 1 ,  0 },  // SXY                 
@@ -326,12 +326,12 @@ static opcode_t pce_opcode[256] = {
 };
 
 // Get opcode description.
-const opcode_t* opcode_get(uint8_t op) {
+const Opcode* opcode_get(uint8_t op) {
     return &pce_opcode[op];
 }
 
 // Get opcode description
-const char* opcode_format(const opcode_t *op, int i) {
+const char* opcode_format(const Opcode *op, int i) {
     if((i < 0) || (i >= PCE_ARG_COUNT)) {
         return NULL;
     }
