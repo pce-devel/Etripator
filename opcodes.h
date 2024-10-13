@@ -103,14 +103,14 @@ typedef struct {
 /// Get opcode description
 /// \param [in] op Opcode id
 /// \return Pointer to opcode description
-const opcode_t* opcode_get(uint8_t op);
+const Opcode* opcode_get(uint8_t op);
 
 /// Get opcode format string
 /// \param [in] op Pointer to opcode description
 /// \param [in] i  Opcode argument id
 /// \return Argument format string
 /// \return NULL if the argument id is out of opcode argument count
-const char* opcode_format(const opcode_t *op, int i);
+const char* opcode_format(const Opcode *op, int i);
 
 /// Is the instruction a local jump ?
 bool opcode_is_local_jump(uint8_t op);
