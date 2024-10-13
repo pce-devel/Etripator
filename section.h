@@ -105,19 +105,19 @@ void section_sort(Section *ptr, size_t n);
 void section_delete(Section *ptr, int n);
 
 // Load sections from a JSON file.
-// \param [in]  filename Input filename.
 // \param [out] out Loaded sections.
 // \param [out] n Number of loaded sections. 
+// \param [in]  filename Input filename.
 // \return true if the sections contained in the file were succesfully loaded.
 // \return false if an error occured.
-bool section_load(const char *filename, Section **out, int *n);
+bool section_load(Section **out, int *n, const char *filename);
 
 // Save sections to a JSON file.
-// \param [in] filename Output filename.
 // \param [in] ptr Sections to be saved.
 // \param [in] count Number of sections. 
+// \param [in] filename Output filename.
 // \return true if the sections were succesfully saved.
 // \return false if an error occured.
-int section_save(const char *filename, Section *ptr, int n);
+bool section_save(Section *ptr, int n, const char *filename);
 
 #endif // ETRIPATOR_SECTION_H

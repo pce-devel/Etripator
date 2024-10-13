@@ -37,7 +37,6 @@
 #include "label.h"
 #include "message.h"
 #include "message/console.h"
-#include "message/file.h"
 
 void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
     message_printer_init();    

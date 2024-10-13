@@ -117,7 +117,6 @@ add_unit_test(
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
 
-#[[
 add_unit_test(
     NAME section
     SOURCES 
@@ -130,4 +129,3 @@ add_unit_test(
     LIBRARIES cwalk jansson
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
-#]]
