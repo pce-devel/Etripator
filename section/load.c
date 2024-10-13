@@ -62,7 +62,7 @@ static inline DataType json_validate_data_type(const char *str) {
     return DATA_TYPE_UNKNOWN;
 }
 
-static inline bool json_parse_section_type(const json_t *obj, SectionType *out) {
+static inline bool json_parse_section_type(Section *out, const json_t *obj) {
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "type");
     if (tmp == NULL) {
@@ -70,8 +70,8 @@ static inline bool json_parse_section_type(const json_t *obj, SectionType *out) 
     } else if (!json_is_string(tmp)) {
         ERROR_MSG("Invalid section type.");
     } else {
-        *out = json_validate_section_type(json_string_value(tmp));     
-        if (*out == SECTION_TYPE_UNKNOWN) {
+        out->type = json_validate_section_type(json_string_value(tmp));     
+        if (out->type == SECTION_TYPE_UNKNOWN) {
             ERROR_MSG("Invalid section type value.");
         } else {
             ret =  true;
@@ -80,7 +80,7 @@ static inline bool json_parse_section_type(const json_t *obj, SectionType *out) 
     return ret;
 }
 
-static inline bool json_parse_section_page(const json_t *obj, uint8_t *out) {
+static inline bool json_parse_section_page(Section *out, const json_t *obj) {
     int num;
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "page");
@@ -91,13 +91,13 @@ static inline bool json_parse_section_page(const json_t *obj, uint8_t *out) {
     } else if ((num < 0) || (num > 255)) {
         ERROR_MSG("Section memory page out of range.");
     } else {
-        *out = (uint8_t)num;
+        out->page = (uint8_t)num;
         ret = true;
     }
     return ret;
 }
 
-static inline bool json_parse_section_logical(const json_t *obj, uint16_t *out) {
+static inline bool json_parse_section_logical(Section *out, const json_t *obj) {
     int num;
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "logical");
@@ -108,13 +108,13 @@ static inline bool json_parse_section_logical(const json_t *obj, uint16_t *out) 
     } else if ((num < 0) || (num > 0xFFFF)) {
         ERROR_MSG("Section logical address out of range.");
     } else {
-        *out = (uint16_t)num;
+        out->logical = (uint16_t)num;
         ret = true;
     }
     return ret;
 }
 
-static inline bool json_parse_section_offset(const json_t *obj, Section *out) {
+static inline bool json_parse_section_offset(Section *out, const json_t *obj) {
     int num;
     bool ret = true;
     json_t *tmp = json_object_get(obj, "offset");
@@ -129,14 +129,14 @@ static inline bool json_parse_section_offset(const json_t *obj, Section *out) {
     return ret;
 }
 
-static inline bool json_parse_section_size(const json_t *obj, int32_t *out) {
+static inline bool json_parse_section_size(Section *out, const json_t *obj) {
     bool ret = true;
     int num;
     const json_t *tmp = json_object_get(obj, "size");
     if (tmp == NULL) {
-        *out = -1;
+        // use default value
     } else if (json_validate_int(tmp, &num)) {
-        *out = (int32_t)num;
+        out->size = (int32_t)num;
     } else {
         ERROR_MSG("Invalid section size.");
         ret = false;
@@ -144,7 +144,7 @@ static inline bool json_parse_section_size(const json_t *obj, int32_t *out) {
     return ret;
 }
 
-static inline bool json_parse_section_mpr(const json_t *obj, Section *out) {
+static inline bool json_parse_section_mpr(Section *out, const json_t *obj) {
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "mpr");
     if(tmp == NULL) {
@@ -176,7 +176,7 @@ static inline bool json_parse_section_mpr(const json_t *obj, Section *out) {
     return ret;
 }
 
-static inline bool json_parse_section_output(const json_t *obj, Section *out) {
+static inline bool json_parse_section_output(Section *out, const json_t *obj) {
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "filename");
     if (tmp == NULL) {
@@ -194,7 +194,7 @@ static inline bool json_parse_section_output(const json_t *obj, Section *out) {
     return ret;
 }
 
-static inline bool json_parse_data_config_type(const json_t *obj, DataType *out) {
+static inline bool json_parse_data_config_type(DataConfig *out, const json_t *obj) {
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "type");
     if (tmp == NULL) {
@@ -202,8 +202,8 @@ static inline bool json_parse_data_config_type(const json_t *obj, DataType *out)
     } else if (!json_is_string(tmp)) {
         ERROR_MSG("Invalid section data type.");
     } else {
-        *out = json_validate_section_type(json_string_value(tmp));     
-        if (*out == DATA_TYPE_UNKNOWN) {
+        out->type = json_validate_data_type(json_string_value(tmp));     
+        if (out->type == DATA_TYPE_UNKNOWN) {
             ERROR_MSG("Invalid section data type value.");
         } else {
             ret =  true;
@@ -212,14 +212,14 @@ static inline bool json_parse_data_config_type(const json_t *obj, DataType *out)
     return ret;
 }
 
-static inline bool json_parse_data_config_element_size(const json_t *obj, DataConfig *out) {
+static inline bool json_parse_data_config_element_size(DataConfig *out, const json_t *obj) {
     bool ret = false;
     const json_t *value = json_object_get(obj, "element_size");
     if(value == NULL) {
         ret = true; // use default value
     } else if(out->type != DATA_TYPE_HEX) {
         ERROR_MSG("Element size is only valid for hex data type");
-    } else if(!json_validate_int(obj, &out->element_size)) {
+    } else if(!json_validate_int(value, &out->element_size)) {
         ERROR_MSG("Invalid element size");
     } else if((out->element_size < 0) || (out->element_size > 2)) {
         ERROR_MSG("Invalid element size value: %d", out->element_size);
@@ -229,14 +229,14 @@ static inline bool json_parse_data_config_element_size(const json_t *obj, DataCo
     return ret;
 }
 
-static inline bool json_parse_data_config_element_per_line(const json_t *obj, DataConfig *out) {
+static inline bool json_parse_data_config_element_per_line(DataConfig *out, const json_t *obj) {
     bool ret = false;
     const json_t *value = json_object_get(obj, "elements_per_line");
     if(value == NULL) {
         ret = true; // use default value
     } else if(out->type == DATA_TYPE_BINARY) {
         ERROR_MSG("Number of elements per line is invalid for binary data section");
-    } else if (!json_validate_int(obj, &out->elements_per_line)) {
+    } else if (!json_validate_int(value, &out->elements_per_line)) {
         ERROR_MSG("Invalid number of elements per line.");
     } else {
         ret = true;
@@ -244,17 +244,19 @@ static inline bool json_parse_data_config_element_per_line(const json_t *obj, Da
     return ret;
 }
 
-static bool json_parse_section_data_config(const json_t *obj, DataConfig *out) {
+static bool json_parse_section_data_config(Section *out, const json_t *obj) {
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "data"); 
     if (tmp == NULL) {
         ret = true;
-    } else if(!json_parse_data_config_type(tmp, &out->type)) {
+    } else if(out->type != SECTION_TYPE_DATA) {
+        ERROR_MSG("Data configuration only valid for data sections");
+    } else if(!json_parse_data_config_type(&out->data, tmp)) {
         // ...
-    } else if(!json_parse_data_config_element_size(tmp, out)) {
+    } else if(!json_parse_data_config_element_size(&out->data, tmp)) {
         // ...
     } else {
-        ret = json_parse_data_config_element_per_line(tmp, out);
+        ret = json_parse_data_config_element_per_line(&out->data, tmp);
     }
     return ret;
 }
@@ -264,7 +266,7 @@ static bool json_parse_section_data_config(const json_t *obj, DataConfig *out) {
 /// \param [out] out Section.
 /// \return 1 upon success
 /// \return 0 if an error occured.
-static bool section_parse(const json_t *obj, Section *out) {
+static bool section_parse(Section *out, const json_t *obj) {
     assert(obj != NULL);
     assert(out != NULL);
     
@@ -273,40 +275,31 @@ static bool section_parse(const json_t *obj, Section *out) {
     section_reset(out);
     if (!json_is_object(obj)) {
         ERROR_MSG("Invalid json element.");
-    } else if(!json_parse_section_type(obj, &out->type)) {
+    } else if(!json_parse_section_type(out, obj)) {
         // ...
-    } else if(!json_parse_section_page(obj, &out->page)) {
+    } else if(!json_parse_section_page(out, obj)) {
         // ...
-    } else if(!json_parse_section_logical(obj, &out->logical)) {
+    } else if(!json_parse_section_logical(out, obj)) {
         // ...
-    } else if(!json_parse_section_offset(obj, out)) {
+    } else if(!json_parse_section_offset(out, obj)) {
         // ...
-    } else if(!json_parse_section_size(obj, &out->size)) {
+    } else if(!json_parse_section_size(out, obj)) {
         // ...
-    } else if(!json_parse_section_mpr(obj, out)) {
+    } else if(!json_parse_section_mpr(out, obj)) {
 
-    } else if(!json_parse_section_output(obj, out)) {
+    } else if(!json_parse_section_output(out, obj)) {
+        // ...
+    } else if(!json_parse_section_data_config(out, obj)) {
         // ...
     } else {
-        const json_t *data = json_object_get(obj, "data");
-        if(data != NULL) {
-            if(out->type != SECTION_TYPE_DATA) {
-                ERROR_MSG("Data configuration only valid for data sections");
-            } else  if(!json_parse_section_data_config(data, &out->data)) {
-            // ...
-            } else {
-                // description (optional)
-                ret = json_load_description(data, "description", &out->description);
-            }
-        } else {
-            ret = true;
-        }
+        // description (optional)
+        ret = json_load_description(obj, "description", &out->description);
     }
     return ret;
 }
 
 // Load sections from a JSON file.
-bool section_load(const char *filename, Section **out, int *n) {
+bool section_load(Section **out, int *n, const char *filename) {
     bool ret = false;
     json_error_t err;
     Section *ptr;
@@ -324,15 +317,14 @@ bool section_load(const char *filename, Section **out, int *n) {
             *out = (Section*)realloc(*out, (*n+size) * sizeof(Section));
             ptr = *out + *n;
             *n += (int)size;
+            ret = true;
             json_object_foreach(root, key, obj) {
-                section_reset(ptr);
-                ret = ret && section_parse(obj, ptr);
-                if(ret) {
-                    ptr->name = strdup(key);
+                if(!section_parse(ptr, obj)) {
+                    ret = false;
                 }
+                ptr->name = strdup(key);
                 ptr++;
             }
-            ret = true;
         }
         json_decref(root);
     }

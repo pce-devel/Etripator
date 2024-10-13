@@ -38,29 +38,22 @@
 #include "message.h"
 #include "message/console.h"
 
-void* setup(const MunitParameter params[], void* user_data) {
-    (void) params;
-    (void) user_data;
-    
-    console_msg_printer_t *printer = (console_msg_printer_t*)malloc(sizeof(console_msg_printer_t));
-    
-    msg_printer_init();    
-    console_msg_printer_init(printer);
-    msg_printer_add((msg_printer_t*)printer);
 
-    return (void*)printer;
+void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+    message_printer_init();    
+    console_message_printer_init();
+    return NULL;
 }
 
-void tear_down(void* fixture) {
-    msg_printer_destroy();
-    free(fixture);
+void tear_down(void* fixture __attribute__((unused))) {
+    message_printer_destroy();
 }
 
 MunitResult section_sort_test(const MunitParameter params[], void* fixture) {
     (void)params;
     (void)fixture;
     
-    section_t section[8];
+    Section section[8];
     
     section[0].output = "0002";
     section[0].page = 0;
@@ -110,39 +103,39 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
     (void)params;
     (void)fixture;
 
-    static section_t bank0_0[4] = {
-        { "cdbios_functions", Code, 0, 0xe000, 0x0000, 0x505, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } }, 
-        { "unknown.0", Data, 0, 0xe504, 0x0504, 0x05, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
-        { "ex_colorcmd.impl", Code, 0, 0xe509, 0x0509, 0xce, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
-        { "unknown.1", Data, 0, 0xe5d7, 0x05d7, 0x03, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } }
+    static const Section bank0_0[4] = {
+        { "cdbios_functions", SECTION_TYPE_CODE, 0, 0xe000, 0x0000, 0x505, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } }, 
+        { "unknown.0", SECTION_TYPE_DATA, 0, 0xe504, 0x0504, 0x05, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
+        { "ex_colorcmd.impl", SECTION_TYPE_CODE, 0, 0xe509, 0x0509, 0xce, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
+        { "unknown.1", SECTION_TYPE_DATA, 0, 0xe5d7, 0x05d7, 0x03, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } }
     };
 
-    static section_t bank0_1[9] = {
-        { "ex_satclr.impl", Code, 0, 0xe5da, 0x05da, 0x26, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } }, 
-        { "unknown.2", Data, 0, 0xf8a9, 0x18a9, 0x0f, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
-        { "bm_free.impl", Code, 0, 0xf8b8, 0x18b8, 0x575, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
-        { "jump_table.0", Data, 0, 0xfe2d, 0x1e2d, 0x2a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
-        { "grp_bios.impl", Code, 0, 0xfe57, 0x1e57, 0x18, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
-        { "jump_table.1", Data, 0, 0xfe70, 0x1e70, 0x22, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
-        { "ex_memopen.impl", Code, 0, 0xfe92, 0x1e92, 0x30, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
-        { "unknown.3", Data, 0, 0xfec2, 0x1ec2, 0x134, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { UnknownDataType, 8, 16 } },
-        { "irq_vectors", Data, 0, 0xfff6, 0x1ff6, 0x0a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { Hex, 2, 1 } }
+    static const Section bank0_1[9] = {
+        { "ex_satclr.impl", SECTION_TYPE_CODE, 0, 0xe5da, 0x05da, 0x26, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } }, 
+        { "unknown.2", SECTION_TYPE_DATA, 0, 0xf8a9, 0x18a9, 0x0f, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
+        { "bm_free.impl", SECTION_TYPE_CODE, 0, 0xf8b8, 0x18b8, 0x575, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
+        { "jump_table.0", SECTION_TYPE_DATA, 0, 0xfe2d, 0x1e2d, 0x2a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
+        { "grp_bios.impl", SECTION_TYPE_CODE, 0, 0xfe57, 0x1e57, 0x18, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
+        { "jump_table.1", SECTION_TYPE_DATA, 0, 0xfe70, 0x1e70, 0x22, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
+        { "ex_memopen.impl", SECTION_TYPE_CODE, 0, 0xfe92, 0x1e92, 0x30, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
+        { "unknown.3", SECTION_TYPE_DATA, 0, 0xfec2, 0x1ec2, 0x134, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
+        { "irq_vectors", SECTION_TYPE_DATA, 0, 0xfff6, 0x1ff6, 0x0a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_HEX, 2, 1 } }
     };
 
-    static const section_t* bank0[2] = { bank0_0, bank0_1 };
+    static const Section* bank0[2] = { bank0_0, bank0_1 };
     
-    section_t *section = NULL;
+    Section *section = NULL;
     int count[2] = { 0, 0 };
 
     int i, j, k;
     int ret;
-    
-    ret = section_load("./data/bank0_0.json", &section, &count[0]);
+    ret = section_load(&section, &count[0], "./data/bank0_0.json");
+
     munit_assert_int(ret, !=, 0);
     munit_assert_int(count[0], ==, 4);
     
     section_sort(section, count[0]);
-        
+
     for(i=0; i<count[0]; i++) {
         munit_assert_string_equal(bank0[0][i].name, section[i].name);
         munit_assert_int(bank0[0][i].type, ==, section[i].type);
@@ -155,9 +148,9 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
         munit_assert_int32(bank0[0][i].data.elements_per_line, ==, section[i].data.elements_per_line);
         munit_assert_string_equal(bank0[0][i].output, section[i].output);
     }
-    
+
     count[1] = count[0];
-    ret = section_load("./data/bank0_1.json", &section, &count[1]);
+    ret = section_load(&section, &count[1], "./data/bank0_1.json");
     munit_assert_int(ret, !=, 0);
     munit_assert_int(count[1], ==, 13);
     
