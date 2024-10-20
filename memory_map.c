@@ -33,47 +33,84 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "memory.h"
+#include "memory_map.h"
 #include "message.h"
 
-// Creates a new memory block.
-bool memory_create(Memory *memory, size_t length) {
-    assert(memory != NULL);
-
-    bool ret = false;
-    if(length == 0) {
-        ERROR_MSG("Invalid length");
-    } else {
-        uint8_t *buffer = (uint8_t*)malloc(length);
-        if(buffer == NULL) {
-            ERROR_MSG("Unable to allocate %zu bytes: %s.", length, strerror(errno));
-        } else {
-            memory->data = buffer;
-            memory->length = length;
-            ret = true;
-        }
+// Resets memory map.
+static void memory_map_clear(MemoryMap *map) {
+    for(unsigned int i=0; i<PCE_MEMORY_COUNT; i++) {
+        map->memory[i].length = 0;
+        map->memory[i].data = NULL;
     }
-    return ret;
+    for(unsigned int i=0; i<PCE_MPR_COUNT; i++) {
+        map->mpr[i] = 0xFFU;
+    }
+    for(unsigned int i=0; i<PCE_PAGE_COUNT; i++) {
+        map->page[i].id = PCE_MEMORY_NONE;
+        map->page[i].bank = 0;
+    }  
 }
 
-// Releases memory block resources.
-void memory_destroy(Memory *memory) {
-    assert(memory != NULL);
-    free(memory->data);
-    memory->data = NULL;
-    memory->length = 0;
-}
-
-// Fills a memory block with a given byte value.
-bool memory_fill(Memory *memory, uint8_t c) {
-    assert(memory != NULL);
+// Initializes memory map.
+bool memory_map_init(MemoryMap *map) {
     bool ret = false;
-    if(memory->data != NULL) {
-        const size_t n = memory->length;
-        for(size_t i=0; i<n; i++) {
-            memory->data[i] = c;
+
+    memory_map_clear(map);
+
+    // Allocate main (or work) RAM.
+    if(!memory_create(&map->memory[PCE_MEMORY_BASE_RAM], PCE_BANK_SIZE)) {
+        ERROR_MSG("Failed to allocate main memory!");
+    } else {
+        // Main RAM is mapped to pages 0xF8 to 0xFB (included).
+        // Pages 0xF9 to 0xFB mirror page 0xF8. */
+        for(unsigned int i=0xf8; i<=0xfb; i++) {
+            map->page[i].id = PCE_MEMORY_BASE_RAM;
+            map->page[i].bank = 0;
         }
+        
+        // ROM and syscard RAM will be initialized later.
         ret = true;
     }
     return ret;
+}
+
+// Releases resources used by the memory map.
+void memory_map_destroy(MemoryMap *map) {
+    assert(map != NULL);
+    for(unsigned i=0; i<PCE_MEMORY_COUNT; i++) {
+        memory_destroy(&map->memory[i]);
+    }
+    memory_map_clear(map);
+}
+
+// Get the memory page associated to a logical address.
+uint8_t memory_map_page(MemoryMap* map, uint16_t logical) {
+    assert(map != NULL);
+    uint8_t id = (logical >> 13) & 0x07U;
+    return map->mpr[id];
+}
+
+// Reads a single byte from memory. 
+uint8_t memory_map_read(MemoryMap *map, size_t logical) {
+    assert(map != NULL);
+    const uint8_t id = memory_map_page(map, (uint16_t)logical);
+    const Page *page = &map->page[id];
+    
+    uint8_t ret = 0xFFU;
+    if(page->id != PCE_MEMORY_NONE) {
+        const size_t offset = (logical & 0x1FFFU) + (page->bank * PCE_BANK_SIZE);
+        const Memory *mem = &map->memory[page->id];
+        if(offset < mem->length) {
+            ret = mem->data[offset];
+        }
+    }
+    return ret;
+}
+
+// Update mprs.
+void memory_map_mpr(MemoryMap *map, const uint8_t mpr[PCE_MPR_COUNT]) {
+    assert(map != NULL);
+    for(unsigned int i=0; i<PCE_MPR_COUNT; i++) {
+        map->mpr[i] = mpr[i];
+    }
 }

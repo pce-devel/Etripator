@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,53 +33,65 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "memorymap.h"
-#include "message.h"
-/* Initializes memory map.  */
-int memmap_init(memmap_t *map) {
-    int i, ret = 0;
-    memset(map, 0, sizeof(memmap_t));
-    /* Allocate main (or work) RAM */
-    if(!mem_create(&map->mem[PCE_MEM_BASE_RAM], 8192)) {
-        ERROR_MSG("Failed to allocate main memory!\n");
-    } else {
-        /* Main RAM is mapped to pages 0xf8-0xfb (included). */
-        /* Pages 0xf9 to 0xfb mirror page 0xf8. */
-        for(i=0xf8; i<=0xfb; i++) {
-            map->page[i] = &(map->mem[PCE_MEM_BASE_RAM].data[0]);
-        }
-        
-        /* ROM and syscard RAM will be initialized later. */
+#ifndef ETRIPATOR_MEMORY_MAP_H
+#define ETRIPATOR_MEMORY_MAP_H
 
-        /* Clear mprs. */
-        memset(map->mpr, 0, 8);
-        map->mpr[0] = 0xff;
-        map->mpr[1] = 0xf8;
-    
-        ret = 1;
-    }
-    return ret;
-}
-/* Releases resources used by the memory map. */
-void memmap_destroy(memmap_t *map) {
-    int i;
-    for(i=0; i<PCE_MEM_COUNT; i++) {
-        mem_destroy(&map->mem[i]);
-    }
-    memset(map, 0, sizeof(memmap_t));
-}
-/* Get the memory page associated to a logical address. */
-uint8_t memmap_page(memmap_t* map, uint16_t logical) {
-    uint8_t id = (logical >> 13) & 0x07;
-    return map->mpr[id];
-}
-/* Reads a single byte from memory. */
-uint8_t memmap_read(memmap_t *map, size_t logical) {
-    uint8_t i = memmap_page(map, (uint16_t)logical);
-    return (map->page[i]) ? map->page[i][logical & 0x1fff] : 0xff;
-}
-/* Update mprs. */
-void memmap_mpr(memmap_t *map, const uint8_t *mpr) {
-    memcpy(map->mpr, mpr, 8);
-}
+#include "memory.h"
 
+/// PC Engine memory blocks.
+enum {
+    PCE_MEMORY_NONE = -1,
+    PCE_MEMORY_ROM = 0,
+    PCE_MEMORY_BASE_RAM,
+    PCE_MEMORY_CD_RAM,
+    PCE_MEMORY_SYSCARD_RAM,
+    PCE_MEMORY_COUNT
+};
+
+#define PCE_PAGE_COUNT 0x100U
+
+#define PCE_MPR_COUNT 8U
+
+#define PCE_BANK_SIZE 8192U
+
+/// PC Engine memory page description.
+typedef struct {
+    int id;         // name the PCE_MEMORY_* enum ?
+    size_t bank;
+} Page;
+
+/// PC Engine memory map.
+typedef struct {
+    Memory memory[PCE_MEMORY_COUNT];
+    Page page[PCE_PAGE_COUNT];
+    uint8_t mpr[PCE_MPR_COUNT];
+} MemoryMap;
+
+/// Initializes memory map.
+/// \param [in out] map Memory map.
+/// \return true 
+/// \return false
+bool memory_map_init(MemoryMap *map);
+
+/// Releases resources used by the memory map.
+/// \param [in out] map Memory map.
+void memory_map_destroy(MemoryMap *map);
+
+/// Get the memory page associated to a logical address.
+/// \param [in] map Memory map.
+/// \param [in] logical Logical address.
+/// \return Memory page.
+uint8_t memory_map_page(MemoryMap* map, uint16_t logical);
+
+/// Reads a single byte from memory.
+/// \param [in] map     Memory map.
+/// \param [in] logical Logical address.
+/// \return The value stored at the specified logical address.
+uint8_t memory_map_read(MemoryMap *map, size_t logical);
+
+/// Update the whole mprs list
+/// \param [in out] map Memory map.
+/// \param [in]     mpr Memory page registers.
+void memory_map_mpr(MemoryMap *map, const uint8_t mpr[PCE_MPR_COUNT]);
+
+#endif // ETRIPATOR_MEMORY_MAP_H

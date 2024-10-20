@@ -9,7 +9,7 @@
 * [Gfx unpacking](examples/maerchen_maze) in Maerchen Maze - メルヘンメイズ .
 * [Memory Base 128 detection](examples/tadaima) in Taidama Yusha Boshuchu - ただいま勇者募集中.
 * [Joypad routine](examples/sf2) of Street Fighter II' Champion Edition - ストリートファイターII'.
-* [Games Express CD Card bank #0](examples/games_express).
+* [Games Express CD Card](https://github.com/BlockoS/GamesExpressCDCard).
 * [Password check](examples/youkai_douchuuki) in Youkai Douchuuki - 妖怪道中記.
 
 ## Usage
@@ -22,7 +22,7 @@ The options are :
 * **--help** or **-h** : displays help.
 * **--out** or **-o < file >** : main asm file containing includes for all sections as long the irq vector table if the irq-detect  option is enabled.
 * **--labels** or **-l < file >** : labels definition filename.
-* **--labels-out <file>** : extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl.\n"
+* **--labels-out <file>** : extracted labels output filename. Otherwise the labels will be written to `"<in>.YYMMDDhhmmss.lbl"`
 * **--comments <file>** : comments description filename.
 * **--address** : print statement logical address and page in an inline comment.
 * **cfg** :  configuration file. It is optional if irq detection is enabled.
@@ -189,27 +189,24 @@ This can be acheived using a package manager (apt, brew, chocolate, pacman, ...)
 wget https://github.com/akheron/jansson/archive/v2.12.zip
 unzip v2.12.zip
 cd jansson-2.12
-mkdir -p build/cmake
-mkdir -p build/install
-cd build/cmake
-cmake ../.. -DJANSSON_BUILD_DOCS=OFF \
-            -DJANSSON_WITHOUT_TESTS=ON \
-            -DCMAKE_INSTALL_PREFIX=../install 
-cmake --build . --target install
-cd ../../..
+mkdir -p build
+cmake -Bbuild/cmake -S . \
+      -DJANSSON_BUILD_DOCS=OFF \
+      -DJANSSON_WITHOUT_TESTS=ON \
+      -DCMAKE_INSTALL_PREFIX=build/install 
+cmake --build build/cmake --target install
 ```
 
 Now on to building etripator. 
 ```
 cd etripator
-mkdir -p build/cmake
-cd build/cmake
-cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install
+mkdir -p build
+cmake -Bbuild/cmake -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=cmake/install
 ```
 
 If you build jansson as shown earlier you may configure the project with
 ```
-cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install \
+cmake -Bbuild/cmake -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=build/install \
     -DJANSSON_INCLUDE_DIR=../../jansson-2.12/build/install/include \
     -DJANSSON_LIBRARY=../../jansson-2.12/build/install/lib/jansson.lib 
 ```
@@ -218,7 +215,7 @@ cmake ../.. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../install \
 
 If everything went right, you can now compile the project with:
 ```
-cmake --build . --config Release --target install
+cmake --build build/cmake --target install
 ```
 
 ## Authors

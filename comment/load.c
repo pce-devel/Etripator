@@ -36,62 +36,56 @@
 #include <jansson.h>
 #include "../message.h"
 #include "../jsonhelpers.h"
-#include "../label.h"
+#include "../comment.h"
 
-#define MAX_LABEL_NAME 128
-
-// Load labels from file.
-bool label_repository_load(LabelRepository* repository, const char* filename) {
-    assert(repository != NULL);
+// Load comments from file.
+bool comment_repository_load(CommentRepository* repository, const char* filename) {
     assert(filename != NULL);
+    assert(repository != NULL);
 
     bool ret = false;
 
+    json_t* root;
     json_error_t err;
-    json_t* root = json_load_file(filename, 0, &err);
+    json_t* value;
+    int index = 0;
+    root = json_load_file(filename, 0, &err);
     if(!root) {
         ERROR_MSG("Failed to parse %s:%d:%d: %s", filename, err.line, err.column, err.text);
     } else {
-        json_t* value = NULL;
-        int index = 0;
         if(!json_is_array(root)) {
             ERROR_MSG("Array expected.");
         } else for (index = 0, ret = true; ret && (index < json_array_size(root)) && (value = json_array_get(root, index)); index++) {
-            ret = 0;
+            ret = false;
             if(!json_is_object(value)) {
                 ERROR_MSG("Expected object.");
             } else {
-                // name
-                json_t* tmp = json_object_get(value, "name");
-                if (!json_is_string(tmp)) {
-                    ERROR_MSG("Missing or invalid label name.");
+                int num;
+                // logical
+                json_t *tmp = json_object_get(value, "logical");
+                if(!json_validate_int(tmp, &num)) {
+                    ERROR_MSG("Invalid or missing logical address.");
+                } else if((num < 0) || (num > 0xffff)) {
+                    ERROR_MSG("Logical address out of range.");
                 } else {
-                    int num;
-                    const char* key = json_string_value(tmp);
-                    // logical
-                    tmp = json_object_get(value, "logical");
+                    uint16_t logical = (uint16_t)num;
+                    // page
+                    tmp = json_object_get(value, "page");
                     if(!json_validate_int(tmp, &num)) {
-                        ERROR_MSG("Invalid or missing logical address.");
-                    } else if((num < 0) || (num > 0xFFFF)) {
-                        ERROR_MSG("Logical address out of range.");
+                        ERROR_MSG("Invalid or missing page.");
                     } else {
-                        uint16_t logical = (uint16_t)num;
-                        // page
-                        tmp = json_object_get(value, "page");
-                        if(!json_validate_int(tmp, &num)) {
-                            ERROR_MSG("Invalid or missing page.");
-                        } else {
-                            // description
-                            char* description = NULL;
-                            if(json_load_description(value, "description", &description) != true) {
-                                ERROR_MSG("Failed to load label description");
-                            } else if((num < 0) || (num > 0xff)) {
-                                ERROR_MSG("Page value out of range.");
-                            } else if(label_repository_add(repository, key, logical, (uint8_t)num, description)) {
-                                ret = true;
-                            }
-                            free(description);
+                        // text (same format as section/label description)
+                        char* text = NULL;
+                        if(json_load_description (value, "text", &text) != true) {
+                            ERROR_MSG("Faile to retrieve text.");
+                        } else if(text == NULL) {
+                            ERROR_MSG("Empty text string");
+                        } else if((num < 0) || (num > 0xFF)) {
+                            ERROR_MSG("Page value out of range.");
+                        } else if(comment_repository_add(repository, logical, (uint8_t)num, text)) {
+                            ret = true;
                         }
+                        free(text);
                     }
                 }
             }

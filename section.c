@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -43,53 +43,57 @@
 static const int32_t g_default_element_size = 8;
 static const int32_t g_default_elements_per_line = 16;
 
-static const char *g_supported_section_types[SectionTypeCount] = {
-    "data",
-    "code"
-};
+// Retrieves section type name
+const char* section_type_name(SectionType type) {
+    static const char *name[SECTION_TYPE_COUNT] = {
+        [SECTION_TYPE_DATA] = "data",
+        [SECTION_TYPE_CODE] = "code"
+    };
 
-static const char *g_supported_data_types[DataTypeCount] = {
-    "binary",
-    "hex",
-    "string",
-    "jumptable"
-};
-
-/* Retrieves section type name. */
-const char* section_type_name(section_type_t type) {
-    if((type <= UnknownSectionType) || (type >= SectionTypeCount)) {
+    if((type <= SECTION_TYPE_UNKNOWN) || (type >= SECTION_TYPE_COUNT)) {
         return "unknown";
     }
-    return g_supported_section_types[type];
+    return name[type];
 }
 
-/* Retrieves data type name. */
-const char* data_type_name(data_type_t type) {
-    if((type <= UnknownDataType) || (type >= DataTypeCount)) {
+// Retrieves data type name
+const char* data_type_name(DataType type) {
+    static const char *name[DATA_TYPE_COUNT] = {
+        [DATA_TYPE_BINARY] = "binary",
+        [DATA_TYPE_HEX] = "hex",
+        [DATA_TYPE_STRING] = "string",
+        [DATA_TYPE_JUMP_TABLE] = "jumptable"
+    };
+
+    if((type <= DATA_TYPE_UNKNOWN) || (type >= DATA_TYPE_COUNT)) {
         return "unknown";
     }
-    return g_supported_data_types[type];
+    return name[type];
 }
 
-/* Reset a section to its default values. */
-void section_reset(section_t *s) {
+// Reset a section to its default values
+void section_reset(Section *s) {
+    assert(s != NULL);
     s->name = NULL;
-    s->type = UnknownSectionType;
+    s->type = SECTION_TYPE_UNKNOWN;
     s->page = 0;
     s->logical = 0;
     s->offset = 0;
     s->size = 0;
-    memset(s->mpr, 0, 8*sizeof(uint8_t));
+    for(unsigned int i=0; i<8U; i++) {
+        s->mpr[i] = 0;
+    }
     s->output = NULL;
-    s->data.type = UnknownDataType;
+    s->data.type = DATA_TYPE_UNKNOWN;
     s->data.element_size = g_default_element_size;
     s->data.elements_per_line = g_default_elements_per_line;
     s->description = NULL;
 }
 
 static int section_compare(const void *a, const void *b) {
-    section_t* s0 = (section_t*)a;
-    section_t* s1 = (section_t*)b;
+    Section* s0 = (Section*)a;
+    Section* s1 = (Section*)b;
+   
     int cmp = s0->page - s1->page;
     if(!cmp) {
         cmp = s0->logical - s1->logical;
@@ -97,24 +101,18 @@ static int section_compare(const void *a, const void *b) {
     return cmp;
 }
 
-/* Group section per output filename and sort them in bank/org order. */
-void section_sort(section_t *ptr, size_t n) {
-    qsort(ptr, n, sizeof(section_t), &section_compare);
+// Group section per output filename and sort them in bank/org order.
+void section_sort(Section *ptr, size_t n) {
+    qsort(ptr, n, sizeof(Section), &section_compare);
 }
 
-/* Delete sections. */
-void section_delete(section_t *ptr, int n) {
-    int i;
-    for(i=0; i<n; i++) {
-        if(ptr[i].name) {
-            free(ptr[i].name);
-        }
-        if(ptr[i].output) {
-            free(ptr[i].output);
-        }
-        if(ptr[i].description) {
-            free(ptr[i].description);
-        }
+// Delete sections.
+void section_delete(Section *ptr, int n) {
+    assert(ptr != NULL);
+    for(int i=0; i<n; i++) {
+        free(ptr[i].name);
+        free(ptr[i].output);
+        free(ptr[i].description);
     }
     free(ptr);
 }

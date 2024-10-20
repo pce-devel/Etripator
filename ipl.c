@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,8 +39,9 @@
 #define IPL_HEADER_SIZE 0x80
 #define IPL_DATA_SIZE 0xB2
 
-static int ipl_read_header(ipl_t *out, FILE *in, const char *filename) {
-    int ret = 0;
+static bool ipl_read_header(IPL *out, FILE *in, const char *filename) {
+    bool ret = false;
+
     if(fread(out->load_start_record, 1, 3, in) != 3) {
         ERROR_MSG("Failed to read IPLBLK from %s: %s", filename, strerror(errno));
     } else if(fread(&out->load_sector_count, 1, 1, in) != 1) {
@@ -76,12 +77,12 @@ static int ipl_read_header(ipl_t *out, FILE *in, const char *filename) {
     } else if(fread(out->extra, 1, 6, in) != 6) {
         ERROR_MSG("Failed to read EXTRA from %s: %s", filename, strerror(errno));
     } else {
-        ret = 1;
+        ret = true;
     }
     return ret;
 }
 
-void ipl_print(ipl_t *in) {
+void ipl_print(IPL *in) {
     INFO_MSG("IPLBLK: hi:%02x mid:%02x lo:%02x", in->load_start_record[0], in->load_start_record[1], in->load_start_record[2]); 
     INFO_MSG("IPLBKN: %02x", in->load_sector_count);
     INFO_MSG("IPLSTA: hi:%02x lo:%02x", in->load_store_address[1], in->load_store_address[0]);
@@ -107,31 +108,39 @@ void ipl_print(ipl_t *in) {
     } else {
         fprintf(stream,  "IPLBLK: .db $%02x, $%02x, $%02x\n", in->load_start_record[0], in->load_start_record[1], in->load_start_record[2]); 
         fprintf(stream, "IPLBKN: .db $%02x\n", in->load_sector_count);
-        fprintf(stream, "IPLSTA: .dw $%02x%02x\n", in->load_store_address[0], in->load_store_address[1]);
-        fprintf(stream, "IPLJMP: .dw $%02x%02x\n", in->load_exec_address[0], in->load_exec_address[1]);
+        fprintf(stream, "IPLSTA: .dw $%02x%02x\n", in->load_store_address[1], in->load_store_address[0]);
+        fprintf(stream, "IPLJMP: .dw $%02x%02x\n", in->load_exec_address[1], in->load_exec_address[0]);
         fprintf(stream, "IPLMPR: .db $%02x, $%02x, $%02x, $%02x, $%02x\n", in->mpr[0], in->mpr[1], in->mpr[2], in->mpr[3], in->mpr[4]);
         fprintf(stream, "OPENMODE: .db $%02x\n", in->opening_mode);
         fprintf(stream, "GRPBLK: .db $%02x, $%02x, $%02x\n", in->opening_gfx_record[0], in->opening_gfx_record[1], in->opening_gfx_record[2]); 
         fprintf(stream, "GRPBLN: .db $%02x\n", in->opening_gfx_sector_count);
-        fprintf(stream, "GRPADR: .dw $%02x%02x\n", in->opening_gfx_read_address[0], in->opening_gfx_read_address[1]);
+        fprintf(stream, "GRPADR: .dw $%02x%02x\n", in->opening_gfx_read_address[1], in->opening_gfx_read_address[0]);
         fprintf(stream, "ADPBLK: .db $%02x, $%02x, $%02x\n", in->opening_adpcm_record[0], in->opening_adpcm_record[1], in->opening_adpcm_record[2]);
         fprintf(stream, "ADPBLN: .db %02x\n", in->opening_adpcm_sector_count);
-        fprintf(stream, "ADPRATE: .db $%02x\b", in->opening_adpcm_sampling_rate);
+        fprintf(stream, "ADPRATE: .db $%02x\n", in->opening_adpcm_sampling_rate);
         fprintf(stream, "RESERVED: .db $%02x, $%02x, $%02x, $%02x, $%02x, $%02x, $%02x\n", 
             in->reserved[0], in->reserved[1], in->reserved[2], in->reserved[3],
             in->reserved[4], in->reserved[5], in->reserved[6]);
-        fprintf(stream, "ID STR: .db \"%.24s\"\n", in->id);
-        fprintf(stream, "LEGAL: .db \"%.50s\"\n", in->legal);
+        fprintf(stream, "ID STR: .db \"%.24s\"", in->id);
+        for(int i=23; (i>=0) && (in->id[i] == '\0'); i--) {
+            fprintf(stream, ",0");
+        }
+        fputc('\n', stream);
+        fprintf(stream, "LEGAL: .db \"%.50s\"", in->legal);
+        for(int i=49; (i>=0) && (in->legal[i] == '\0'); i--) {
+            fprintf(stream, ",0");
+        }
+        fputc('\n', stream);
         fprintf(stream,"PROGRAM NAME: .db \"%.16s\"\n", in->program_name);
         fprintf(stream,"EXTRA: .db \"%.6s\"\n", in->extra);
         fclose(stream);
     }
 }
 
-/* Read IPL data from file. */
-int ipl_read(ipl_t *out, const char *filename) {
+// Read IPL data from file.
+bool ipl_read(IPL *out, const char *filename) {
+    bool ret = false;
     FILE *in = fopen(filename, "rb");
-    int ret = 0;
     if(in == NULL) {
         ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
     } else {
@@ -139,73 +148,71 @@ int ipl_read(ipl_t *out, const char *filename) {
             ERROR_MSG("Failed to seek to IPL header in %s: %s", filename, strerror(errno));
         } else if(ipl_read_header(out, in, filename)) {
             ipl_print(out);
-            ret = 1;
+            ret = true;
         }
         fclose(in);
     }
     return ret;
 }
 
-/* Get irq code offsets from IPL. */
-int ipl_sections(ipl_t *in, section_t **out, int *count) {
-    int i, j, k, extra;
-    section_t *section;
+//  Get irq code offsets from IPL.
+bool ipl_sections(IPL *in, Section **out, int *count) {
     static const char *section_name[2] = { "cd_start", "gfx_start" };
     static const char *section_filename[2] = { "cd_start.asm", "gfx_start.bin" };
-    uint32_t record;
     
-    extra = 0;
+    bool ret =true;
+    int extra = 0;
     if(in->load_sector_count) { extra++; }
     if(in->opening_gfx_sector_count) { extra++; }
-    if(0 == extra) {
+    if(extra == 0) {
         INFO_MSG("No section found from IPL data.");
-        return 1;
-    }
-        
-    j = *count;
-    section = (section_t*)realloc(*out, (j+extra) * sizeof(section_t));
-    if(NULL == section) {
-        ERROR_MSG("Failed to add extra sections.");
-        return 0;
-    }
-    *count += extra;
-    *out = section;
+    } else {
+        int j = *count;
+        Section *section = (Section*)realloc(*out, (j+extra) * sizeof(Section));
+        if(section == NULL) {
+            ERROR_MSG("Failed to add extra sections.");
+            ret = false;
+        } else {
+            *count += extra;
+            *out = section;
 
-    memset(&section[j], 0, extra * sizeof(section_t));
+            memset(&section[j], 0, extra * sizeof(Section));
 
-    for(k=0; k<extra; k++) {
-        section[j+k].mpr[0] = 0xff;
-        section[j+k].mpr[1] = 0xf8;
-        section[j+k].mpr[7] = 0x00;
-        for(i=0; i<5; i++) {
-            section[j+k].mpr[2+i] = 0x80 + in->mpr[i];
+            for(int k=0; k<extra; k++) {
+                section[j+k].mpr[0] = 0xff;
+                section[j+k].mpr[1] = 0xf8;
+                section[j+k].mpr[7] = 0x00;
+                for(int i=0; i<5; i++) {
+                    section[j+k].mpr[2+i] = 0x80 + in->mpr[i];
+                }
+            }
+            // "CD boot"
+            if(in->load_sector_count) {
+                uint32_t record = (in->load_start_record[0] << 16) | (in->load_start_record[1] << 8) | in->load_start_record[2];
+                section[j].name    = strdup(section_name[0]);
+                section[j].type    = SECTION_TYPE_CODE;
+                section[j].page    = section[j].mpr[in->load_exec_address[1]>>5];
+                section[j].logical = (in->load_exec_address[1] << 8) | in->load_exec_address[0];
+                section[j].offset  = record * 2048;
+                section[j].size    = in->load_sector_count * 2048;
+                section[j].output  = strdup(section_filename[0]);
+                j++;
+            }
+            // "GFX"
+            if(in->opening_gfx_sector_count) {
+                uint32_t record = (in->opening_gfx_record[0] << 16) | (in->opening_gfx_record[1] << 8) | in->opening_gfx_record[2];
+                section[j].name    = strdup(section_name[1]);
+                section[j].type    = SECTION_TYPE_DATA;
+                section[j].page    = section[j].mpr[in->opening_gfx_read_address[1]>>5];
+                section[j].logical = (in->opening_gfx_read_address[1] << 8) | in->opening_gfx_read_address[0];
+                section[j].offset  = record * 2048;
+                section[j].size    = in->opening_gfx_sector_count * 2048;
+                section[j].output  = strdup(section_filename[1]);
+                section[j].data.type = DATA_TYPE_BINARY;
+                section[j].data.element_size = 1;
+                section[j].data.elements_per_line = 16;
+            }
         }
     }
-    // "CD boot"
-    if(in->load_sector_count) {
-        record = (in->load_start_record[0] << 16) | (in->load_start_record[1] << 8) | in->load_start_record[2];
-        section[j].name    = strdup(section_name[0]);
-        section[j].type    = Code;
-        section[j].page    = section[j].mpr[in->load_exec_address[1]>>5];
-        section[j].logical = (in->load_exec_address[1] << 8) | in->load_exec_address[0];
-        section[j].offset  = record * 2048;
-        section[j].size    = in->load_sector_count * 2048;
-        section[j].output  = strdup(section_filename[0]);
-        j++;
-    }
-    // "GFX"
-    if(in->opening_gfx_sector_count) {
-        record = (in->opening_gfx_record[0] << 16) | (in->opening_gfx_record[1] << 8) | in->opening_gfx_record[2];
-        section[j].name    = strdup(section_name[1]);
-        section[j].type    = Data;
-        section[j].page    = section[j].mpr[in->opening_gfx_read_address[1]>>5];
-        section[j].logical = (in->opening_gfx_read_address[1] << 8) | in->opening_gfx_read_address[0];
-        section[j].offset  = record * 2048;
-        section[j].size    = in->opening_gfx_sector_count * 2048;
-        section[j].output  = strdup(section_filename[1]);
-        section[j].data.type = Binary;
-        section[j].data.element_size = 1;
-        section[j].data.elements_per_line = 16;
-    }
-    return 1;
+    return ret;
 }

@@ -33,19 +33,56 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_IRQ_H
-#define ETRIPATOR_IRQ_H
+#include <munit.h>
 
-#include "config.h"
-#include "memory_map.h"
-#include "section.h"
+#include <message.h>
+#include <message/console.h>
 
-/// Get irq code offsets from rom.
-/// \param [in]  map Memory map.
-/// \param [out] section Section list.
-/// \param [out] count Number of extracted sections.
-/// \return true if the IRQ vectors where successfully extradcted.
-/// \return false otherwise (missing ROM, or offsets out of range).
-bool irq_read(MemoryMap* map, Section **section, int *count);
+#include <memory_map.h>
 
-#endif // ETRIPATOR_IRQ_H
+void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+    return NULL;
+}
+
+void tear_down(void* fixture __attribute__((unused))) {
+}
+
+MunitResult memory_map_read_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+    MemoryMap map = {0};
+
+    munit_assert_true(memory_map_init(&map));
+
+    map.mpr[1] = 0xF8U;
+
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0000] = 0xC5;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0100] = 0x7E;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x1000] = 0xA9;
+
+    munit_assert_uint8(memory_map_read(&map, 0x2000U), ==, 0xC5);
+    munit_assert_uint8(memory_map_read(&map, 0x2100U), ==, 0x7E);
+    munit_assert_uint8(memory_map_read(&map, 0x3000U), ==, 0xA9);
+
+    memory_map_destroy(&map);
+
+    return MUNIT_OK;
+}
+
+static MunitTest memory_map_tests[] = {
+    { "/read", memory_map_read_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
+};
+
+static const MunitSuite memory_map_suite = {
+    "Memory map test suite", memory_map_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
+};
+
+int main (int argc, char* const* argv) {
+    message_printer_init();    
+    console_message_printer_init();
+
+    int ret = munit_suite_main(&memory_map_suite, NULL, argc, argv);
+
+    message_printer_destroy();
+
+    return ret;
+}

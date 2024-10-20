@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2023 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -38,17 +38,17 @@
 
 #include "../message.h"
 
-typedef struct {
-    msg_printer_t super;
-    FILE *out;
-} file_msg_printer_t;
+/// @addtogroup Message
+/// @{
 
-/**
- * \brief Setups file message writer.
- * \param [in] impl Msg printer implementation.
- * \return 0 upon success.
- */
-int file_msg_printer_init(file_msg_printer_t *printer);
+/// Setups file message writer.
+/// Messages will be appeneded to a file names "etripator.log".
+/// This file will be placed in the current working directory.
+/// \return true if the log file can be written to.
+/// \return false if an error occured.
+bool file_message_printer_init();
+
+/// @}
 
 #endif // ETRIPATOR_MESSAGE_FILE_H
 
