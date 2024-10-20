@@ -9,7 +9,7 @@
 * [Gfx unpacking](examples/maerchen_maze) in Maerchen Maze - メルヘンメイズ .
 * [Memory Base 128 detection](examples/tadaima) in Taidama Yusha Boshuchu - ただいま勇者募集中.
 * [Joypad routine](examples/sf2) of Street Fighter II' Champion Edition - ストリートファイターII'.
-* [Games Express CD Card bank #0](examples/games_express).
+* [Games Express CD Card](https://github.com/BlockoS/GamesExpressCDCard).
 * [Password check](examples/youkai_douchuuki) in Youkai Douchuuki - 妖怪道中記.
 
 ## Usage
