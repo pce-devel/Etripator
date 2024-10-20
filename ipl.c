@@ -41,6 +41,7 @@
 
 static bool ipl_read_header(IPL *out, FILE *in, const char *filename) {
     bool ret = false;
+
     if(fread(out->load_start_record, 1, 3, in) != 3) {
         ERROR_MSG("Failed to read IPLBLK from %s: %s", filename, strerror(errno));
     } else if(fread(&out->load_sector_count, 1, 1, in) != 1) {
@@ -107,21 +108,29 @@ void ipl_print(IPL *in) {
     } else {
         fprintf(stream,  "IPLBLK: .db $%02x, $%02x, $%02x\n", in->load_start_record[0], in->load_start_record[1], in->load_start_record[2]); 
         fprintf(stream, "IPLBKN: .db $%02x\n", in->load_sector_count);
-        fprintf(stream, "IPLSTA: .dw $%02x%02x\n", in->load_store_address[0], in->load_store_address[1]);
-        fprintf(stream, "IPLJMP: .dw $%02x%02x\n", in->load_exec_address[0], in->load_exec_address[1]);
+        fprintf(stream, "IPLSTA: .dw $%02x%02x\n", in->load_store_address[1], in->load_store_address[0]);
+        fprintf(stream, "IPLJMP: .dw $%02x%02x\n", in->load_exec_address[1], in->load_exec_address[0]);
         fprintf(stream, "IPLMPR: .db $%02x, $%02x, $%02x, $%02x, $%02x\n", in->mpr[0], in->mpr[1], in->mpr[2], in->mpr[3], in->mpr[4]);
         fprintf(stream, "OPENMODE: .db $%02x\n", in->opening_mode);
         fprintf(stream, "GRPBLK: .db $%02x, $%02x, $%02x\n", in->opening_gfx_record[0], in->opening_gfx_record[1], in->opening_gfx_record[2]); 
         fprintf(stream, "GRPBLN: .db $%02x\n", in->opening_gfx_sector_count);
-        fprintf(stream, "GRPADR: .dw $%02x%02x\n", in->opening_gfx_read_address[0], in->opening_gfx_read_address[1]);
+        fprintf(stream, "GRPADR: .dw $%02x%02x\n", in->opening_gfx_read_address[1], in->opening_gfx_read_address[0]);
         fprintf(stream, "ADPBLK: .db $%02x, $%02x, $%02x\n", in->opening_adpcm_record[0], in->opening_adpcm_record[1], in->opening_adpcm_record[2]);
         fprintf(stream, "ADPBLN: .db %02x\n", in->opening_adpcm_sector_count);
-        fprintf(stream, "ADPRATE: .db $%02x\b", in->opening_adpcm_sampling_rate);
+        fprintf(stream, "ADPRATE: .db $%02x\n", in->opening_adpcm_sampling_rate);
         fprintf(stream, "RESERVED: .db $%02x, $%02x, $%02x, $%02x, $%02x, $%02x, $%02x\n", 
             in->reserved[0], in->reserved[1], in->reserved[2], in->reserved[3],
             in->reserved[4], in->reserved[5], in->reserved[6]);
-        fprintf(stream, "ID STR: .db \"%.24s\"\n", in->id);
-        fprintf(stream, "LEGAL: .db \"%.50s\"\n", in->legal);
+        fprintf(stream, "ID STR: .db \"%.24s\"", in->id);
+        for(int i=23; (i>=0) && (in->id[i] == '\0'); i--) {
+            fprintf(stream, ",0");
+        }
+        fputc('\n', stream);
+        fprintf(stream, "LEGAL: .db \"%.50s\"", in->legal);
+        for(int i=49; (i>=0) && (in->legal[i] == '\0'); i--) {
+            fprintf(stream, ",0");
+        }
+        fputc('\n', stream);
         fprintf(stream,"PROGRAM NAME: .db \"%.16s\"\n", in->program_name);
         fprintf(stream,"EXTRA: .db \"%.6s\"\n", in->extra);
         fclose(stream);

@@ -140,3 +140,13 @@ add_unit_test(
     LIBRARIES cwalk jansson
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
+
+add_unit_test(
+    NAME ipl
+    SOURCES 
+        ipl.c 
+        ${PROJECT_SOURCE_DIR}/message.c
+        ${PROJECT_SOURCE_DIR}/message/console.c
+    LIBRARIES cwalk
+    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+)
