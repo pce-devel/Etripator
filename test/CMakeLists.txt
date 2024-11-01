@@ -17,6 +17,11 @@ function(add_unit_test)
     target_link_libraries(${target_name} PRIVATE ${ut_LIBRARIES} munit)
     target_include_directories(${target_name} PRIVATE ${ut_INCLUDE_DIRECTORIES} ${EXTRA_INCLUDE})
     set_target_properties(${target_name} PROPERTIES C_STANDARD 11)
+
+    if(ut_WRAP AND NOT CMAKE_COMPILER_IS_GNUCC)
+        message(FATAL_ERROR "WRAP can only be used with GCC")
+    endif()
+
     foreach(_wrap ${ut_WRAP})
         target_link_options(${target_name} PRIVATE LINKER:--wrap=${_wrap})
     endforeach()
@@ -63,19 +68,21 @@ add_unit_test(
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
 
-add_unit_test(
-    NAME rom
-    SOURCES 
-        rom.c 
-        ${PROJECT_SOURCE_DIR}/rom.c
-        ${PROJECT_SOURCE_DIR}/memory_map.c
-        ${PROJECT_SOURCE_DIR}/memory.c
-        ${PROJECT_SOURCE_DIR}/message.c
-        ${PROJECT_SOURCE_DIR}/message/console.c
-    LIBRARIES cwalk fff
-    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
-    WRAP fopen fileno fstat fseek fread fclose
-)
+if(CMAKE_COMPILER_IS_GNUCC)
+    add_unit_test(
+        NAME rom
+        SOURCES 
+            rom.c 
+            ${PROJECT_SOURCE_DIR}/rom.c
+            ${PROJECT_SOURCE_DIR}/memory_map.c
+            ${PROJECT_SOURCE_DIR}/memory.c
+            ${PROJECT_SOURCE_DIR}/message.c
+            ${PROJECT_SOURCE_DIR}/message/console.c
+        LIBRARIES cwalk fff
+        INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+        WRAP fopen fileno fstat fseek fread fclose
+    )
+endif()
 
 add_unit_test(
     NAME cd

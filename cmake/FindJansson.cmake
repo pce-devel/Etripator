@@ -26,34 +26,43 @@ else (JANSSON_LIBRARIES AND JANSSON_INCLUDE_DIRS)
       /sw/include
   )
 
-find_library(JANSSON_LIBRARY
-    NAMES
-      jansson
-    PATHS
-      /usr/lib
-      /usr/local/lib
-      /opt/local/lib
-      /sw/lib
+  find_library(JANSSON_LIBRARY
+      NAMES
+        jansson
+      PATHS
+        /usr/lib
+        /usr/local/lib
+        /opt/local/lib
+        /sw/lib
   )
 
-set(JANSSON_INCLUDE_DIRS
-  ${JANSSON_INCLUDE_DIR}
+  set(JANSSON_INCLUDE_DIRS
+    ${JANSSON_INCLUDE_DIR}
   )
 
-if (JANSSON_LIBRARY)
-  set(JANSSON_LIBRARIES
-    ${JANSSON_LIBRARIES}
-    ${JANSSON_LIBRARY}
+  if (JANSSON_LIBRARY)
+    set(JANSSON_LIBRARIES
+      ${JANSSON_LIBRARIES}
+      ${JANSSON_LIBRARY}
     )
-endif (JANSSON_LIBRARY)
-
-  include(FindPackageHandleStandardArgs)
-  find_package_handle_standard_args(Jansson DEFAULT_MSG
-    JANSSON_LIBRARIES JANSSON_INCLUDE_DIRS)
-
-  # show the JANSSON_INCLUDE_DIRS and JANSSON_LIBRARIES variables only in the advanced view
-  mark_as_advanced(JANSSON_INCLUDE_DIRS JANSSON_LIBRARIES)
-
+  endif (JANSSON_LIBRARY)
 endif (JANSSON_LIBRARIES AND JANSSON_INCLUDE_DIRS)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Jansson DEFAULT_MSG
+  JANSSON_LIBRARIES JANSSON_INCLUDE_DIRS)
+
+if(JANSSON_FOUND)
+  add_library(jansson UNKNOWN IMPORTED)
+  set_target_properties(jansson 
+    PROPERTIES
+      IMPORTED_LOCATION "${JANSSON_LIBRARIES}"
+      INTERFACE_INCLUDE_DIRECTORIES "${JANSSON_INCLUDE_DIRS}"
+  )
+endif()
+
+# show the JANSSON_INCLUDE_DIRS and JANSSON_LIBRARIES variables only in the advanced view
+mark_as_advanced(JANSSON_INCLUDE_DIRS JANSSON_LIBRARIES)
+
 
 

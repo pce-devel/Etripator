@@ -40,9 +40,9 @@
 
 /// Label repository.
 struct LabelRepositoryImpl {
-    size_t size;            //< Size of label repository.
-    size_t last;            //< Last element in the repository.
-    Label *labels;        //< Labels.
+    size_t size;   //< Size of label repository.
+    size_t last;   //< Last element in the repository.
+    Label *labels; //< Labels.
 };
 
 /// Get label index by its address.
@@ -151,7 +151,7 @@ bool label_repository_find(LabelRepository* repository, uint16_t logical, uint8_
     return ret;
 }
 
-/// Get the number of labels stored in the repository.
+// Get the number of labels stored in the repository.
 int label_repository_size(LabelRepository* repository) {
     assert(repository != NULL);
     return (int)repository->last;
@@ -169,7 +169,7 @@ bool label_repository_get(LabelRepository* repository, int index, Label *out) {
     return ret;
 }
 
-/// Delete labels.
+// Delete labels.
 void label_repository_delete(LabelRepository* repository, uint16_t first, uint16_t end, uint8_t page) {
     size_t i;
     for(i=0; i<repository->last; i++) {
