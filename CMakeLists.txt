@@ -72,9 +72,9 @@ set(etripator_HDR
 
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
 set_target_properties(etripator PROPERTIES C_STANDARD 11)
-target_include_directories(etripator PUBLIC ${JANSSON_INCLUDE_DIRS} ${EXTRA_INCLUDE} externals)
+target_include_directories(etripator PUBLIC ${EXTRA_INCLUDE} externals)
 target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
-target_link_libraries(etripator PUBLIC ${JANSSON_LIBRARIES} cwalk)
+target_link_libraries(etripator PUBLIC jansson cwalk)
 #[[
 add_executable(etripator_cli cli/etripator.c cli/options.c)
 set_target_properties(etripator_cli 
