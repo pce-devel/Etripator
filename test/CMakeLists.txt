@@ -128,7 +128,6 @@ add_unit_test(
     NAME section
     SOURCES 
         section.c 
-        ${PROJECT_SOURCE_DIR}/section.c
         ${PROJECT_SOURCE_DIR}/section/load.c
         ${PROJECT_SOURCE_DIR}/message.c
         ${PROJECT_SOURCE_DIR}/jsonhelpers.c

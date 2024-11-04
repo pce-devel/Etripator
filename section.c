@@ -116,3 +116,127 @@ void section_delete(Section *ptr, int n) {
     }
     free(ptr);
 }
+
+// Reset a section array.
+void section_array_reset(SectionArray *arr) {
+    assert(arr != NULL);
+    if(arr->data != NULL) {
+        for(size_t i=0; i<arr->count; i++) {
+            free(arr->data[i].name);
+            free(arr->data[i].output);
+            free(arr->data[i].description);
+            section_reset(&arr->data[i]);
+        }
+    }
+    arr->count = 0;
+}
+
+// Release section array memory.
+void section_array_delete(SectionArray *arr) {
+    assert(arr != NULL);
+    section_array_reset(arr);
+    free(arr->data);
+    arr->data = NULL;
+    arr->capacity = 0;
+}
+
+// Check if 2 sections overlaps.
+// \return 1 Both sections has the same time and overlaps
+// \return 0 Sections don't overlap
+// \return -1 Sections overlap but they are not of the same type.
+static int section_overlap(const Section *a, const Section *b) {
+    assert(a != NULL);
+    assert(b != NULL);
+
+    int ret = 0;
+
+    if(a->page == b->page) {
+        if(a->logical > b->logical) {
+            const Section *tmp = b;
+            b = a;
+            a = tmp;
+        }
+        if(b->logical <= (a->logical + a->size)) {
+            if(a->type == b->type) {
+                ret = 1;
+            } else {
+                ret = -1;
+            }
+        }
+    }
+    return ret;
+}
+
+static inline uint16_t minu16(uint16_t a, uint16_t b) {
+    return (a < b) ? a : b;
+}
+
+static inline uint16_t maxi32(int32_t a, int32_t b) {
+    return (a > b) ? a : b;
+}
+
+// Merge 2 sections the 2nd section into the 1st one.
+static void section_merge(Section *a, const Section *b) {
+    assert(a != NULL);
+    assert(b != NULL);
+
+    uint16_t begin = minu16(a->logical, b->logical);
+    int32_t end = maxi32(a->logical+a->size, b->logical+b->size);
+    a->logical = begin;
+    a->size = end - begin;
+}
+
+// Add a new section.
+int section_array_add(SectionArray *arr, const Section* in) {
+    assert(arr != NULL);
+    assert(in != NULL);
+
+    int ret = -1;//todo
+    size_t i;
+    // Search for overlapping section.
+    for(i=0; i<arr->count; i++) {
+        int overlap = section_overlap(&arr->data[i], in);
+        if(overlap ==  1) {
+            section_merge(&arr->data[i], in);
+            INFO_MSG("Section %s has been merged with %s!",  arr->data[i].name, in->name);
+            break;
+        } else if(overlap == -1) {
+            WARNING_MSG("Section %s and %s overlaps! %x %x.%x", arr->data[i].name, in->name);
+            break;
+        }
+    }
+
+    if(i >= arr->count) {
+        // Check if we need to expand section array buffer
+        if(i >= arr->capacity) {
+            size_t n = arr->capacity + 4U;
+            Section *ptr = realloc(arr->data, n*sizeof(Section));
+            if(ptr == NULL) {
+                ERROR_MSG("Failed to expand section array buffer", strerror(errno));
+            } else {
+                arr->data = ptr;
+                arr->capacity = n;
+                ret = true;
+            }
+        } else {
+            ret = true;
+        }
+
+        // Append new section.
+        if(ret) {
+            arr->data[arr->count++] = *in;
+        }
+    }
+    return ret;
+}
+
+// Retrieve the ith section from the array.
+const Section* section_array_get(SectionArray *arr, size_t i) {
+    const Section *ret = NULL;
+    if(arr != NULL) {
+        if((arr->data != NULL) && (i < arr->count)) {
+            ret = &arr->data[i];
+        }
+    }
+    return ret;
+}

@@ -34,7 +34,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
 #include <munit.h>
-#include "section.h"
+#include "../section.c"
 #include "message.h"
 #include "message/console.h"
 
@@ -175,9 +175,59 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
     return MUNIT_OK;
 }
 
+MunitResult section_overlap_test(const MunitParameter params[], void* fixture) {
+    Section a = {
+        .type = SECTION_TYPE_CODE,
+        .page = 0x01,
+    };
+    Section b = {
+        .type = SECTION_TYPE_CODE,
+        .page = 0x01,
+    };
+
+    a.logical = 0xe000;
+    a.size = 0x100;
+
+    b.logical = 0xe010;
+    b.size = 0x40;
+   
+    munit_assert_int(section_overlap(&a, &b), ==, 1);
+
+    b.type = SECTION_TYPE_DATA;
+    munit_assert_int(section_overlap(&a, &b), ==, -1);
+
+    a.type = SECTION_TYPE_DATA;
+    a.logical = 0x0200;
+    a.size = 0x10;
+
+    b.logical = 0x01e0;
+    b.size = 0x50;
+
+    munit_assert_int(section_overlap(&a, &b), ==, 1);
+
+    b.page = 0x02;
+    munit_assert_int(section_overlap(&a, &b), ==, 0);
+
+    b.page = a.page;
+    b.size = 0x01;
+    munit_assert_int(section_overlap(&a, &b), ==, 0);
+
+    return MUNIT_OK;
+}
+
+
+MunitResult section_add_test(const MunitParameter params[], void* fixture) {
+    // [todo] add sections
+    // [todo] add one that merge
+    // [todo] add one with merge+error
+    return MUNIT_OK;
+}
+
 static MunitTest section_tests[] = {
     { "/sort", section_sort_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { "/load", section_load_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/overlap", section_overlap_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/add", section_add_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
