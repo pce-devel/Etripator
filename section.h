@@ -99,10 +99,10 @@ void section_reset(Section *s);
 /// Group section per output filename and sort them in page/logical address order.
 /// \param [in out] ptr Sections.
 /// \param [in] n Number of sections to sort.
-void section_sort(Section *ptr, size_t n);
+void section_sort(Section *ptr, size_t n);          // [todo] will be removed
 
 /// Delete sections.
-void section_delete(Section *ptr, int n);
+void section_delete(Section *ptr, int n);           // [todo] will be removed
 
 // Load sections from a JSON file.
 // \param [out] out Loaded sections.
@@ -110,7 +110,7 @@ void section_delete(Section *ptr, int n);
 // \param [in]  filename Input filename.
 // \return true if the sections contained in the file were succesfully loaded.
 // \return false if an error occured.
-bool section_load(Section **out, int *n, const char *filename);
+bool section_load(Section **out, int *n, const char *filename); // [todo] use SectionArray
 
 // Save sections to a JSON file.
 // \param [in] ptr Sections to be saved.
@@ -118,6 +118,40 @@ bool section_load(Section **out, int *n, const char *filename);
 // \param [in] filename Output filename.
 // \return true if the sections were succesfully saved.
 // \return false if an error occured.
-bool section_save(const Section *ptr, int n, const char *filename);
+bool section_save(const Section *ptr, int n, const char *filename); // [todo] use SectionArray
+
+// Section array
+typedef struct {
+    Section *data;      ///< Pointer to section array.
+    size_t count;       ///< Number of sections currently in use.
+    size_t capacity;    ///< Number the section array can hold.
+    // [todo] index array of sorted sections ?
+} SectionArray;
+
+/// Reset a section array.
+/// \note The internal data pointer will not be freed.
+/// \param [in out] arr Section array to be reseted.
+void section_array_reset(SectionArray *arr);
+
+/// Release section array memory.
+/// \param [in out] arr Section array.
+void section_array_delete(SectionArray *arr);
+
+/// Add a new section.
+/// Note that if the section overlaps an already existing one, it will be merged if both sections have the
+/// same type.
+/// \param [in out] arr Section array the section will be added to.
+/// \param [in] in Section that will be added to the section array.
+/// \return  1 if the section was succesfully added.
+/// \return  0 if the section was merged with one from the section array.
+/// \return -1 if the section can not be merged or if there is not enough memory to add a new one.
+int section_array_add(SectionArray *arr, const Section* in);
+
+/// Retrieve the ith section from the array.
+/// \param [in] arr Section array.
+/// \param [in] i Index of the section to be retrieved.
+/// \return A pointer to the section if the index is within the section array bounds.
+/// \return NULL if the index is out of the section array bounds.
+const Section* section_array_get(SectionArray *arr, size_t i);
 
 #endif // ETRIPATOR_SECTION_H
