@@ -7,6 +7,7 @@
 [submodule "externals/cwalk"]
 	path = externals/cwalk
 	url = https://github.com/likle/cwalk.git
+	branch=v1.2.9
 [submodule "externals/fff"]
 	path = externals/fff
 	url = https://github.com/meekrosoft/fff.git
