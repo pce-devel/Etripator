@@ -50,12 +50,12 @@ typedef struct {
     const char *labels_out;
     const char **labels_in;
     const char **comments_in;
-} cli_opt_t;
+} CommandLineOptions;
 
-/* Extract command line options */
-int get_cli_opt(int argc, const char** argv, cli_opt_t* option);
+/// Extract command line options
+bool cli_opt_get(CommandLineOptions *options, int argc, const char** argv);
 
-/* Release allocated resources during command line parsing */
-void release_cli_opt(cli_opt_t* option);
+/// Release allocated resources during command line parsing
+void cli_opt_release(CommandLineOptions *options);
 
 #endif // ETRIPATOR_OPTIONS_H

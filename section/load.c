@@ -62,7 +62,7 @@ static inline DataType json_validate_data_type(const char *str) {
     return DATA_TYPE_UNKNOWN;
 }
 
-static inline bool json_parse_section_type(Section *out, const json_t *obj) {
+static bool json_parse_section_type(Section *out, const json_t *obj) {
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "type");
     if (tmp == NULL) {
@@ -80,9 +80,9 @@ static inline bool json_parse_section_type(Section *out, const json_t *obj) {
     return ret;
 }
 
-static inline bool json_parse_section_page(Section *out, const json_t *obj) {
-    int num;
+static bool json_parse_section_page(Section *out, const json_t *obj) {
     bool ret = false;
+    int num = -1;
     const json_t *tmp = json_object_get(obj, "page");
     if (tmp == NULL) {
         ERROR_MSG("Missing section page");
@@ -97,9 +97,9 @@ static inline bool json_parse_section_page(Section *out, const json_t *obj) {
     return ret;
 }
 
-static inline bool json_parse_section_logical(Section *out, const json_t *obj) {
-    int num;
+static bool json_parse_section_logical(Section *out, const json_t *obj) {
     bool ret = false;
+    int num = -1;
     const json_t *tmp = json_object_get(obj, "logical");
     if (tmp == NULL) {
         ERROR_MSG("Missing section logical address");
@@ -114,9 +114,9 @@ static inline bool json_parse_section_logical(Section *out, const json_t *obj) {
     return ret;
 }
 
-static inline bool json_parse_section_offset(Section *out, const json_t *obj) {
-    int num;
+static bool json_parse_section_offset(Section *out, const json_t *obj) {
     bool ret = true;
+    int num = 1;
     json_t *tmp = json_object_get(obj, "offset");
     if(tmp == NULL) {
         out->offset = (out->page << 13) | (out->logical & 0x1FFF);
@@ -129,9 +129,9 @@ static inline bool json_parse_section_offset(Section *out, const json_t *obj) {
     return ret;
 }
 
-static inline bool json_parse_section_size(Section *out, const json_t *obj) {
+static bool json_parse_section_size(Section *out, const json_t *obj) {
     bool ret = true;
-    int num;
+    int num = -1;
     const json_t *tmp = json_object_get(obj, "size");
     if (tmp == NULL) {
         // use default value
@@ -144,7 +144,7 @@ static inline bool json_parse_section_size(Section *out, const json_t *obj) {
     return ret;
 }
 
-static inline bool json_parse_section_mpr(Section *out, const json_t *obj) {
+static bool json_parse_section_mpr(Section *out, const json_t *obj) {
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "mpr");
     if(tmp == NULL) {
@@ -172,11 +172,10 @@ static inline bool json_parse_section_mpr(Section *out, const json_t *obj) {
             }
         }
     }
-
     return ret;
 }
 
-static inline bool json_parse_section_output(Section *out, const json_t *obj) {
+static bool json_parse_section_output(Section *out, const json_t *obj) {
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "filename");
     if (tmp == NULL) {
@@ -194,7 +193,7 @@ static inline bool json_parse_section_output(Section *out, const json_t *obj) {
     return ret;
 }
 
-static inline bool json_parse_data_config_type(DataConfig *out, const json_t *obj) {
+static bool json_parse_data_config_type(DataConfig *out, const json_t *obj) {
     bool ret = false;
     const json_t *tmp = json_object_get(obj, "type");
     if (tmp == NULL) {
@@ -212,7 +211,7 @@ static inline bool json_parse_data_config_type(DataConfig *out, const json_t *ob
     return ret;
 }
 
-static inline bool json_parse_data_config_element_size(DataConfig *out, const json_t *obj) {
+static bool json_parse_data_config_element_size(DataConfig *out, const json_t *obj) {
     bool ret = false;
     const json_t *value = json_object_get(obj, "element_size");
     if(value == NULL) {
@@ -229,17 +228,51 @@ static inline bool json_parse_data_config_element_size(DataConfig *out, const js
     return ret;
 }
 
-static inline bool json_parse_data_config_element_per_line(DataConfig *out, const json_t *obj) {
+static bool json_parse_data_config_element_per_line(DataConfig *out, const json_t *obj) {
     bool ret = false;
     const json_t *value = json_object_get(obj, "elements_per_line");
     if(value == NULL) {
         ret = true; // use default value
-    } else if(out->type == DATA_TYPE_BINARY) {
-        ERROR_MSG("Number of elements per line is invalid for binary data section");
+    } else if(out->type != DATA_TYPE_HEX) {
+        ERROR_MSG("Number of elements per line is only valid for hex data section");
     } else if (!json_validate_int(value, &out->elements_per_line)) {
         ERROR_MSG("Invalid number of elements per line.");
     } else {
         ret = true;
+    }
+    return ret;
+}
+
+static bool json_parse_section_data_string_delimiter(DataConfig *out, const json_t *obj) {
+    bool ret = false;
+    const json_t *tmp = json_object_get(obj, "delimiter");
+    if(tmp == NULL) {
+        ret = true; // use default value
+    } else if(out->type != DATA_TYPE_STRING) {
+        ERROR_MSG("string delimiter is only valid for string data section");
+    } else if(!json_is_array(tmp)) {
+        ERROR_MSG("Invalid string delimiter");
+    } else {
+        int num;
+        size_t index;
+        json_t* value;
+        json_array_foreach(tmp, index, value) {
+            ret = false;
+            if(index > 7U) {
+                ERROR_MSG("too many char in string delimiter");
+            } else if(!json_validate_int(value, &num)) {
+                ERROR_MSG("Invalid type for string delimiter char");
+            } else if((num < 0) || (num > 0xFF)) {
+                ERROR_MSG("Invalid char %d value", index);    
+            } else {
+                out->delimiter[index] = (uint8_t)num;
+                ret = true;
+            }
+            if(!ret) {
+                break;
+            }
+        }
+        out->delimiter_size = index;
     }
     return ret;
 }
@@ -255,8 +288,12 @@ static bool json_parse_section_data_config(Section *out, const json_t *obj) {
         // ...
     } else if(!json_parse_data_config_element_size(&out->data, tmp)) {
         // ...
+    } else if(json_parse_data_config_element_per_line(&out->data, tmp) == false) {
+        // ...
+    } else if(json_parse_section_data_string_delimiter(&out->data, tmp) == false) {
+        // ...
     } else {
-        ret = json_parse_data_config_element_per_line(&out->data, tmp);
+        ret = true;
     }
     return ret;
 }
