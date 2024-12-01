@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.16)
+cmake_minimum_required (VERSION 3.30)
 
 project(etripator
     VERSION 0.9.0
@@ -8,7 +8,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     add_compile_definitions(_XOPEN_SOURCE=700)
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 enable_testing()
 
@@ -17,17 +17,16 @@ include(CheckSymbolExists)
 check_symbol_exists(strdup "string.h" HAVE_STRDUP)
 
 if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS, "No build type specified. Force build type to Debug.")
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
-
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}")
 
 find_package(Doxygen)
 find_package(Jansson)
 
 set(CMAKE_C_STANDARDS 11)
 
-add_subdirectory(externals)
+add_subdirectory(externals EXCLUDE_FROM_ALL)
 
 set(etripator_SRC
     message.c 
@@ -74,7 +73,6 @@ set(etripator_HDR
 
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
 set_target_properties(etripator PROPERTIES C_STANDARD 11)
-target_include_directories(etripator PUBLIC ${EXTRA_INCLUDE} externals)
 target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
 target_link_libraries(etripator PUBLIC jansson cwalk)
 
@@ -85,6 +83,7 @@ set_target_properties(etripator_cli
         C_STANDARD 11
 )
 target_include_directories(etripator_cli PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(etripator_cli PUBLIC externals)
 target_link_libraries(etripator_cli etripator argparse)
 
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
@@ -102,4 +101,4 @@ add_custom_target(doc
 
 add_subdirectory(test)
 
-# install(TARGETS etripator_cli DESTINATION bin)
+install(TARGETS etripator_cli DESTINATION bin)
