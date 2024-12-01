@@ -77,6 +77,9 @@ typedef struct {
     DataType type;             //< type
     int32_t element_size;      //< element size (string=0, byte=1, word=2)
     int32_t elements_per_line; //< number of elements per line
+    
+    uint8_t delimiter[8U];  //< string delimiter
+    int32_t delimiter_size; //< string delimiter length
 } DataConfig;
 
 // Section description

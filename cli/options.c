@@ -45,8 +45,8 @@ struct payload_t {
     const char ***array;
 };
 
-static int opt_callback(struct argparse *self, const struct argparse_option *option) {
-    struct payload_t *payload = (struct payload_t*)option->data;
+static int opt_callback(struct argparse *self, const struct argparse_option *options) {
+    struct payload_t *payload = (struct payload_t*)options->data;
     size_t last = payload->size++;
     if(payload->capacity <= payload->size) {
         payload->capacity += 4;
@@ -57,12 +57,12 @@ static int opt_callback(struct argparse *self, const struct argparse_option *opt
         memset(tmp+last, 0, 4*sizeof(const char*));
         *payload->array = tmp;
     }
-    (*payload->array)[last] = *(char**)option->value;
+    (*payload->array)[last] = *(char**)options->value;
     return 1;
 }
 
-/* Extract command line options */
-int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
+// Extract command line options
+bool cli_opt_get(CommandLineOptions *options, int argc, const char** argv) {
     static const char *const usages[] = {
         "etripator [options] [--] <cfg.json> <in>",
         NULL
@@ -71,47 +71,47 @@ int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
     int ret = 0;
 
     char *dummy;
-    struct payload_t labels_payload = { 0, 0, &option->labels_in };
-    struct payload_t comments_payload = {0, 0, &option->comments_in};
+    struct payload_t labels_payload = { 0, 0, &options->labels_in };
+    struct payload_t comments_payload = {0, 0, &options->comments_in};
 
-    struct argparse_option options[] = {
+    struct argparse_option arg_opt[] = {
         OPT_HELP(),
-        OPT_BOOLEAN('i', "irq-detect", &option->extract_irq, "automatically detect and extract irq vectors when disassembling a ROM, or extract opening code and gfx from CDROM IPL data", NULL, 0, 0),
-        OPT_BOOLEAN('c', "cd", &option->cdrom, "cdrom image disassembly. Irq detection and rom. Header jump is not performed", NULL, 0, 0),
-        OPT_STRING('o', "out", &option->main_filename, "main asm file containing includes for all sections as long the irq vector table if the irq-detect option is enabled", NULL, 0, 0),
+        OPT_BOOLEAN('i', "irq-detect", &options->extract_irq, "automatically detect and extract irq vectors when disassembling a ROM, or extract opening code and gfx from CDROM IPL data", NULL, 0, 0),
+        OPT_BOOLEAN('c', "cd", &options->cdrom, "cdrom image disassembly. Irq detection and rom. Header jump is not performed", NULL, 0, 0),
+        OPT_STRING('o', "out", &options->main_filename, "main asm file containing includes for all sections as long the irq vector table if the irq-detect option is enabled", NULL, 0, 0),
         OPT_STRING('l', "labels", &dummy, "labels definition filename", opt_callback, (intptr_t)&labels_payload, 0),
-        OPT_STRING(0, "labels-out", &option->labels_out, "extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl", NULL, 0, 0),
+        OPT_STRING(0, "labels-out", &options->labels_out, "extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl", NULL, 0, 0),
         OPT_STRING(0, "comments", &dummy, "comments description filename", opt_callback, (intptr_t)&comments_payload, 0),
-        OPT_BOOLEAN(0, "address", &option->address, "print statement address as comment", NULL, 0, 0),
-        OPT_INTEGER(0, "sector_size", &option->sector_size, "2352 bytes sectors (cd only)", NULL, 0, 0),
+        OPT_BOOLEAN(0, "address", &options->address, "print statement address as comment", NULL, 0, 0),
+        OPT_INTEGER(0, "sector_size", &options->sector_size, "2352 bytes sectors (cd only)", NULL, 0, 0),
         OPT_END(),
     };
 
     struct argparse argparse;
 
-    option->extract_irq = 0;
-    option->cdrom = 0;
-    option->cfg_filename  = NULL;
-    option->rom_filename  = NULL;
-    option->main_filename = "main.asm";
-    option->labels_in = NULL;
-    option->labels_out = NULL;
-    option->comments_in = NULL;
-    option->address = 0;
-    option->sector_size = 2048;
+    options->extract_irq = 0;
+    options->cdrom = 0;
+    options->cfg_filename  = NULL;
+    options->rom_filename  = NULL;
+    options->main_filename = "main.asm";
+    options->labels_in = NULL;
+    options->labels_out = NULL;
+    options->comments_in = NULL;
+    options->address = 0;
+    options->sector_size = 2048;
 
-    argparse_init(&argparse, options, usages, 0);
+    argparse_init(&argparse, arg_opt, usages, 0);
     argparse_describe(&argparse, "\nEtripator : a PC Engine disassembler", "  ");
     argc = argparse_parse(&argparse, argc, argv);
     if(!argc) {
         // ...
-    } else if((option->sector_size != 2048) && (option->sector_size != 2352)) {
+    } else if((options->sector_size != 2048) && (options->sector_size != 2352)) {
        ERROR_MSG("invalid sector size (must be 2048 or 2352).");
     } else if(argc != 2) {
-        if((option->extract_irq) && (argc == 1)) {
+        if((options->extract_irq) && (argc == 1)) {
             /* Config file is optional with automatic irq vector extraction. */
-            option->cfg_filename =  NULL;
-            option->rom_filename = argv[0];
+            options->cfg_filename =  NULL;
+            options->rom_filename = argv[0];
             ret = 1;
         }
         else {
@@ -119,8 +119,8 @@ int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
         }
     }
     else {
-        option->cfg_filename = argv[0];
-        option->rom_filename = argv[1];
+        options->cfg_filename = argv[0];
+        options->rom_filename = argv[1];
         ret = 1;
     }
 
@@ -131,13 +131,13 @@ int get_cli_opt(int argc, const char** argv, cli_opt_t* option) {
     return ret;
 }
 
-/* Release allocated resources during command line parsing */
-void release_cli_opt(cli_opt_t* option) {
-    if(option->comments_in) {
-        free(option->comments_in);
+// Release allocated resources during command line parsing
+void cli_opt_release(CommandLineOptions *options) {
+    if(options->comments_in) {
+        free(options->comments_in);
     }
-    if(option->labels_in) {
-        free(option->labels_in);
+    if(options->labels_in) {
+        free(options->labels_in);
     }
-    memset(option, 0, sizeof(cli_opt_t));
+    memset(options, 0, sizeof(CommandLineOptions));
 }

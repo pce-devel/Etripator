@@ -40,6 +40,8 @@ set(etripator_SRC
     section/save.c
     opcodes.c
     comment.c
+    comment/load.c
+    comment/save.c
     label.c
     label/load.c
     label/save.c
@@ -75,7 +77,7 @@ set_target_properties(etripator PROPERTIES C_STANDARD 11)
 target_include_directories(etripator PUBLIC ${EXTRA_INCLUDE} externals)
 target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
 target_link_libraries(etripator PUBLIC jansson cwalk)
-#[[
+
 add_executable(etripator_cli cli/etripator.c cli/options.c)
 set_target_properties(etripator_cli 
     PROPERTIES
@@ -84,7 +86,7 @@ set_target_properties(etripator_cli
 )
 target_include_directories(etripator_cli PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(etripator_cli etripator argparse)
-#]]
+
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
 set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
 

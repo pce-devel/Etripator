@@ -49,7 +49,7 @@
 #include <irq.h>
 #include <label.h>
 #include <comment.h>
-#include <memorymap.h>
+#include <memory_map.h>
 #include <opcodes.h>
 #include <rom.h>
 #include <ipl.h>
@@ -58,149 +58,134 @@
 
 #include "options.h"
 
-/*
-  exit callback
- */
-void exit_callback(void) { msg_printer_destroy(); }
+// exit callback
+void exit_callback() { 
+    message_printer_destroy();
+}
 
-/*
-  output labels
-*/
-int label_output(cli_opt_t *option, label_repository_t *repository) {
-    char buffer[256];
-
-    if (NULL == option->labels_out) {
-        /* We don't want to destroy the original label file. */
+// save found labels to a file named <rom name>.YYmmddHHMMSS.lbl
+static bool label_output(CommandLineOptions *options, LabelRepository *repository) {
+    bool ret = false;
+    char buffer[256U] = {0};
+    if (options->labels_out == NULL) {
+        // Create a new filename as we don't want to destroy the original label file.
         const char *filename;
         size_t length;
 
-        char dateString[128];
-
-#if defined(_MSC_VER)
-        struct tm now;
-        __time64_t tv;
-        _time64(&tv);
-        errno_t err = _localtime64_s(&now, &tv);
-        if (err == 0) {
-            strftime(dateString, 128, "%Y%m%d%H%M%S", &now);
-        } else {
-            sprintf(dateString, 128, "19871030133700");
-        }
-#else
-        struct timeval tv;
-        time_t t;
-        struct tm *now;
-        gettimeofday(&tv, NULL);
-        t = tv.tv_sec;
-        now = localtime(&t);
-        strftime(dateString, 128, "%Y%m%d%H%M%S", now);
-#endif   
-        cwk_path_get_basename(option->rom_filename, &filename, &length);
+        cwk_path_get_basename(options->rom_filename, &filename, &length);
         if(filename == NULL) {
-            filename = option->rom_filename;
+            filename = options->rom_filename;
         }
 
-        snprintf(buffer, 256, "%s.%s.lbl", filename, dateString);     
-        option->labels_out = buffer;
+        time_t t = time(NULL);
+        struct tm *now = localtime(&t);
+
+        char date_string[128U] = {0};
+        strftime(date_string, sizeof(date_string), "%Y%m%d%H%M%S", now);
+
+        snprintf(buffer, 256, "%s.%s.lbl", filename, date_string);     
+        options->labels_out = buffer;
     }
-    if (!label_repository_save(option->labels_out, repository)) {
-        ERROR_MSG("Failed to write/update label file: %s", option->labels_out);
-        return 0;
+    if (!label_repository_save(repository, options->labels_out)) {
+        ERROR_MSG("Failed to write/update label file: %s", options->labels_out);
+    } else {
+        ret = true;
     }
-    return 1;
+    if(options->labels_out == buffer) {
+        options->labels_out = NULL;
+    }
+    return ret;
 }
 
-static console_msg_printer_t g_console_printer;
-static file_msg_printer_t g_file_printer;
+// log command line
+static bool log_cli(int argc, const char* argv[]) {
+    bool ret = false;
+
+    size_t len = 0;
+    for(int i=0; i<argc; i++) {
+        len += strlen(argv[i]) + 1;
+    }
+    char *buffer = (char*)malloc(len);
+    if(buffer != NULL) {
+        char *ptr = buffer;
+        for(int i=0; i<argc; i++) {
+            size_t n = strlen(argv[i]);
+            strcpy(ptr, argv[i]);
+            ptr += n;
+            *ptr++ = ' ';
+        }
+        buffer[len-1] = '\0';
+        INFO_MSG("Command line: %s", buffer);
+        free(buffer);
+        ret = true;
+    }
+    return ret;
+}
 
 /* ---------------------------------------------------------------- */
 int main(int argc, const char **argv) {
-    cli_opt_t option;
-
-    FILE *out;
-    FILE *main_file;
-    int i;
-    int ret, failure;
-
-    memmap_t map;
-
-    section_t *section;
-    int section_count;
+    int ret = EXIT_FAILURE;
 
     atexit(exit_callback);
 
-    msg_printer_init();
+    message_printer_init();
 
-    file_msg_printer_init(&g_file_printer);
-    console_msg_printer_init(&g_console_printer);
-
-    if (msg_printer_add(&g_file_printer.super)) {
+    if (file_message_printer_init() != true) {
         fprintf(stderr, "Failed to setup file printer.\n");
-        return EXIT_FAILURE;
-    }
-    if (msg_printer_add(&g_console_printer.super)) {
+    } else if (console_message_printer_init() != true) {
         fprintf(stderr, "Failed to setup console printer.\n");
-        return EXIT_FAILURE;
+    } else if (log_cli(argc, argv) != true) {
+        fprintf(stderr, "Failed to log command line.\n");
+    } else {
+        // [todo]
     }
 
-    /* Log CLI */
-    {
-        size_t len = 0;
-        char *buffer;
-        for(i=0; i<argc; i++) {
-            len += strlen(argv[i]) + 1;
-        }
-        buffer = (char*)malloc(len);
-        if(buffer == NULL) {
-            /* too bad... */
-        } else {
-            char *ptr = buffer;
-            for(int i=0; i<argc; i++) {
-                size_t n = strlen(argv[i]);
-                strcpy(ptr, argv[i]);
-                ptr += n;
-                *ptr++ = ' ';
-            }
-            buffer[len-1] = '\0';
-            INFO_MSG("Command line: %s", buffer);
-            free(buffer);
-        }
-    }
+    CommandLineOptions options;
+
+    FILE *out;
+    FILE *main_file;
+    int failure;
+
+    MemoryMap map = {0};
+
+    Section *section = NULL;
+    int section_count = 0;
+
 
     failure = 1;
     section_count = 0;
     section = NULL;
 
     /* Extract command line options */
-    ret = get_cli_opt(argc, argv, &option);
+    ret = cli_opt_get(&options, argc, argv);
     if (ret <= 0) {
         goto error_1;
     }
 
     /* Read configuration file */
-    if (option.cfg_filename) {
-        ret = section_load(option.cfg_filename, &section, &section_count);
+    if (options.cfg_filename) {
+        ret = section_load(&section, &section_count, options.cfg_filename);
         if (!ret) {
-            ERROR_MSG("Unable to read %s", option.cfg_filename);
+            ERROR_MSG("Unable to read %s", options.cfg_filename);
             goto error_1;
         }
     }
 
     /* Initialize memory map */
-    ret = memmap_init(&map);
+    ret = memory_map_init(&map);
     if (!ret) {
         goto error_1;
     }
 
     /* Read ROM */
-    if (!option.cdrom) {
-        ret = rom_load(option.rom_filename, &map);
+    if (!options.cdrom) {
+        ret = rom_load(options.rom_filename, &map);
         if (!ret) {
             goto error_2;
         }
 
         /* Get irq offsets */
-        if (option.extract_irq) {
+        if (options.extract_irq) {
             ret = irq_read(&map, &section, &section_count);
             if (!ret) {
                 ERROR_MSG("An error occured while reading irq vector offsets");
@@ -208,14 +193,14 @@ int main(int argc, const char **argv) {
             }
         }
     } else {
-        ret = cd_memmap(&map);
+        ret = cd_memory_map(&map);
         if (!ret) {
             goto error_2;
         }
 
-        if (option.extract_irq) {
-            ipl_t ipl;
-            ret = ipl_read(&ipl, option.rom_filename);
+        if (options.extract_irq) {
+            IPL ipl;
+            ret = ipl_read(&ipl, options.rom_filename);
             ret = ret && ipl_sections(&ipl, &section, &section_count);
             if (!ret) {
                 ERROR_MSG("An error occured while setting up sections from IPL data.");
@@ -227,32 +212,32 @@ int main(int argc, const char **argv) {
 
     section_sort(section, section_count);
 
-    comment_repository_t *comments_repository = comment_repository_create();
+    CommentRepository *comments_repository = comment_repository_create();
     /* Load comments */
-    if(NULL != option.comments_in) {
-        for(i=0; option.comments_in[i]; i++) {
-            ret = comment_repository_load(option.comments_in[i], comments_repository);
+    if(NULL != options.comments_in) {
+        for(int i=0; options.comments_in[i]; i++) {
+            ret = comment_repository_load(comments_repository, options.comments_in[i]);
             if (!ret) {
-                ERROR_MSG("An error occured while loading comments from %s : %s", option.comments_in[i], strerror(errno));
+                ERROR_MSG("An error occured while loading comments from %s : %s", options.comments_in[i], strerror(errno));
                 goto error_3;
             }
         }
     }
 
-    label_repository_t *repository = label_repository_create();
+    LabelRepository *repository = label_repository_create();
     /* Load labels */
-    if (NULL != option.labels_in) {
-        for(i=0; option.labels_in[i]; i++) {
-            ret = label_repository_load(option.labels_in[i], repository);
+    if (NULL != options.labels_in) {
+        for(int i=0; options.labels_in[i]; i++) {
+            ret = label_repository_load(repository, options.labels_in[i]);
             if (!ret) {
-                ERROR_MSG("An error occured while loading labels from %s : %s", option.labels_in[i], strerror(errno));
+                ERROR_MSG("An error occured while loading labels from %s : %s", options.labels_in[i], strerror(errno));
                 goto error_4;
             }
         }
     }
 
     /* For each section reset every existing files */
-    for (i = 0; i < section_count; ++i) {
+    for (int i = 0; i < section_count; ++i) {
         out = fopen(section[i].output, "wb");
         if (NULL == out) {
             ERROR_MSG("Can't open %s : %s", section[i].output, strerror(errno));
@@ -262,7 +247,7 @@ int main(int argc, const char **argv) {
     }
 
     /* Add section name to label repository. */
-    for (i = 0; i < section_count; ++i) {
+    for (int i = 0; i < section_count; ++i) {
         ret = label_repository_add(repository, section[i].name, section[i].logical, section[i].page, section[i].description);
         if (!ret) {
             ERROR_MSG("Failed to add section name (%s) to labels", section[i].name);
@@ -271,17 +256,17 @@ int main(int argc, const char **argv) {
     }
 
     /* Disassemble and output */
-    for (i = 0; i < section_count; ++i) {
+    for (int i = 0; i < section_count; ++i) {
         out = fopen(section[i].output, "ab");
         if (!out) {
             ERROR_MSG("Can't open %s : %s", section[i].output, strerror(errno));
             goto error_4;
         }
 
-        if ((0 != option.cdrom) || (section[i].offset != ((section[i].page << 13) | (section[i].logical & 0x1fff)))) {
+        if (options.cdrom || (section[i].offset != ((section[i].page << 13) | (section[i].logical & 0x1fff)))) {
             size_t offset = section[i].offset;
             /* Copy CDROM data */
-            ret = cd_load(option.rom_filename, section[i].offset, section[i].size, option.sector_size, section[i].page, section[i].logical, &map);
+            ret = cd_load(options.rom_filename, section[i].offset, section[i].size, options.sector_size, section[i].page, section[i].logical, &map);
             if (0 == ret) {
                 ERROR_MSG("Failed to load CD data (section %d)", i);
                 goto error_4;
@@ -318,17 +303,17 @@ int main(int argc, const char **argv) {
                 INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
             }
         }
-        else if((section[i].type != Data) || (section[i].data.type != Binary)) {
+        else if((section[i].type != SECTION_TYPE_DATA) || (section[i].data.type != DATA_TYPE_BINARY)) {
             /* Print header */
             fprintf(out, "\t.%s\n"
                          "\t.bank $%03x\n"
                          "\t.org $%04x\n",
-                    (section[i].type == Code) ? "code" : "data", section[i].page, section[i].logical);
+                    (section[i].type == SECTION_TYPE_CODE) ? "code" : "data", section[i].page, section[i].logical);
         }
 
-        memmap_mpr(&map, section[i].mpr);
+        memory_map_mpr(&map, section[i].mpr);
        
-        if (section[i].type == Code) {
+        if (section[i].type == SECTION_TYPE_CODE) {
             if(section[i].size <= 0) {
                 section[i].size = compute_size(section, i, section_count, &map);
             }
@@ -341,11 +326,11 @@ int main(int argc, const char **argv) {
             /* Process opcodes */
             uint16_t logical = section[i].logical;
             do {
-                (void)decode(out, &logical, &section[i], &map, repository, comments_repository, option.address);
+                (void)decode(out, &logical, &section[i], &map, repository, comments_repository, options.address);
             } while (logical < (section[i].logical+section[i].size));
             fputc('\n', out);
         } else {
-            ret = data_extract(out, &section[i], &map, repository, comments_repository, option.address);
+            ret = data_extract(out, &section[i], &map, repository, comments_repository, options.address);
             if (!ret) {
                 // [todo]
             }
@@ -355,17 +340,17 @@ int main(int argc, const char **argv) {
     }
 
     /* Open main asm file */
-    main_file = fopen(option.main_filename, "w");
+    main_file = fopen(options.main_filename, "w");
     if (!main_file) {
-        ERROR_MSG("Unable to open %s : %s", option.main_filename, strerror(errno));
+        ERROR_MSG("Unable to open %s : %s", options.main_filename, strerror(errno));
         goto error_4;
     }
 
     label_dump(main_file, &map, repository);
 
-    if (!option.cdrom && option.extract_irq) {
+    if (!options.cdrom && options.extract_irq) {
         fprintf(main_file, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
-        for (i = 0; i < 5; ++i) {
+        for (int i = 0; i < 5; ++i) {
             fprintf(main_file, "\t.dw $%04x\n", section[i].logical);
         }
     }
@@ -373,7 +358,7 @@ int main(int argc, const char **argv) {
     fclose(main_file);
 
     /* Output labels  */
-    if (!label_output(&option, repository)) {
+    if (!label_output(&options, repository)) {
         goto error_4;
     }
     failure = 0;
@@ -383,11 +368,11 @@ error_4:
 error_3:
     comment_repository_destroy(comments_repository);
 error_2:
-    memmap_destroy(&map);
+    memory_map_destroy(&map);
 error_1:
-    release_cli_opt(&option);
+    cli_opt_release(&options);
 
-    for (i = 0; i < section_count; ++i) {
+    for (int i = 0; i < section_count; ++i) {
         free(section[i].name);
         free(section[i].output);
         section[i].name = NULL;
