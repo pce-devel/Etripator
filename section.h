@@ -72,7 +72,7 @@ typedef enum {
 /// \return "unknown" otherwise
 const char* data_type_name(DataType type);
 
-// Data section configuration
+/// Data section configuration
 typedef struct {
     DataType type;             //< type
     int32_t element_size;      //< element size (string=0, byte=1, word=2)
@@ -82,7 +82,7 @@ typedef struct {
     int32_t delimiter_size; //< string delimiter length
 } DataConfig;
 
-// Section description
+/// Section description
 typedef struct {
     char *name;        //< Name
     SectionType type;  //< Type
@@ -96,34 +96,7 @@ typedef struct {
     char *description; //< optional description
 } Section;
 
-/// Reset a section to its default values.
-void section_reset(Section *s);
-
-/// Group section per output filename and sort them in page/logical address order.
-/// \param [in out] ptr Sections.
-/// \param [in] n Number of sections to sort.
-void section_sort(Section *ptr, size_t n);          // [todo] will be removed
-
-/// Delete sections.
-void section_delete(Section *ptr, int n);           // [todo] will be removed
-
-// Load sections from a JSON file.
-// \param [out] out Loaded sections.
-// \param [out] n Number of loaded sections. 
-// \param [in]  filename Input filename.
-// \return true if the sections contained in the file were succesfully loaded.
-// \return false if an error occured.
-bool section_load(Section **out, int *n, const char *filename); // [todo] use SectionArray
-
-// Save sections to a JSON file.
-// \param [in] ptr Sections to be saved.
-// \param [in] count Number of sections. 
-// \param [in] filename Output filename.
-// \return true if the sections were succesfully saved.
-// \return false if an error occured.
-bool section_save(const Section *ptr, int n, const char *filename); // [todo] use SectionArray
-
-// Section array
+/// Section array
 typedef struct {
     Section *data;      ///< Pointer to section array.
     size_t count;       ///< Number of sections currently in use.
@@ -156,5 +129,31 @@ int section_array_add(SectionArray *arr, const Section* in);
 /// \return A pointer to the section if the index is within the section array bounds.
 /// \return NULL if the index is out of the section array bounds.
 const Section* section_array_get(SectionArray *arr, size_t i);
+
+/// Reset a section to its default values.
+void section_reset(Section *s);
+
+/// Group section per output filename and sort them in page/logical address order.
+/// \param [in out] ptr Sections.
+/// \param [in] n Number of sections to sort.
+void section_sort(Section *ptr, size_t n);          // [todo] will be removed
+
+/// Delete sections.
+void section_delete(Section *ptr, int n);           // [todo] will be removed
+
+// Load sections from a JSON file.
+// \param [out] arr Loaded sections.
+// \param [in]  filename Input filename.
+// \return true if the sections contained in the file were succesfully loaded.
+// \return false if an error occured.
+bool section_load(SectionArray *arr, const char *filename);
+
+// Save sections to a JSON file.
+// \param [in] ptr Sections to be saved.
+// \param [in] count Number of sections. 
+// \param [in] filename Output filename.
+// \return true if the sections were succesfully saved.
+// \return false if an error occured.
+bool section_save(const Section *ptr, int n, const char *filename); // [todo] use SectionArray
 
 #endif // ETRIPATOR_SECTION_H

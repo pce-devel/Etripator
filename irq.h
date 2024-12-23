@@ -42,10 +42,9 @@
 
 /// Get irq code offsets from rom.
 /// \param [in]  map Memory map.
-/// \param [out] section Section list.
-/// \param [out] count Number of extracted sections.
+/// \param [out] out Section list.
 /// \return true if the IRQ vectors where successfully extradcted.
 /// \return false otherwise (missing ROM, or offsets out of range).
-bool irq_read(MemoryMap* map, Section **section, int *count);
+bool irq_read(MemoryMap* map, SectionArray *out);
 
 #endif // ETRIPATOR_IRQ_H

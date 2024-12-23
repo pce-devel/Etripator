@@ -336,12 +336,14 @@ static bool section_parse(Section *out, const json_t *obj) {
 }
 
 // Load sections from a JSON file.
-bool section_load(Section **out, int *n, const char *filename) {
+bool section_load(SectionArray *arr, const char *filename) {
     bool ret = false;
     json_error_t err;
     Section *ptr;
     const char* key;
     
+    section_array_reset(arr);
+
     json_t* root = json_load_file(filename, 0, &err);
     if(root == NULL) {
         ERROR_MSG("Failed to parse %s:%d:%d: %s", filename, err.line, err.column, err.text);
@@ -351,16 +353,20 @@ bool section_load(Section **out, int *n, const char *filename) {
         } else {
             json_t* obj = NULL;
             size_t size = json_object_size(root);
-            *out = (Section*)realloc(*out, (*n+size) * sizeof(Section));
-            ptr = *out + *n;
-            *n += (int)size;
+            
             ret = true;
             json_object_foreach(root, key, obj) {
-                if(!section_parse(ptr, obj)) {
+                Section tmp = {0};
+                section_reset(&tmp);
+
+                if(!section_parse(&tmp, obj)) {
                     ret = false;
+                } else {
+                    tmp.name = strdup(key);
+                    if(section_array_add(arr, &tmp) <= 0) {
+                        section_delete(&tmp, 1);
+                    }                        
                 }
-                ptr->name = strdup(key);
-                ptr++;
             }
         }
         json_decref(root);

@@ -49,10 +49,11 @@ static char* g_irq_names[PCE_IRQ_COUNT] = {
 
 // [todo] add an extra section for the address table
 // Get irq code offsets from rom.
-bool irq_read(MemoryMap* map, Section **section, int *count) {
+bool irq_read(MemoryMap* map, SectionArray *out) {
     assert(map != NULL);
-    assert(section != NULL);
-    assert(count != NULL);
+    assert(out != NULL);
+    assert(out->data != NULL);
+    assert((out->count + PCE_IRQ_COUNT) <= out->capacity);
 
     bool ret = false;
     if(map->memory[PCE_MEMORY_ROM].data == NULL) {
@@ -60,45 +61,41 @@ bool irq_read(MemoryMap* map, Section **section, int *count) {
     } else if(map->memory[PCE_MEMORY_ROM].length < (PCE_IRQ_TABLE + PCE_IRQ_COUNT)) {
         ERROR_MSG("ROM is abnormally small.");
     } else {
-        Section *tmp = (Section*)realloc(*section, (*count+PCE_IRQ_COUNT) * sizeof(Section));
-        if(tmp == NULL) {
-            ERROR_MSG("Failed to allocate extra IRQ sections.");
-        } else {
-            int j = *count;
-            uint16_t offset = PCE_IRQ_TABLE;
-            *section = tmp;
-            *count += PCE_IRQ_COUNT;
+        uint16_t offset = PCE_IRQ_TABLE;
+        ret = true;
+        for(size_t i=0; ret && (i<PCE_IRQ_COUNT); i++) {
+            // IRQ name.
+            const char *name = g_irq_names[i];
+            // Read offset.
+            uint8_t lo = memory_map_read(map, offset++);
+            uint8_t hi = memory_map_read(map, offset++);
 
-            for(size_t i=0; i<PCE_IRQ_COUNT; i++, j++) {
-                // IRQ name.
-                const char *name = g_irq_names[i];
-                // Read offset.
-                uint8_t lo = memory_map_read(map, offset++);
-                uint8_t hi = memory_map_read(map, offset++);
+            // Initialize section
+            Section tmp = {
+                .name     = strdup(name),
+                .type     = SECTION_TYPE_CODE,
+                .page     = 0,
+                .logical  = (hi << 8) | lo,
+                .size     = 0,
+                .mpr      = {
+                    [0] = 0xFFU, // I/O
+                    [1] = 0xF8U, // RAM
+                    // [2..7] : 0 // ROM                    
+                },
+                .description = NULL,
+            };
 
-                // Initialize section
-                tmp[j].name     = strdup(name);
-                tmp[j].type     = SECTION_TYPE_CODE;
-                tmp[j].page     = 0;
-                tmp[j].logical  = (hi << 8) | lo;
-                tmp[j].size     = 0;
+            size_t filename_len = strlen(name) + 5U; // .asm\0
+            tmp.output = (char*)malloc(filename_len);
+            snprintf(tmp.output, filename_len, "%s.asm", name);
 
-                tmp[j].mpr[0] = 0xFFU;      // I/O
-                tmp[j].mpr[1] = 0xF8U;      // RAM
-                for(int k=2; k<PCE_MPR_COUNT; k++) {
-                    tmp[j].mpr[k] = 0x00;   // ROM
-                }
+            INFO_MSG("%s found at %04x", tmp.name, tmp.logical);
 
-                size_t filename_len = strlen(name) + 5U; // .asm\0
-                tmp[j].output = (char*)malloc(filename_len);
-                snprintf(tmp[j].output, filename_len, "%s.asm", name);
-
-                tmp[j].description = NULL;
-
-                INFO_MSG("%s found at %04x", tmp[j].name, tmp[j].logical);
+            if(section_array_add(out, &tmp) < 0) {
+                ERROR_MSG("failed to add section");
+                ret = false;
             }
         }
     }
-
     return ret;
 }

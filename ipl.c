@@ -156,7 +156,11 @@ bool ipl_read(IPL *out, const char *filename) {
 }
 
 //  Get irq code offsets from IPL.
-bool ipl_sections(IPL *in, Section **out, int *count) {
+bool ipl_sections(IPL *in, SectionArray *out) {
+    assert(in != NULL);
+    assert(out != NULL);
+    assert(out->data != NULL);
+    
     static const char *section_name[2] = { "cd_start", "gfx_start" };
     static const char *section_filename[2] = { "cd_start.asm", "gfx_start.bin" };
     
@@ -167,50 +171,46 @@ bool ipl_sections(IPL *in, Section **out, int *count) {
     if(extra == 0) {
         INFO_MSG("No section found from IPL data.");
     } else {
-        int j = *count;
-        Section *section = (Section*)realloc(*out, (j+extra) * sizeof(Section));
-        if(section == NULL) {
-            ERROR_MSG("Failed to add extra sections.");
-            ret = false;
-        } else {
-            *count += extra;
-            *out = section;
-
-            memset(&section[j], 0, extra * sizeof(Section));
-
-            for(int k=0; k<extra; k++) {
-                section[j+k].mpr[0] = 0xff;
-                section[j+k].mpr[1] = 0xf8;
-                section[j+k].mpr[7] = 0x00;
-                for(int i=0; i<5; i++) {
-                    section[j+k].mpr[2+i] = 0x80 + in->mpr[i];
-                }
+        size_t j = out->count;
+        for(int k=0; ret && (k<extra); k++) {
+            Section tmp = {0};
+            tmp.mpr[0] = 0xff;
+            tmp.mpr[1] = 0xf8;
+            tmp.mpr[7] = 0x00;
+            for(int i=0; i<5; i++) {
+                tmp.mpr[2+i] = 0x80 + in->mpr[i];
             }
+            if(section_array_add(out, &tmp) < 0) {
+                ret = false;
+            }
+        }
+        if(ret) {
             // "CD boot"
             if(in->load_sector_count) {
+                Section *section = &out->data[j++];
                 uint32_t record = (in->load_start_record[0] << 16) | (in->load_start_record[1] << 8) | in->load_start_record[2];
-                section[j].name    = strdup(section_name[0]);
-                section[j].type    = SECTION_TYPE_CODE;
-                section[j].page    = section[j].mpr[in->load_exec_address[1]>>5];
-                section[j].logical = (in->load_exec_address[1] << 8) | in->load_exec_address[0];
-                section[j].offset  = record * 2048;
-                section[j].size    = in->load_sector_count * 2048;
-                section[j].output  = strdup(section_filename[0]);
-                j++;
+                section->name    = strdup(section_name[0]);
+                section->type    = SECTION_TYPE_CODE;
+                section->page    = section->mpr[in->load_exec_address[1]>>5];
+                section->logical = (in->load_exec_address[1] << 8) | in->load_exec_address[0];
+                section->offset  = record * 2048;
+                section->size    = in->load_sector_count * 2048;
+                section->output  = strdup(section_filename[0]);
             }
             // "GFX"
             if(in->opening_gfx_sector_count) {
+                Section *section = &out->data[j++];
                 uint32_t record = (in->opening_gfx_record[0] << 16) | (in->opening_gfx_record[1] << 8) | in->opening_gfx_record[2];
-                section[j].name    = strdup(section_name[1]);
-                section[j].type    = SECTION_TYPE_DATA;
-                section[j].page    = section[j].mpr[in->opening_gfx_read_address[1]>>5];
-                section[j].logical = (in->opening_gfx_read_address[1] << 8) | in->opening_gfx_read_address[0];
-                section[j].offset  = record * 2048;
-                section[j].size    = in->opening_gfx_sector_count * 2048;
-                section[j].output  = strdup(section_filename[1]);
-                section[j].data.type = DATA_TYPE_BINARY;
-                section[j].data.element_size = 1;
-                section[j].data.elements_per_line = 16;
+                section->name    = strdup(section_name[1]);
+                section->type    = SECTION_TYPE_DATA;
+                section->page    = section->mpr[in->opening_gfx_read_address[1]>>5];
+                section->logical = (in->opening_gfx_read_address[1] << 8) | in->opening_gfx_read_address[0];
+                section->offset  = record * 2048;
+                section->size    = in->opening_gfx_sector_count * 2048;
+                section->output  = strdup(section_filename[1]);
+                section->data.type = DATA_TYPE_BINARY;
+                section->data.element_size = 1;
+                section->data.elements_per_line = 16;
             }
         }
     }
