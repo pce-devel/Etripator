@@ -104,9 +104,8 @@ bool ipl_read(IPL *out, const char *filename);
 
 /// Get irq code offsets from IPL.
 /// \param [in]  in IPL infos.
-/// \param [out] section Sections.
-/// \param [out] count  Section count.
+/// \param [out] out Sections.
 /// \return 0 on error, 1 otherwise.
-bool ipl_sections(IPL *in, Section **out, int *count);
+bool ipl_sections(IPL *in, SectionArray *out);
 
 #endif // IPL_H

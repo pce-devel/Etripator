@@ -191,7 +191,7 @@ int section_array_add(SectionArray *arr, const Section* in) {
     assert(arr != NULL);
     assert(in != NULL);
 
-    int ret = -1;//todo
+    int ret = -1;
     size_t i;
     // Search for overlapping section.
     for(i=0; i<arr->count; i++) {
@@ -216,10 +216,10 @@ int section_array_add(SectionArray *arr, const Section* in) {
             } else {
                 arr->data = ptr;
                 arr->capacity = n;
-                ret = true;
+                ret = 1;
             }
         } else {
-            ret = true;
+            ret = 1;
         }
 
         // Append new section.

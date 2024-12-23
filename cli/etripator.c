@@ -148,13 +148,11 @@ int main(int argc, const char **argv) {
 
     MemoryMap map = {0};
 
-    Section *section = NULL;
-    int section_count = 0;
-
+    SectionArray section_arr = {0};
 
     failure = 1;
-    section_count = 0;
-    section = NULL;
+
+    section_array_reset(&section_arr);
 
     /* Extract command line options */
     ret = cli_opt_get(&options, argc, argv);
@@ -164,7 +162,7 @@ int main(int argc, const char **argv) {
 
     /* Read configuration file */
     if (options.cfg_filename) {
-        ret = section_load(&section, &section_count, options.cfg_filename);
+        ret = section_load(&section_arr, options.cfg_filename);
         if (!ret) {
             ERROR_MSG("Unable to read %s", options.cfg_filename);
             goto error_1;
@@ -186,7 +184,7 @@ int main(int argc, const char **argv) {
 
         /* Get irq offsets */
         if (options.extract_irq) {
-            ret = irq_read(&map, &section, &section_count);
+            ret = irq_read(&map, &section_arr);
             if (!ret) {
                 ERROR_MSG("An error occured while reading irq vector offsets");
                 goto error_2;
@@ -201,7 +199,7 @@ int main(int argc, const char **argv) {
         if (options.extract_irq) {
             IPL ipl;
             ret = ipl_read(&ipl, options.rom_filename);
-            ret = ret && ipl_sections(&ipl, &section, &section_count);
+            ret = ret && ipl_sections(&ipl, &section_arr);
             if (!ret) {
                 ERROR_MSG("An error occured while setting up sections from IPL data.");
                 goto error_2;
@@ -210,7 +208,7 @@ int main(int argc, const char **argv) {
         /*  Data will be loaded during section disassembly */
     }
 
-    section_sort(section, section_count);
+// [todo]    section_sort(section, section_count);
 
     CommentRepository *comments_repository = comment_repository_create();
     /* Load comments */
@@ -237,59 +235,64 @@ int main(int argc, const char **argv) {
     }
 
     /* For each section reset every existing files */
-    for (int i = 0; i < section_count; ++i) {
-        out = fopen(section[i].output, "wb");
+    for (int i = 0; i < section_arr.count; ++i) {
+        Section *section = &section_arr.data[i];
+        out = fopen(section->output, "wb");
         if (NULL == out) {
-            ERROR_MSG("Can't open %s : %s", section[i].output, strerror(errno));
+            ERROR_MSG("Can't open %s : %s", section->output, strerror(errno));
             goto error_4;
         }
         fclose(out);
     }
 
     /* Add section name to label repository. */
-    for (int i = 0; i < section_count; ++i) {
-        ret = label_repository_add(repository, section[i].name, section[i].logical, section[i].page, section[i].description);
+    for (int i = 0; i < section_arr.count; ++i) {
+        Section *section = &section_arr.data[i];
+        ret = label_repository_add(repository, section->name, section->logical, section->page, section->description);
         if (!ret) {
-            ERROR_MSG("Failed to add section name (%s) to labels", section[i].name);
+            ERROR_MSG("Failed to add section name (%s) to labels", section->name);
             goto error_4;
         }
     }
 
     /* Disassemble and output */
-    for (int i = 0; i < section_count; ++i) {
-        out = fopen(section[i].output, "ab");
+    Section *previous = NULL;
+    Section *current = NULL;
+    for (int i = 0; i < section_arr.count; ++i, previous=current) {
+        current = &section_arr.data[i];
+        out = fopen(current->output, "ab");
         if (!out) {
-            ERROR_MSG("Can't open %s : %s", section[i].output, strerror(errno));
+            ERROR_MSG("Can't open %s : %s", current->output, strerror(errno));
             goto error_4;
         }
 
-        if (options.cdrom || (section[i].offset != ((section[i].page << 13) | (section[i].logical & 0x1fff)))) {
-            size_t offset = section[i].offset;
+        if (options.cdrom || (current->offset != ((current->page << 13) | (current->logical & 0x1fff)))) {
+            size_t offset = current->offset;
             /* Copy CDROM data */
-            ret = cd_load(options.rom_filename, section[i].offset, section[i].size, options.sector_size, section[i].page, section[i].logical, &map);
+            ret = cd_load(options.rom_filename, current->offset, current->size, options.sector_size, current->page, current->logical, &map);
             if (0 == ret) {
                 ERROR_MSG("Failed to load CD data (section %d)", i);
                 goto error_4;
             }
         }
 
-        if((i > 0) && (section[i].logical < (section[i-1].logical + section[i-1].size))
-                   && (section[i].page == section[i-1].page) 
-                   && (section[i].type != section[i-1].type)) {
-            WARNING_MSG("Section %s and %s overlaps! %x %x.%x", section[i].name, section[i-1].name);
+        if((previous != NULL) && (current->logical < (previous->logical + previous->size))
+                              && (current->page == previous->page) 
+                              && (current->type != previous->type)) {
+            WARNING_MSG("Section %s and %s overlaps! %x %x.%x", current->name, previous->name);
         }
 
-        if((i > 0) && (0 == strcmp(section[i].output, section[i-1].output))
-                   && (section[i].page == section[i-1].page)
-                   && (section[i].logical <= (section[i-1].logical + section[i-1].size))) {
+        if((previous != NULL) && (0 == strcmp(current->output, previous->output))
+                              && (current->page == previous->page)
+                              && (current->logical <= (previous->logical + previous->size))) {
             // "Merge" sections and adjust size if necessary.
-            if(section[i].size > 0) {
-                uint32_t end0 = section[i-1].logical + section[i-1].size;
-                uint32_t end1 = section[i].logical + section[i].size;
+            if(current->size > 0) {
+                uint32_t end0 = previous->logical + previous->size;
+                uint32_t end1 = current->logical + current->size;
                 if(end1 > end0) {
-                    section[i].size = end1 - end0;
-                    section[i].logical = end0;
-                    INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
+                    current->size = end1 - end0;
+                    current->logical = end0;
+                    INFO_MSG("Section %s has been merged with %s!", current->name, previous->name);
                 }
                 else {
                     // The previous section overlaps the current one.
@@ -297,40 +300,38 @@ int main(int argc, const char **argv) {
                     fclose(out);
                     continue;
                 }
+            } else {
+                current->logical = previous->logical + previous->size;
+                INFO_MSG("Section %s has been merged with %s!", current->name, previous->name);
             }
-            else {
-                section[i].logical = section[i-1].logical + section[i-1].size;
-                INFO_MSG("Section %s has been merged with %s!", section[i].name, section[i-1].name);
-            }
-        }
-        else if((section[i].type != SECTION_TYPE_DATA) || (section[i].data.type != DATA_TYPE_BINARY)) {
+        } else if((current->type != SECTION_TYPE_DATA) || (current->data.type != DATA_TYPE_BINARY)) {
             /* Print header */
             fprintf(out, "\t.%s\n"
                          "\t.bank $%03x\n"
                          "\t.org $%04x\n",
-                    (section[i].type == SECTION_TYPE_CODE) ? "code" : "data", section[i].page, section[i].logical);
+                    (current->type == SECTION_TYPE_CODE) ? "code" : "data", current->page, current->logical);
         }
 
-        memory_map_mpr(&map, section[i].mpr);
+        memory_map_mpr(&map, current->mpr);
        
-        if (section[i].type == SECTION_TYPE_CODE) {
-            if(section[i].size <= 0) {
-                section[i].size = compute_size(section, i, section_count, &map);
+        if (current->type == SECTION_TYPE_CODE) {
+            if(current->size <= 0) {
+                current->size = compute_size(current, i, section_arr.count, &map);
             }
 
             /* Extract labels */
-            ret = label_extract(&section[i], &map, repository);
+            ret = label_extract(current, &map, repository);
             if (!ret) {
                 goto error_4;
             }
             /* Process opcodes */
-            uint16_t logical = section[i].logical;
+            uint16_t logical = current->logical;
             do {
-                (void)decode(out, &logical, &section[i], &map, repository, comments_repository, options.address);
-            } while (logical < (section[i].logical+section[i].size));
+                (void)decode(out, &logical, current, &map, repository, comments_repository, options.address);
+            } while (logical < (current->logical+current->size));
             fputc('\n', out);
         } else {
-            ret = data_extract(out, &section[i], &map, repository, comments_repository, options.address);
+            ret = data_extract(out, current, &map, repository, comments_repository, options.address);
             if (!ret) {
                 // [todo]
             }
@@ -351,7 +352,7 @@ int main(int argc, const char **argv) {
     if (!options.cdrom && options.extract_irq) {
         fprintf(main_file, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
         for (int i = 0; i < 5; ++i) {
-            fprintf(main_file, "\t.dw $%04x\n", section[i].logical);
+            fprintf(main_file, "\t.dw $%04x\n", current->logical);
         }
     }
 
@@ -372,12 +373,7 @@ error_2:
 error_1:
     cli_opt_release(&options);
 
-    for (int i = 0; i < section_count; ++i) {
-        free(section[i].name);
-        free(section[i].output);
-        section[i].name = NULL;
-    }
-    free(section);
+    section_array_delete(&section_arr);
 
     return failure;
 }

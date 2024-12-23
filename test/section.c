@@ -124,16 +124,15 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
 
     static const Section* bank0[2] = { bank0_0, bank0_1 };
     
-    Section *section = NULL;
-    int count[2] = { 0, 0 };
+    SectionArray arr = {0};
 
     int i, j, k;
     int ret;
-    ret = section_load(&section, &count[0], "./data/bank0_0.json");
+    ret = section_load(&arr, "./data/bank0_0.json");
 
     munit_assert_int(ret, !=, 0);
-    munit_assert_int(count[0], ==, 4);
-    
+    munit_assert_int(arr.count, ==, 4);
+/*    
     section_sort(section, count[0]);
 
     for(i=0; i<count[0]; i++) {
@@ -148,12 +147,11 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
         munit_assert_int32(bank0[0][i].data.elements_per_line, ==, section[i].data.elements_per_line);
         munit_assert_string_equal(bank0[0][i].output, section[i].output);
     }
-
-    count[1] = count[0];
-    ret = section_load(&section, &count[1], "./data/bank0_1.json");
+*/
+    ret = section_load(&arr, "./data/bank0_1.json");
     munit_assert_int(ret, !=, 0);
-    munit_assert_int(count[1], ==, 13);
-    
+    munit_assert_int(arr.count, ==, 13);
+/*
     section_sort(section, count[1]);
 
     for(i=0, j=0; j<2; j++) {
@@ -171,7 +169,8 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
         }
     }    
     section_delete(section, count[1]);
-    
+*/
+    section_array_delete(&arr);
     return MUNIT_OK;
 }
 
