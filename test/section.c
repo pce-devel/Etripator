@@ -104,7 +104,7 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
     (void)fixture;
 
     static const Section bank0_0[4] = {
-        { "cdbios_functions", SECTION_TYPE_CODE, 0, 0xe000, 0x0000, 0x505, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } }, 
+        { "cdbios_functions", SECTION_TYPE_CODE, 0, 0xe000, 0x0000, 0x504, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } }, 
         { "unknown.0", SECTION_TYPE_DATA, 0, 0xe504, 0x0504, 0x05, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
         { "ex_colorcmd.impl", SECTION_TYPE_CODE, 0, 0xe509, 0x0509, 0xce, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
         { "unknown.1", SECTION_TYPE_DATA, 0, 0xe5d7, 0x05d7, 0x03, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } }
@@ -121,10 +121,9 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
         { "unknown.3", SECTION_TYPE_DATA, 0, 0xfec2, 0x1ec2, 0x134, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
         { "irq_vectors", SECTION_TYPE_DATA, 0, 0xfff6, 0x1ff6, 0x0a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_HEX, 2, 1 } }
     };
-
-    static const Section* bank0[2] = { bank0_0, bank0_1 };
-    
+ 
     SectionArray arr = {0};
+    section_array_reset(&arr);
 
     int i, j, k;
     int ret;
@@ -132,44 +131,48 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
 
     munit_assert_int(ret, !=, 0);
     munit_assert_int(arr.count, ==, 4);
-/*    
-    section_sort(section, count[0]);
 
-    for(i=0; i<count[0]; i++) {
-        munit_assert_string_equal(bank0[0][i].name, section[i].name);
-        munit_assert_int(bank0[0][i].type, ==, section[i].type);
-        munit_assert_uint8(bank0[0][i].page, ==, section[i].page);
-        munit_assert_uint16(bank0[0][i].logical, ==, section[i].logical);
-        munit_assert_uint32(bank0[0][i].offset, ==, section[i].offset);
-        munit_assert_int32(bank0[0][i].size, ==, section[i].size);
-        munit_assert_memory_equal(8, bank0[0][i].mpr, section[i].mpr);
-        munit_assert_int32(bank0[0][i].data.element_size, ==, section[i].data.element_size);
-        munit_assert_int32(bank0[0][i].data.elements_per_line, ==, section[i].data.elements_per_line);
-        munit_assert_string_equal(bank0[0][i].output, section[i].output);
+    for(i=0; i<arr.count; i++) {
+        munit_assert_string_equal(bank0_0[i].name, arr.data[i].name);
+        munit_assert_int(bank0_0[i].type, ==, arr.data[i].type);
+        munit_assert_uint8(bank0_0[i].page, ==, arr.data[i].page);
+        munit_assert_uint16(bank0_0[i].logical, ==, arr.data[i].logical);
+        munit_assert_uint32(bank0_0[i].offset, ==, arr.data[i].offset);
+        munit_assert_int32(bank0_0[i].size, ==, arr.data[i].size);
+        munit_assert_memory_equal(8, bank0_0[i].mpr, arr.data[i].mpr);
+        munit_assert_int32(bank0_0[i].data.element_size, ==, arr.data[i].data.element_size);
+        munit_assert_int32(bank0_0[i].data.elements_per_line, ==, arr.data[i].data.elements_per_line);
+        munit_assert_string_equal(bank0_0[i].output, arr.data[i].output);
     }
-*/
+
     ret = section_load(&arr, "./data/bank0_1.json");
     munit_assert_int(ret, !=, 0);
     munit_assert_int(arr.count, ==, 13);
-/*
-    section_sort(section, count[1]);
+    for(i=0, k=0; k<4; i++, k++) {
+        munit_assert_string_equal(bank0_0[k].name, arr.data[i].name);
+        munit_assert_int(bank0_0[k].type, ==, arr.data[i].type);
+        munit_assert_uint8(bank0_0[k].page, ==, arr.data[i].page);
+        munit_assert_uint16(bank0_0[k].logical, ==, arr.data[i].logical);
+        munit_assert_uint32(bank0_0[k].offset, ==, arr.data[i].offset);
+        munit_assert_int32(bank0_0[k].size, ==, arr.data[i].size);
+        munit_assert_memory_equal(8, bank0_0[k].mpr, arr.data[i].mpr);
+        munit_assert_int32(bank0_0[k].data.element_size, ==, arr.data[i].data.element_size);
+        munit_assert_int32(bank0_0[k].data.elements_per_line, ==, arr.data[i].data.elements_per_line);
+        munit_assert_string_equal(bank0_0[k].output, arr.data[i].output);
+    }
+    for(k=0; k<9; i++, k++) {
+        munit_assert_string_equal(bank0_1[k].name, arr.data[i].name);
+        munit_assert_int(bank0_1[k].type, ==, arr.data[i].type);
+        munit_assert_uint8(bank0_1[k].page, ==, arr.data[i].page);
+        munit_assert_uint16(bank0_1[k].logical, ==, arr.data[i].logical);
+        munit_assert_uint32(bank0_1[k].offset, ==, arr.data[i].offset);
+        munit_assert_int32(bank0_1[k].size, ==, arr.data[i].size);
+        munit_assert_memory_equal(8, bank0_1[k].mpr, arr.data[i].mpr);
+        munit_assert_int32(bank0_1[k].data.element_size, ==, arr.data[i].data.element_size);
+        munit_assert_int32(bank0_1[k].data.elements_per_line, ==, arr.data[i].data.elements_per_line);
+        munit_assert_string_equal(bank0_1[k].output, arr.data[i].output);
+    }
 
-    for(i=0, j=0; j<2; j++) {
-        for(k=0; i<count[j]; i++, k++) {
-            munit_assert_string_equal(bank0[j][k].name, section[i].name);
-            munit_assert_int(bank0[j][k].type, ==, section[i].type);
-            munit_assert_uint8(bank0[j][k].page, ==, section[i].page);
-            munit_assert_uint16(bank0[j][k].logical, ==, section[i].logical);
-            munit_assert_uint32(bank0[j][k].offset, ==, section[i].offset);
-            munit_assert_int32(bank0[j][k].size, ==, section[i].size);
-            munit_assert_memory_equal(8, bank0[j][k].mpr, section[i].mpr);
-            munit_assert_int32(bank0[j][k].data.element_size, ==, section[i].data.element_size);
-            munit_assert_int32(bank0[j][k].data.elements_per_line, ==, section[i].data.elements_per_line);
-            munit_assert_string_equal(bank0[j][k].output, section[i].output);
-        }
-    }    
-    section_delete(section, count[1]);
-*/
     section_array_delete(&arr);
     return MUNIT_OK;
 }
