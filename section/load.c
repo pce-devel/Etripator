@@ -342,8 +342,6 @@ bool section_load(SectionArray *arr, const char *filename) {
     Section *ptr;
     const char* key;
     
-    section_array_reset(arr);
-
     json_t* root = json_load_file(filename, 0, &err);
     if(root == NULL) {
         ERROR_MSG("Failed to parse %s:%d:%d: %s", filename, err.line, err.column, err.text);

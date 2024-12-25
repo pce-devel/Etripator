@@ -208,8 +208,6 @@ int main(int argc, const char **argv) {
         /*  Data will be loaded during section disassembly */
     }
 
-// [todo]    section_sort(section, section_count);
-
     CommentRepository *comments_repository = comment_repository_create();
     /* Load comments */
     if(NULL != options.comments_in) {
