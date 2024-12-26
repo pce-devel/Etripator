@@ -233,8 +233,8 @@ static bool json_parse_data_config_element_per_line(DataConfig *out, const json_
     const json_t *value = json_object_get(obj, "elements_per_line");
     if(value == NULL) {
         ret = true; // use default value
-    } else if(out->type != DATA_TYPE_HEX) {
-        ERROR_MSG("Number of elements per line is only valid for hex data section");
+    } else if((out->type != DATA_TYPE_HEX) && (out->type != DATA_TYPE_STRING)) {
+        ERROR_MSG("Number of elements per line is only valid for hex and string data section");
     } else if (!json_validate_int(value, &out->elements_per_line)) {
         ERROR_MSG("Invalid number of elements per line.");
     } else {
