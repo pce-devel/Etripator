@@ -78,7 +78,7 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
     int i, j, k;
     int ret;
     ret = section_load(&arr, "./data/bank0_0.json");
-
+    section_array_tidy(&arr);
     munit_assert_int(ret, !=, 0);
     munit_assert_int(arr.count, ==, 4);
 
@@ -96,6 +96,7 @@ MunitResult section_load_test(const MunitParameter params[], void* fixture) {
     }
 
     ret = section_load(&arr, "./data/bank0_1.json");
+    section_array_tidy(&arr);
     munit_assert_int(ret, !=, 0);
     munit_assert_int(arr.count, ==, 13);
     for(i=0, k=0; k<4; i++, k++) {

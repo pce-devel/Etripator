@@ -113,14 +113,16 @@ void section_array_reset(SectionArray *arr);
 void section_array_delete(SectionArray *arr);
 
 /// Add a new section.
-/// Note that if the section overlaps an already existing one, it will be merged if both sections have the
-/// same type.
 /// \param [in out] arr Section array the section will be added to.
 /// \param [in] in Section that will be added to the section array.
 /// \return  1 if the section was succesfully added.
 /// \return  0 if the section was merged with one from the section array.
 /// \return -1 if the section can not be merged or if there is not enough memory to add a new one.
 int section_array_add(SectionArray *arr, const Section* in);
+
+/// Merge and sort sections.
+/// \param [in out] arr Section array the section will be added to.
+void section_array_tidy(SectionArray *arr);
 
 /// Retrieve the ith section from the array.
 /// \param [in] arr Section array.

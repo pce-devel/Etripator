@@ -504,7 +504,7 @@ static int data_extract_jump_table(FILE *out, Section *section, MemoryMap *map, 
             print_statement_address(out, n, line_logical, line_page);
         }
     }
-    fputc('\n', out);
+
     return 1;
 }
 
@@ -817,10 +817,10 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 }
 
 /* Computes section size. */
-int32_t compute_size(Section *sections, int index, int count, MemoryMap *map) {
+int32_t compute_size(SectionArray *sections, int index, int count, MemoryMap *map) {
     uint8_t i;
     uint8_t data[7];
-    Section *current = &sections[index];
+    Section *current = &sections->data[index];
     uint32_t start = current->logical;
     uint32_t logical = start;
 
@@ -829,9 +829,9 @@ int32_t compute_size(Section *sections, int index, int count, MemoryMap *map) {
     uint32_t max_offset = 0xffffffff;
     for (i = 0; i < count; i++) {
         if (i != index) {
-            if (current->page == sections[i].page) {
+            if (current->page == sections->data[i].page) {
                 uint32_t offset_current = current->offset & 0x1fff;
-                uint32_t offset_it = sections[i].offset & 0x1fff;
+                uint32_t offset_it = sections->data[i].offset & 0x1fff;
                 if ((offset_current < offset_it) && (max_offset > offset_it)) {
                     max_offset = offset_it;
                 }
