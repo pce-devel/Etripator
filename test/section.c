@@ -49,56 +49,6 @@ void tear_down(void* fixture __attribute__((unused))) {
     message_printer_destroy();
 }
 
-MunitResult section_sort_test(const MunitParameter params[], void* fixture) {
-    (void)params;
-    (void)fixture;
-    
-    Section section[8];
-    
-    section[0].output = "0002";
-    section[0].page = 0;
-    section[0].logical = 1;
-
-    section[1].output = "0001";
-    section[1].page = 0;
-    section[1].logical = 0;
-
-    section[2].output = "0002";
-    section[2].page = 1;
-    section[2].logical = 0;
-
-    section[3].output = "0001";
-    section[3].page = 1;
-    section[3].logical = 0;
-
-    section[4].output = "0000";
-    section[4].page = 0;
-    section[4].logical = 2;
-
-    section[5].output = "0000";
-    section[5].page = 0;
-    section[5].logical = 1;
-
-    section[6].output = "0001";
-    section[6].page = 0;
-    section[6].logical = 1;
-    
-    section[7].output = "0002";
-    section[7].page = 0;
-    section[7].logical = 0;
-
-    section_sort(section, 8);
-
-    for(int i=0; i<7; i++) {
-        munit_assert_int(section[i].page, <=, section[i+1].page);
-        if(section[i].page == section[i+1].page) {
-            munit_assert_int(section[i].logical, <=, section[i+1].logical);
-        }
-    }
-
-    return MUNIT_OK;
-}
-
 MunitResult section_load_test(const MunitParameter params[], void* fixture) {
     (void)params;
     (void)fixture;
@@ -226,7 +176,6 @@ MunitResult section_add_test(const MunitParameter params[], void* fixture) {
 }
 
 static MunitTest section_tests[] = {
-    { "/sort", section_sort_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { "/load", section_load_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { "/overlap", section_overlap_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
     { "/add", section_add_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },

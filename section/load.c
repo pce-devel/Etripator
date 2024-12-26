@@ -362,7 +362,7 @@ bool section_load(SectionArray *arr, const char *filename) {
                 } else {
                     tmp.name = strdup(key);
                     if(section_array_add(arr, &tmp) <= 0) {
-                        section_delete(&tmp, 1);
+                        section_delete(&tmp);
                     }                        
                 }
             }

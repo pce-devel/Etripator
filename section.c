@@ -101,20 +101,13 @@ static int section_compare(const void *a, const void *b) {
     return cmp;
 }
 
-// Group section per output filename and sort them in bank/org order.
-void section_sort(Section *ptr, size_t n) {
-    qsort(ptr, n, sizeof(Section), &section_compare);
-}
-
-// Delete sections.
-void section_delete(Section *ptr, int n) {
+// Delete section.
+void section_delete(Section *ptr) {
     assert(ptr != NULL);
-    for(int i=0; i<n; i++) {
-        free(ptr[i].name);
-        free(ptr[i].output);
-        free(ptr[i].description);
-    }
-    free(ptr);
+    free(ptr->name);
+    free(ptr->output);
+    free(ptr->description);
+    section_reset(ptr);
 }
 
 // Reset a section array.
@@ -122,10 +115,7 @@ void section_array_reset(SectionArray *arr) {
     assert(arr != NULL);
     if(arr->data != NULL) {
         for(size_t i=0; i<arr->count; i++) {
-            free(arr->data[i].name);
-            free(arr->data[i].output);
-            free(arr->data[i].description);
-            section_reset(&arr->data[i]);
+            section_delete(&arr->data[i]);
         }
     }
     arr->count = 0;

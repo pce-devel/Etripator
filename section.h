@@ -101,7 +101,6 @@ typedef struct {
     Section *data;      ///< Pointer to section array.
     size_t count;       ///< Number of sections currently in use.
     size_t capacity;    ///< Number the section array can hold.
-    // [todo] index array of sorted sections ?
 } SectionArray;
 
 /// Reset a section array.
@@ -133,13 +132,8 @@ const Section* section_array_get(SectionArray *arr, size_t i);
 /// Reset a section to its default values.
 void section_reset(Section *s);
 
-/// Group section per output filename and sort them in page/logical address order.
-/// \param [in out] ptr Sections.
-/// \param [in] n Number of sections to sort.
-void section_sort(Section *ptr, size_t n);          // [todo] will be removed
-
-/// Delete sections.
-void section_delete(Section *ptr, int n);           // [todo] will be removed
+/// Delete section.
+void section_delete(Section *ptr);
 
 // Load sections from a JSON file.
 // \param [out] arr Loaded sections.
