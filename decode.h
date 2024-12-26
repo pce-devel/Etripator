@@ -79,7 +79,7 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 /// \param [in] count Number of sections.
 /// \param [in] map Memory map.
 /// \return Section size.
-int32_t compute_size(Section *sections, int index, int count, MemoryMap *map);
+int32_t compute_size(SectionArray *sections, int index, int count, MemoryMap *map);
 
 /// Output hardware IO port and RAM labels.
 /// \param [out] out File output.

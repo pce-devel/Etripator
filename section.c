@@ -145,8 +145,7 @@ static int section_overlap(const Section *a, const Section *b) {
             const Section *tmp = b;
             b = a;
             a = tmp;
-        }
-        
+        }        
         if(a->type != b->type) {
             ret = (b->logical < (a->logical + a->size)) ? -1 : 0;
         } else if(b->logical <= (a->logical + a->size)) {
@@ -185,60 +184,24 @@ int section_array_add(SectionArray *arr, const Section* in) {
     assert(in != NULL);
 
     int ret = -1;
-    size_t i;
-    bool insert = false;
-
-    // Find the slot where the section will be inserted or merged
-    for(i=0; (!insert) && (i<arr->count); ) {
-        if(in->page > arr->data[i].page) {
-            // ...
-        } else if(in->page < arr->data[i].page) {
-            insert = true;
+    // Check if we need to expand section array buffer
+    if(arr->count >= arr->capacity) {
+        size_t n = arr->capacity + 4U;
+        Section *ptr = realloc(arr->data, n*sizeof(Section));
+        if(ptr == NULL) {
+            ERROR_MSG("Failed to expand section array buffer", strerror(errno));
         } else {
-            int overlap = section_overlap(&arr->data[i], in);
-            if(overlap == 1) {
-                section_merge(&arr->data[i], in);
-                INFO_MSG("Section %s has been merged with %s!",  arr->data[i].name, in->name);
-                ret = 1;
-                break;
-            } else if (overlap == -1) {
-                WARNING_MSG("Section %s and %s overlaps!", arr->data[i].name, in->name);
-            } else if(overlap == 0) {
-                // ...
-            }
-            if(in->offset < arr->data[i].offset) {
-                insert = true;
-            }
-        }
-        if(!insert) {
-            i++;
-        }
-    }
-
-    if((i >= arr->count) || insert) {
-        // Check if we need to expand section array buffer
-        if(arr->count >= arr->capacity) {
-            size_t n = arr->capacity + 4U;
-            Section *ptr = realloc(arr->data, n*sizeof(Section));
-            if(ptr == NULL) {
-                ERROR_MSG("Failed to expand section array buffer", strerror(errno));
-            } else {
-                arr->data = ptr;
-                arr->capacity = n;
-                ret = 1;
-            }
-        } else {
+            arr->data = ptr;
+            arr->capacity = n;
             ret = 1;
         }
+    } else {
+        ret = 1;
+    }
 
-        size_t ii = i;
-        if(ret > 0) {
-            for(size_t j=arr->count; j>i; j--) {
-                arr->data[j] = arr->data[j-1];
-            }
-            arr->count++;
-            arr->data[i] = *in;   
-        }
+    if(ret > 0) {
+        arr->data[arr->count] = *in;   
+        arr->count++;
     }
     return ret;
 }
@@ -252,4 +215,33 @@ const Section* section_array_get(SectionArray *arr, size_t i) {
         }
     }
     return ret;
+}
+
+// Merge and sort sections.
+void section_array_tidy(SectionArray *arr) {
+    assert(arr != NULL);
+    assert(arr->count != 0);
+
+    Section *section = calloc(arr->count, sizeof(Section));
+    
+    qsort(arr->data, arr->count, sizeof(Section), section_compare);
+
+    size_t j = 0;
+    section[0] = arr->data[0];
+    for(size_t i=1; i<arr->count; i++) {
+        int overlap = section_overlap(&section[j], &arr->data[i]);
+        if(overlap == 1) {
+            section_merge(&section[j], &arr->data[i]);
+            INFO_MSG("Section %s has been merged with %s!",  arr->data[i].name, section[j].name);
+            section_delete(&arr->data[i]);
+        } else {
+            if(overlap == -1) {
+                WARNING_MSG("Section %s and %s overlaps!", arr->data[i].name, section[j].name);
+            }
+            section[++j] = arr->data[i];
+        }
+    }
+    free(arr->data);
+    arr->data = section;
+    arr->count = j+1;
 }

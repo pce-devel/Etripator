@@ -47,13 +47,10 @@ static char* g_irq_names[PCE_IRQ_COUNT] = {
     "irq_reset"
 };
 
-// [todo] add an extra section for the address table
 // Get irq code offsets from rom.
 bool irq_read(MemoryMap* map, SectionArray *out) {
     assert(map != NULL);
     assert(out != NULL);
-    assert(out->data != NULL);
-    assert((out->count + PCE_IRQ_COUNT) <= out->capacity);
 
     bool ret = false;
     if(map->memory[PCE_MEMORY_ROM].data == NULL) {
@@ -62,7 +59,10 @@ bool irq_read(MemoryMap* map, SectionArray *out) {
         ERROR_MSG("ROM is abnormally small.");
     } else {
         uint16_t offset = PCE_IRQ_TABLE;
+        map->mpr[7] = 0;
+
         ret = true;
+
         for(size_t i=0; ret && (i<PCE_IRQ_COUNT); i++) {
             // IRQ name.
             const char *name = g_irq_names[i];
@@ -95,6 +95,25 @@ bool irq_read(MemoryMap* map, SectionArray *out) {
                 ERROR_MSG("failed to add section");
                 ret = false;
             }
+        }
+
+        const Section irq_table = {
+            .name = strdup("irq_table"),
+            .page = 0x00,
+            .type = SECTION_TYPE_DATA,
+            .logical = PCE_IRQ_TABLE,
+            .size = PCE_IRQ_COUNT * 2U,
+            .mpr = { [0] = 0xFU, [1] = 0xF8 },
+            .data = { 
+                .type = DATA_TYPE_JUMP_TABLE,
+                .elements_per_line = 1U
+            },
+            .output = strdup("main.asm")
+        };
+
+        if(section_array_add(out, &irq_table) < 0) {
+            ERROR_MSG("failed to add IRQ table section");
+            ret = false;
         }
     }
     return ret;

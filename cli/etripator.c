@@ -253,6 +253,9 @@ int main(int argc, const char **argv) {
         }
     }
 
+    /* Sort & merge sections */
+    section_array_tidy(&section_arr);
+
     /* Disassemble and output */
     Section *previous = NULL;
     Section *current = NULL;
@@ -264,7 +267,7 @@ int main(int argc, const char **argv) {
             goto error_4;
         }
 
-        if (options.cdrom || (current->offset != ((current->page << 13) | (current->logical & 0x1fff)))) {
+        if (options.cdrom && (current->offset != ((current->page << 13) | (current->logical & 0x1fff)))) {
             size_t offset = current->offset;
             /* Copy CDROM data */
             ret = cd_load(options.rom_filename, current->offset, current->size, options.sector_size, current->page, current->logical, &map);
@@ -314,7 +317,7 @@ int main(int argc, const char **argv) {
        
         if (current->type == SECTION_TYPE_CODE) {
             if(current->size <= 0) {
-                current->size = compute_size(current, i, section_arr.count, &map);
+                current->size = compute_size(&section_arr, i, section_arr.count, &map);
             }
 
             /* Extract labels */
@@ -339,21 +342,12 @@ int main(int argc, const char **argv) {
     }
 
     /* Open main asm file */
-    main_file = fopen(options.main_filename, "w");
+    main_file = fopen(options.main_filename, "a+");                                         // [todo]
     if (!main_file) {
         ERROR_MSG("Unable to open %s : %s", options.main_filename, strerror(errno));
         goto error_4;
     }
-
     label_dump(main_file, &map, repository);
-
-    if (!options.cdrom && options.extract_irq) {
-        fprintf(main_file, "\n\t.data\n\t.bank 0\n\t.org $FFF6\n");
-        for (int i = 0; i < 5; ++i) {
-            fprintf(main_file, "\t.dw $%04x\n", current->logical);
-        }
-    }
-
     fclose(main_file);
 
     /* Output labels  */
