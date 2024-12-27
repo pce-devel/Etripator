@@ -46,12 +46,18 @@ typedef struct {
     char*    description; //< Description (optional) 
 } Label;
 
-typedef struct LabelRepositoryImpl LabelRepository;
+/// Label repository.
+typedef struct {
+    size_t size;   //< Size of label repository.
+    size_t last;   //< Last element in the repository.
+    Label *labels; //< Labels.
+} LabelRepository;
 
 /// Create label repository.
-/// \return A pointer to a label repository.
-/// \return NULL if an error occured.
-LabelRepository* label_repository_create();
+/// \param [in out] repository Label repository.
+/// \return true if the repository was succesfully initialized
+/// \return false if an error occured
+bool label_repository_create(LabelRepository* repository);
 
 /// Release label repository resources.
 /// \param [in,out] repository Label repository.

@@ -50,117 +50,117 @@ void tear_down(void* fixture __attribute__((unused))) {
 
 MunitResult label_add_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
     Label label = {};
-    LabelRepository* repository = label_repository_create();
-    munit_assert_not_null(repository);
+    LabelRepository repository = {0};
+    munit_assert_true(label_repository_create(&repository));
 
-    munit_assert_true(label_repository_add(repository, "l_0001", 0x0001, 0x00, NULL));
-    munit_assert_true(label_repository_add(repository, "l_0020", 0x0020, 0x00, NULL));
-    munit_assert_true(label_repository_add(repository, "l_000a", 0x000a, 0xb1, NULL));
-    munit_assert_true(label_repository_add(repository, "l_cafe", 0xcafe, 0xf7, NULL));
-    munit_assert_true(label_repository_add(repository, "l_0001", 0x0001, 0x00, NULL));
+    munit_assert_true(label_repository_add(&repository, "l_0001", 0x0001, 0x00, NULL));
+    munit_assert_true(label_repository_add(&repository, "l_0020", 0x0020, 0x00, NULL));
+    munit_assert_true(label_repository_add(&repository, "l_000a", 0x000a, 0xb1, NULL));
+    munit_assert_true(label_repository_add(&repository, "l_cafe", 0xcafe, 0xf7, NULL));
+    munit_assert_true(label_repository_add(&repository, "l_0001", 0x0001, 0x00, NULL));
 
-    munit_assert_int(label_repository_size(repository), ==, 4);
+    munit_assert_int(label_repository_size(&repository), ==, 4);
     
-    munit_assert_true(label_repository_find(repository, 0x000a, 0xb1, &label));
+    munit_assert_true(label_repository_find(&repository, 0x000a, 0xb1, &label));
     munit_assert_string_equal(label.name, "l_000a");
 
-    munit_assert_true(label_repository_find(repository, 0x0020, 0x00, &label));
+    munit_assert_true(label_repository_find(&repository, 0x0020, 0x00, &label));
     munit_assert_string_equal(label.name, "l_0020");
 
-    munit_assert_true(label_repository_find(repository, 0xcafe, 0xf7, &label));
+    munit_assert_true(label_repository_find(&repository, 0xcafe, 0xf7, &label));
     munit_assert_string_equal(label.name, "l_cafe");
 
-    munit_assert_true(label_repository_find(repository, 0x0001, 0x00, &label));
+    munit_assert_true(label_repository_find(&repository, 0x0001, 0x00, &label));
     munit_assert_string_equal(label.name, "l_0001");
 
-    munit_assert_false(label_repository_find(repository, 0xbeef, 0xac, &label));
+    munit_assert_false(label_repository_find(&repository, 0xbeef, 0xac, &label));
     
-    label_repository_destroy(repository);
+    label_repository_destroy(&repository);
     return MUNIT_OK;
 }
 
 MunitResult label_delete_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
     Label label = {};
-    LabelRepository* repository = label_repository_create();
-    munit_assert_not_null(repository);
+    LabelRepository repository = {0};
+    munit_assert_true(label_repository_create(&repository));
 
-    munit_assert_true(label_repository_add(repository, "label01", 0x0110, 0x1a, NULL));
-    munit_assert_true(label_repository_add(repository, "label02", 0x0220, 0x1a, NULL));
-    munit_assert_true(label_repository_add(repository, "label03", 0x0330, 0x1b, "description"));
-    munit_assert_true(label_repository_add(repository, "label04", 0x0440, 0x1a, NULL));
-    munit_assert_true(label_repository_add(repository, "label05", 0x0550, 0x1b, NULL));
-    munit_assert_true(label_repository_add(repository, "label06", 0x0553, 0x1b, NULL));
-    munit_assert_true(label_repository_add(repository, "label07", 0x0555, 0x1b, NULL));
-    munit_assert_true(label_repository_add(repository, "label08", 0x0557, 0x1b, NULL));
+    munit_assert_true(label_repository_add(&repository, "label01", 0x0110, 0x1a, NULL));
+    munit_assert_true(label_repository_add(&repository, "label02", 0x0220, 0x1a, NULL));
+    munit_assert_true(label_repository_add(&repository, "label03", 0x0330, 0x1b, "description"));
+    munit_assert_true(label_repository_add(&repository, "label04", 0x0440, 0x1a, NULL));
+    munit_assert_true(label_repository_add(&repository, "label05", 0x0550, 0x1b, NULL));
+    munit_assert_true(label_repository_add(&repository, "label06", 0x0553, 0x1b, NULL));
+    munit_assert_true(label_repository_add(&repository, "label07", 0x0555, 0x1b, NULL));
+    munit_assert_true(label_repository_add(&repository, "label08", 0x0557, 0x1b, NULL));
     
-    munit_assert_int(label_repository_size(repository), ==, 8);
+    munit_assert_int(label_repository_size(&repository), ==, 8);
 
-    label_repository_delete(repository, 0x04a0, 0x0556, 0x1b);
+    label_repository_delete(&repository, 0x04a0, 0x0556, 0x1b);
 
-    munit_assert_int(label_repository_size(repository), ==, 5);
+    munit_assert_int(label_repository_size(&repository), ==, 5);
 
-    munit_assert_true(label_repository_find(repository, 0x0557, 0x1b, &label));
+    munit_assert_true(label_repository_find(&repository, 0x0557, 0x1b, &label));
     munit_assert_string_equal(label.name, "label08");
-    munit_assert_true(label_repository_find(repository, 0x0440, 0x1a, &label));
+    munit_assert_true(label_repository_find(&repository, 0x0440, 0x1a, &label));
     munit_assert_string_equal(label.name, "label04");
-    munit_assert_true(label_repository_find(repository, 0x0330, 0x1b, &label));
+    munit_assert_true(label_repository_find(&repository, 0x0330, 0x1b, &label));
     munit_assert_string_equal(label.name, "label03");
     munit_assert_string_equal(label.description, "description");
-    munit_assert_true(label_repository_find(repository, 0x0220, 0x1a, &label));
+    munit_assert_true(label_repository_find(&repository, 0x0220, 0x1a, &label));
     munit_assert_string_equal(label.name, "label02");
-    munit_assert_true(label_repository_find(repository, 0x0110, 0x1a, &label));
+    munit_assert_true(label_repository_find(&repository, 0x0110, 0x1a, &label));
     munit_assert_string_equal(label.name, "label01");
 
-    munit_assert_false(label_repository_find(repository, 0x0555, 0x1b, &label));
-    munit_assert_false(label_repository_find(repository, 0x0553, 0x1b, &label));
-    munit_assert_false(label_repository_find(repository, 0x0550, 0x1b, &label));
+    munit_assert_false(label_repository_find(&repository, 0x0555, 0x1b, &label));
+    munit_assert_false(label_repository_find(&repository, 0x0553, 0x1b, &label));
+    munit_assert_false(label_repository_find(&repository, 0x0550, 0x1b, &label));
 
-    label_repository_destroy(repository);    
+    label_repository_destroy(&repository);    
 
     return MUNIT_OK;
 }
 
 MunitResult label_load_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
     Label label = {};
-    LabelRepository* repository = label_repository_create();
-    munit_assert_not_null(repository);
+    LabelRepository repository = {0};
+    munit_assert_true(label_repository_create(&repository));
 
-    munit_assert_false(label_repository_load(repository, "/not_here/label.json"));
-    munit_assert_int(label_repository_size(repository), ==, 0);
+    munit_assert_false(label_repository_load(&repository, "/not_here/label.json"));
+    munit_assert_int(label_repository_size(&repository), ==, 0);
 
-    munit_assert_false(label_repository_load(repository, "data/label_1.json"));
-    munit_assert_int(label_repository_size(repository), ==, 1);
+    munit_assert_false(label_repository_load(&repository, "data/label_1.json"));
+    munit_assert_int(label_repository_size(&repository), ==, 1);
     
-    munit_assert_true(label_repository_get(repository, 0, &label));
+    munit_assert_true(label_repository_get(&repository, 0, &label));
     munit_assert_uint16(label.logical, ==, 0x5030U);
     munit_assert_uint8(label.page, ==, 4);
     munit_assert_string_equal(label.name, "ok");
     munit_assert_null(label.description);
 
-    label_repository_destroy(repository);    
+    label_repository_destroy(&repository);    
 
-    munit_assert_true(label_repository_load(repository, "data/label_0.json"));
-    munit_assert_int(label_repository_size(repository), ==, 3);
+    munit_assert_true(label_repository_load(&repository, "data/label_0.json"));
+    munit_assert_int(label_repository_size(&repository), ==, 3);
 
-    munit_assert_true(label_repository_find(repository, 0x31DC, 0xF8, &label));
+    munit_assert_true(label_repository_find(&repository, 0x31DC, 0xF8, &label));
     munit_assert_uint16(label.logical, ==, 0x31DCU);
     munit_assert_uint8(label.page, ==, 0xF8);
     munit_assert_string_equal(label.name, "var");
     munit_assert_null(label.description);
 
-    munit_assert_true(label_repository_find(repository, 0xEABC, 0x00, &label));
+    munit_assert_true(label_repository_find(&repository, 0xEABC, 0x00, &label));
     munit_assert_uint16(label.logical, ==, 0xEABCU);
     munit_assert_uint8(label.page, ==, 0x00);
     munit_assert_string_equal(label.name, "do_something");
     munit_assert_string_equal(label.description, "do something");
     
-    munit_assert_true(label_repository_find(repository, 0xD6F7, 0x1F, &label));
+    munit_assert_true(label_repository_find(&repository, 0xD6F7, 0x1F, &label));
     munit_assert_uint16(label.logical, ==, 0xD6F7U);
     munit_assert_uint8(label.page, ==, 0x1F);
     munit_assert_string_equal(label.name, "run");
     munit_assert_string_equal(label.description, "line0\nline1\nline2\nline3");
 
-    label_repository_destroy(repository);    
+    label_repository_destroy(&repository);    
 
     return MUNIT_OK;
 }

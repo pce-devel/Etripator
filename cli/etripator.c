@@ -64,7 +64,7 @@ void exit_callback() {
 }
 
 // save found labels to a file named <rom name>.YYmmddHHMMSS.lbl
-static bool label_output(CommandLineOptions *options, LabelRepository *repository) {
+static bool label_output(LabelRepository *repository, CommandLineOptions *options) {
     bool ret = false;
     char buffer[256U] = {0};
     if (options->labels_out == NULL) {
@@ -122,9 +122,199 @@ static bool log_cli(int argc, const char* argv[]) {
     return ret;
 }
 
+static bool load_sections(SectionArray *arr, const char *filename) {
+    bool ret = true;
+    if (filename) {
+        if (!section_load(arr, filename)) {
+            ERROR_MSG("Unable to read %s", filename);
+            ret = false;
+        }
+    }
+    return ret;
+}
+
+static bool load_labels(LabelRepository *repository, const char **filename) {
+    bool ret = label_repository_create(repository);
+    if (filename != NULL) {
+        for(int i=0; ret && filename[i]; i++) {
+            ret = label_repository_load(repository, filename[i]);
+            if (!ret) {
+                ERROR_MSG("An error occured while loading labels from %s", filename[i]);
+            }
+        }
+    }
+    return ret;
+}
+
+static bool load_comments(CommentRepository *repository, const char **filename) {
+    bool ret = comment_repository_create(repository);
+    if(filename != NULL) {
+        for(int i=0; ret && filename[i]; i++) {
+            ret = comment_repository_load(repository, filename[i]);
+            if (!ret) {
+                ERROR_MSG("An error occured while loading comments from %s", filename[i]);
+            }
+        }
+    }
+    return ret;
+}
+
+static bool load_rom(MemoryMap *map, const CommandLineOptions *options) {
+    bool ret = false;
+    if (options->cdrom) {
+        ret = cd_memory_map(map);
+        /*  Data will be loaded during section disassembly */
+    } else {
+        ret = rom_load(options->rom_filename, map);
+    }
+    return ret;
+}
+
+static bool load_irq(MemoryMap *map, SectionArray *arr, const CommandLineOptions *options) {
+    bool ret = false;
+    if(!options->extract_irq) {
+        ret = true;
+    } else if (options->cdrom) {    
+        IPL ipl = {0};
+        if (!ipl_read(&ipl, options->rom_filename)) {
+            // ...
+        } else if (!ipl_sections(&ipl, arr)) {
+            ERROR_MSG("An error occured while setting up sections from IPL data.");
+        } else {
+            ret = true;
+        }
+    } else if (!irq_read(map, arr)) {
+        ERROR_MSG("An error occured while reading irq vector offsets");
+    } else {
+        ret = true;
+    }
+    return ret;
+}
+
+static bool reset_output(SectionArray *arr) {
+    bool ret = true;
+    /* For each section reset every existing files */
+    for (int i = 0; ret && (i < arr->count); ++i) {
+        Section *section = &arr->data[i];
+        FILE *out = fopen(section->output, "wb");
+        if (out == NULL) {
+            ERROR_MSG("Can't open %s : %s", section->output, strerror(errno));
+            ret = false;
+        } else {
+            fclose(out);
+        }
+    }
+    return ret;
+}
+
+static bool fill_label_reporitory(LabelRepository *labels, SectionArray *arr) {
+    bool ret = true;
+    /* Add section name to label repository. */
+    for (int i = 0; ret && (i < arr->count); ++i) {
+        Section *section = &arr->data[i];
+        ret = label_repository_add(labels, section->name, section->logical, section->page, section->description);
+        if (!ret) {
+            ERROR_MSG("Failed to add section name (%s) to labels", section->name);
+        }
+    }
+    return ret;
+}
+
+static bool output_main(MemoryMap *map, LabelRepository *labels, const CommandLineOptions *options) {
+    bool ret = false;
+    FILE *out = fopen(options->main_filename, "w");
+    if (out == NULL) {
+        ERROR_MSG("Unable to open %s : %s", options->main_filename, strerror(errno));
+    } else {
+        label_dump(out, map, labels);
+        fclose(out);
+        ret = true;
+    }
+    return ret;
+}
+
+static bool code_extract(FILE *out, SectionArray *arr, int index, MemoryMap *map, LabelRepository *labels, CommentRepository *comments, int address) {
+    bool ret = false;
+    Section *current = &arr->data[index];
+    if(current->size <= 0) {
+        current->size = compute_size(arr, index, arr->count, map);
+    }
+    if (!label_extract(current, map, labels)) {
+        // ...
+    } else {
+        /* Process opcodes */
+        uint16_t logical = current->logical;
+        do {
+            (void)decode(out, &logical, current, map, labels, comments, address);
+        } while (logical < (current->logical+current->size));
+        fputc('\n', out);
+        ret = true;
+    }
+    return true;
+}
+
+static void print_header(FILE *out, Section *current, Section *previous) {
+    if(previous && ((previous->logical + previous->size) == current->logical)) {
+        // ...
+    } else if((current->type != SECTION_TYPE_DATA) || (current->data.type != DATA_TYPE_BINARY)) {
+        /* Print header */
+        fprintf(out, "\t.%s\n"
+                    "\t.bank $%03x\n"
+                    "\t.org $%04x\n",
+                (current->type == SECTION_TYPE_CODE) ? "code" : "data", current->page, current->logical);
+    }
+}
+
+static bool disassemble(SectionArray *arr, MemoryMap *map, LabelRepository *labels, CommentRepository *comments, CommandLineOptions *options) {
+    bool ret = true;
+    Section *previous = NULL;
+    Section *current = NULL;
+    for (int i = 0; ret && (i < arr->count); ++i, previous=current) {
+        current = &arr->data[i];
+        FILE *out = fopen(current->output, "ab");
+        if (out == NULL) {
+            ERROR_MSG("Can't open %s : %s", current->output, strerror(errno));
+        } else {
+            if (options->cdrom && (current->offset != ((current->page << 13) | (current->logical & 0x1fff)))) {
+                size_t offset = current->offset;
+                /* Copy CDROM data */
+                if (!cd_load(options->rom_filename, current->offset, current->size, options->sector_size, current->page, current->logical, map)) {
+                    ERROR_MSG("Failed to load CD data (section %d)", i);
+                } else {
+                    ret = false;
+                }
+            }
+
+            if(ret) {
+                print_header(out, current, previous);
+                memory_map_mpr(map, current->mpr);
+        
+                if (current->type == SECTION_TYPE_CODE) {
+                    ret = code_extract(out, arr, i, map, labels, comments, options->address); 
+                } else {
+                    ret = data_extract(out, current, map, labels, comments, options->address);
+                }
+            }
+            fclose(out);
+        }
+    }
+    return ret;
+}
+
 /* ---------------------------------------------------------------- */
 int main(int argc, const char **argv) {
     int ret = EXIT_FAILURE;
+
+    CommandLineOptions options = {0};
+
+    MemoryMap map = {0};
+    SectionArray section_arr = {0};
+
+    LabelRepository labels = {0};
+
+    CommentRepository comments = {0};
+
+    section_array_reset(&section_arr);
 
     atexit(exit_callback);
 
@@ -136,236 +326,44 @@ int main(int argc, const char **argv) {
         fprintf(stderr, "Failed to setup console printer.\n");
     } else if (log_cli(argc, argv) != true) {
         fprintf(stderr, "Failed to log command line.\n");
+    } else if (cli_opt_get(&options, argc, argv) != true) {
+        // ...
+    } else if (memory_map_init(&map) != true) {
+        // ...
+    } else if (!load_sections(&section_arr, options.cfg_filename)) {
+        // ...
+    } else if (!load_labels(&labels, options.labels_in)) {
+        // ...
+    } else if (!load_comments(&comments, options.comments_in)) {
+        // ...
+    } else if (!load_rom(&map, &options)) {
+        // ...
+    } else if (!load_irq(&map, &section_arr, &options)) {
+        // ...
+    } else if (!reset_output(&section_arr)) {
+        // ...
+    } else if (!fill_label_reporitory(&labels, &section_arr)) {
+        // ...
     } else {
-        // [todo]
-    }
-
-    CommandLineOptions options;
-
-    FILE *out;
-    FILE *main_file;
-    int failure;
-
-    MemoryMap map = {0};
-
-    SectionArray section_arr = {0};
-
-    failure = 1;
-
-    section_array_reset(&section_arr);
-
-    /* Extract command line options */
-    ret = cli_opt_get(&options, argc, argv);
-    if (ret <= 0) {
-        goto error_1;
-    }
-
-    /* Read configuration file */
-    if (options.cfg_filename) {
-        ret = section_load(&section_arr, options.cfg_filename);
-        if (!ret) {
-            ERROR_MSG("Unable to read %s", options.cfg_filename);
-            goto error_1;
-        }
-    }
-
-    /* Initialize memory map */
-    ret = memory_map_init(&map);
-    if (!ret) {
-        goto error_1;
-    }
-
-    /* Read ROM */
-    if (!options.cdrom) {
-        ret = rom_load(options.rom_filename, &map);
-        if (!ret) {
-            goto error_2;
-        }
-
-        /* Get irq offsets */
-        if (options.extract_irq) {
-            ret = irq_read(&map, &section_arr);
-            if (!ret) {
-                ERROR_MSG("An error occured while reading irq vector offsets");
-                goto error_2;
-            }
-        }
-    } else {
-        ret = cd_memory_map(&map);
-        if (!ret) {
-            goto error_2;
-        }
-
-        if (options.extract_irq) {
-            IPL ipl;
-            ret = ipl_read(&ipl, options.rom_filename);
-            ret = ret && ipl_sections(&ipl, &section_arr);
-            if (!ret) {
-                ERROR_MSG("An error occured while setting up sections from IPL data.");
-                goto error_2;
-            }
-        }
-        /*  Data will be loaded during section disassembly */
-    }
-
-    CommentRepository *comments_repository = comment_repository_create();
-    /* Load comments */
-    if(NULL != options.comments_in) {
-        for(int i=0; options.comments_in[i]; i++) {
-            ret = comment_repository_load(comments_repository, options.comments_in[i]);
-            if (!ret) {
-                ERROR_MSG("An error occured while loading comments from %s : %s", options.comments_in[i], strerror(errno));
-                goto error_3;
-            }
-        }
-    }
-
-    LabelRepository *repository = label_repository_create();
-    /* Load labels */
-    if (NULL != options.labels_in) {
-        for(int i=0; options.labels_in[i]; i++) {
-            ret = label_repository_load(repository, options.labels_in[i]);
-            if (!ret) {
-                ERROR_MSG("An error occured while loading labels from %s : %s", options.labels_in[i], strerror(errno));
-                goto error_4;
-            }
-        }
-    }
-
-    /* For each section reset every existing files */
-    for (int i = 0; i < section_arr.count; ++i) {
-        Section *section = &section_arr.data[i];
-        out = fopen(section->output, "wb");
-        if (NULL == out) {
-            ERROR_MSG("Can't open %s : %s", section->output, strerror(errno));
-            goto error_4;
-        }
-        fclose(out);
-    }
-
-    /* Add section name to label repository. */
-    for (int i = 0; i < section_arr.count; ++i) {
-        Section *section = &section_arr.data[i];
-        ret = label_repository_add(repository, section->name, section->logical, section->page, section->description);
-        if (!ret) {
-            ERROR_MSG("Failed to add section name (%s) to labels", section->name);
-            goto error_4;
-        }
-    }
-
-    /* Sort & merge sections */
-    section_array_tidy(&section_arr);
-
-    /* Disassemble and output */
-    Section *previous = NULL;
-    Section *current = NULL;
-    for (int i = 0; i < section_arr.count; ++i, previous=current) {
-        current = &section_arr.data[i];
-        out = fopen(current->output, "ab");
-        if (!out) {
-            ERROR_MSG("Can't open %s : %s", current->output, strerror(errno));
-            goto error_4;
-        }
-
-        if (options.cdrom && (current->offset != ((current->page << 13) | (current->logical & 0x1fff)))) {
-            size_t offset = current->offset;
-            /* Copy CDROM data */
-            ret = cd_load(options.rom_filename, current->offset, current->size, options.sector_size, current->page, current->logical, &map);
-            if (0 == ret) {
-                ERROR_MSG("Failed to load CD data (section %d)", i);
-                goto error_4;
-            }
-        }
-
-        if((previous != NULL) && (current->logical < (previous->logical + previous->size))
-                              && (current->page == previous->page) 
-                              && (current->type != previous->type)) {
-            WARNING_MSG("Section %s and %s overlaps! %x %x.%x", current->name, previous->name);
-        }
-
-        if((previous != NULL) && (0 == strcmp(current->output, previous->output))
-                              && (current->page == previous->page)
-                              && (current->logical <= (previous->logical + previous->size))) {
-            // "Merge" sections and adjust size if necessary.
-            if(current->size > 0) {
-                uint32_t end0 = previous->logical + previous->size;
-                uint32_t end1 = current->logical + current->size;
-                if(end1 > end0) {
-                    current->size = end1 - end0;
-                    current->logical = end0;
-                    INFO_MSG("Section %s has been merged with %s!", current->name, previous->name);
-                }
-                else {
-                    // The previous section overlaps the current one.
-                    // We skip it as it has already been processed.
-                    fclose(out);
-                    continue;
-                }
-            } else {
-                current->logical = previous->logical + previous->size;
-                INFO_MSG("Section %s has been merged with %s!", current->name, previous->name);
-            }
-        } else if((current->type != SECTION_TYPE_DATA) || (current->data.type != DATA_TYPE_BINARY)) {
-            /* Print header */
-            fprintf(out, "\t.%s\n"
-                         "\t.bank $%03x\n"
-                         "\t.org $%04x\n",
-                    (current->type == SECTION_TYPE_CODE) ? "code" : "data", current->page, current->logical);
-        }
-
-        memory_map_mpr(&map, current->mpr);
-       
-        if (current->type == SECTION_TYPE_CODE) {
-            if(current->size <= 0) {
-                current->size = compute_size(&section_arr, i, section_arr.count, &map);
-            }
-
-            /* Extract labels */
-            ret = label_extract(current, &map, repository);
-            if (!ret) {
-                goto error_4;
-            }
-            /* Process opcodes */
-            uint16_t logical = current->logical;
-            do {
-                (void)decode(out, &logical, current, &map, repository, comments_repository, options.address);
-            } while (logical < (current->logical+current->size));
-            fputc('\n', out);
+        section_array_tidy(&section_arr);
+        if(!output_main(&map, &labels, &options)) {
+            // ...
         } else {
-            ret = data_extract(out, current, &map, repository, comments_repository, options.address);
-            if (!ret) {
-                // [todo]
+            ret = EXIT_SUCCESS;
+            if(!disassemble(&section_arr, &map, &labels, &comments, &options)) {
+                ret = EXIT_FAILURE;
+            }
+            if (label_output(&labels, &options)) {
+                ret = EXIT_FAILURE;
             }
         }
-
-        fclose(out);
     }
 
-    /* Open main asm file */
-    main_file = fopen(options.main_filename, "a+");                                         // [todo]
-    if (!main_file) {
-        ERROR_MSG("Unable to open %s : %s", options.main_filename, strerror(errno));
-        goto error_4;
-    }
-    label_dump(main_file, &map, repository);
-    fclose(main_file);
-
-    /* Output labels  */
-    if (!label_output(&options, repository)) {
-        goto error_4;
-    }
-    failure = 0;
-
-error_4:
-    label_repository_destroy(repository);
-error_3:
-    comment_repository_destroy(comments_repository);
-error_2:
+    label_repository_destroy(&labels);
+    comment_repository_destroy(&comments);
     memory_map_destroy(&map);
-error_1:
+    section_array_delete(&section_arr);
     cli_opt_release(&options);
 
-    section_array_delete(&section_arr);
-
-    return failure;
+    return ret;
 }

@@ -68,7 +68,7 @@ bool cli_opt_get(CommandLineOptions *options, int argc, const char** argv) {
         NULL
     };
 
-    int ret = 0;
+    bool ret = false;
 
     char *dummy;
     struct payload_t labels_payload = { 0, 0, &options->labels_in };
@@ -112,7 +112,7 @@ bool cli_opt_get(CommandLineOptions *options, int argc, const char** argv) {
             /* Config file is optional with automatic irq vector extraction. */
             options->cfg_filename =  NULL;
             options->rom_filename = argv[0];
-            ret = 1;
+            ret = true;
         }
         else {
             // ...
@@ -121,10 +121,10 @@ bool cli_opt_get(CommandLineOptions *options, int argc, const char** argv) {
     else {
         options->cfg_filename = argv[0];
         options->rom_filename = argv[1];
-        ret = 1;
+        ret = true;
     }
 
-    if(ret == 0) {
+    if(!ret) {
         argparse_usage(&argparse);
     }
 

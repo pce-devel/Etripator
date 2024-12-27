@@ -36,14 +36,9 @@
 #include "label.h"
 #include "message.h"
 
-#define LABEL_ARRAY_INC 16
+#include <assert.h>
 
-/// Label repository.
-struct LabelRepositoryImpl {
-    size_t size;   //< Size of label repository.
-    size_t last;   //< Last element in the repository.
-    Label *labels; //< Labels.
-};
+#define LABEL_ARRAY_INC 16
 
 /// Get label index by its address.
 /// \param [in]  repository  Label repository.
@@ -63,23 +58,19 @@ static int label_repository_index(LabelRepository *repository, uint16_t logical,
 }
 
 // Create label repository.
-LabelRepository* label_repository_create() {
-    LabelRepository *repository = (LabelRepository*)malloc(sizeof(LabelRepository));
-    if(repository == NULL) {
-        ERROR_MSG("Failed to create label repository: %s", strerror(errno));
-    } else {
-        repository->last  = 0;
-        repository->labels = NULL;
-        repository->size = LABEL_ARRAY_INC;
-        repository->labels = (Label*)malloc(repository->size * sizeof(Label));
-        if(repository->labels == NULL) {
-            ERROR_MSG("Failed to create label: %s", strerror(errno));
-            label_repository_destroy(repository);
-            free(repository);
-            repository = NULL;
-        }
-    }    
-    return repository;
+bool label_repository_create(LabelRepository* repository) {
+    assert(repository != NULL);
+    bool ret = true;
+    repository->last  = 0;
+    repository->labels = NULL;
+    repository->size = LABEL_ARRAY_INC;
+    repository->labels = (Label*)malloc(repository->size * sizeof(Label));
+    if(repository->labels == NULL) {
+        ERROR_MSG("Failed to create label: %s", strerror(errno));
+        label_repository_destroy(repository);
+        ret = false;
+    }
+    return ret;
 }
 
 //  Delete label repository.
