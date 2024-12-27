@@ -300,12 +300,6 @@ static int data_extract_string(FILE *out, Section *section, MemoryMap *map, Labe
     uint8_t line_page;
 
     Comment comment = {0};
-
-    fprintf(stdout, "----------------------------> ");
-    for(k=0; k<section->data.delimiter_size; k++) {
-        fprintf(stdout, "%c", section->data.delimiter[k]);
-    }
-    fprintf(stdout, "\n");
     for (i = 0, j = 0, k = 0, logical = section->logical; i < section->size; i++, logical++) {
         uint8_t data = memory_map_read(map, logical);
         uint8_t page = memory_map_page(map, logical);

@@ -69,8 +69,8 @@ typedef struct {
 
 /// Initializes memory map.
 /// \param [in out] map Memory map.
-/// \return true 
-/// \return false
+/// \return true if the memory map was succesfully initialized
+/// \return false if an error occured
 bool memory_map_init(MemoryMap *map);
 
 /// Releases resources used by the memory map.

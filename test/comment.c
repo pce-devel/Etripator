@@ -50,91 +50,93 @@ void tear_down(void* fixture __attribute__((unused))) {
 
 MunitResult comment_add_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
     Comment comment = {0};
-    CommentRepository *repository = comment_repository_create();
-    munit_assert_not_null(repository);
+    CommentRepository repository = {0};
+    munit_assert_true(comment_repository_create(&repository));
 
-    munit_assert_true(comment_repository_add(repository, 0x0002, 0x00, "comment #0"));
-    munit_assert_true(comment_repository_add(repository, 0x0001, 0x00, "comment #1"));
-    munit_assert_true(comment_repository_add(repository, 0x0003, 0x00, "comment #3"));
-    munit_assert_true(comment_repository_add(repository, 0x0001, 0x01, "comment #2"));
+    munit_assert_true(comment_repository_add(&repository, 0x0002, 0x00, "comment #0"));
+    munit_assert_true(comment_repository_add(&repository, 0x0001, 0x00, "comment #1"));
+    munit_assert_true(comment_repository_add(&repository, 0x0003, 0x00, "comment #3"));
+    munit_assert_true(comment_repository_add(&repository, 0x0001, 0x01, "comment #2"));
     
-    munit_assert_true(comment_repository_find(repository, 0x0001, 0x01, &comment));
+    munit_assert_true(comment_repository_find(&repository, 0x0001, 0x01, &comment));
     munit_assert_uint16(comment.logical, ==, 0x0001);
     munit_assert_uint8(comment.page, ==, 0x01);
     munit_assert_string_equal(comment.text, "comment #2");
 
-    munit_assert_true(comment_repository_find(repository, 0x0001, 0x00, &comment));
+    munit_assert_true(comment_repository_find(&repository, 0x0001, 0x00, &comment));
     munit_assert_uint16(comment.logical, ==, 0x0001);
     munit_assert_uint8(comment.page, ==, 0x00);
     munit_assert_string_equal(comment.text, "comment #1");
 
-    munit_assert_true(comment_repository_find(repository, 0x0003, 0x00, &comment));
+    munit_assert_true(comment_repository_find(&repository, 0x0003, 0x00, &comment));
     munit_assert_uint16(comment.logical, ==, 0x0003);
     munit_assert_uint8(comment.page, ==, 0x00);
     munit_assert_string_equal(comment.text, "comment #3");
 
-    munit_assert_int(comment_repository_size(repository), ==, 4);
+    munit_assert_int(comment_repository_size(&repository), ==, 4);
 
-    comment_repository_destroy(repository);
+    comment_repository_destroy(&repository);
     
     return MUNIT_OK;
 }
 
 MunitResult comment_delete_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
     Comment comment = {0};
-    CommentRepository *repository = comment_repository_create();
-    munit_assert_not_null(repository);
+    CommentRepository repository = {0};
+    munit_assert_true(comment_repository_create(&repository));
 
-    munit_assert_true(comment_repository_add(repository, 0x0002, 0x03, "comment #7"));
-    munit_assert_true(comment_repository_add(repository, 0x0002, 0x01, "comment #6"));
-    munit_assert_true(comment_repository_add(repository, 0x0002, 0x02, "comment #5"));
-    munit_assert_true(comment_repository_add(repository, 0x000a, 0x00, "comment #4"));
-    munit_assert_true(comment_repository_add(repository, 0x0008, 0x00, "comment #3"));
-    munit_assert_true(comment_repository_add(repository, 0x0004, 0x00, "comment #2"));
-    munit_assert_true(comment_repository_add(repository, 0x0002, 0x00, "comment #1"));
-    munit_assert_true(comment_repository_add(repository, 0x0000, 0x00, "comment #0"));
-    munit_assert_int(comment_repository_size(repository), ==, 8);
+    munit_assert_true(comment_repository_add(&repository, 0x0002, 0x03, "comment #7"));
+    munit_assert_true(comment_repository_add(&repository, 0x0002, 0x01, "comment #6"));
+    munit_assert_true(comment_repository_add(&repository, 0x0002, 0x02, "comment #5"));
+    munit_assert_true(comment_repository_add(&repository, 0x000a, 0x00, "comment #4"));
+    munit_assert_true(comment_repository_add(&repository, 0x0008, 0x00, "comment #3"));
+    munit_assert_true(comment_repository_add(&repository, 0x0004, 0x00, "comment #2"));
+    munit_assert_true(comment_repository_add(&repository, 0x0002, 0x00, "comment #1"));
+    munit_assert_true(comment_repository_add(&repository, 0x0000, 0x00, "comment #0"));
+    munit_assert_int(comment_repository_size(&repository), ==, 8);
 
-    comment_repository_delete(repository, 0x0001, 0x0009, 0x00);
+    comment_repository_delete(&repository, 0x0001, 0x0009, 0x00);
 
-    munit_assert_int(comment_repository_size(repository), ==, 5);
+    munit_assert_int(comment_repository_size(&repository), ==, 5);
 
-    comment_repository_destroy(repository);
+    comment_repository_destroy(&repository);
     
     return MUNIT_OK;
 }
 
 MunitResult comment_load_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
     Comment comment = {0};
-    CommentRepository *repository = comment_repository_create();
+    CommentRepository repository = {0};
+    
+    munit_assert_true(comment_repository_create(&repository));
 
-    munit_assert_false(comment_repository_load(repository, "/not_here/comment.json"));
-    munit_assert_int(comment_repository_size(repository), ==, 0);
+    munit_assert_false(comment_repository_load(&repository, "/not_here/comment.json"));
+    munit_assert_int(comment_repository_size(&repository), ==, 0);
 
-    munit_assert_false(comment_repository_load(repository, "data/comment_1.json"));
-    munit_assert_int(comment_repository_size(repository), ==, 1);
+    munit_assert_false(comment_repository_load(&repository, "data/comment_1.json"));
+    munit_assert_int(comment_repository_size(&repository), ==, 1);
 
-    munit_assert_true(comment_repository_get(repository, 0, &comment));
+    munit_assert_true(comment_repository_get(&repository, 0, &comment));
     munit_assert_uint16(comment.logical, ==, 0xCAFEU);
     munit_assert_uint8(comment.page, ==, 0x0AU);
     munit_assert_string_equal(comment.text, "hello!");
 
-    comment_repository_destroy(repository);
+    comment_repository_destroy(&repository);
 
-    munit_assert_true(comment_repository_load(repository, "data/comment_0.json"));
-    munit_assert_int(comment_repository_size(repository), ==, 2);
+    munit_assert_true(comment_repository_load(&repository, "data/comment_0.json"));
+    munit_assert_int(comment_repository_size(&repository), ==, 2);
 
-    munit_assert_true(comment_repository_find(repository, 0xC105U, 3, &comment));
+    munit_assert_true(comment_repository_find(&repository, 0xC105U, 3, &comment));
     munit_assert_uint16(comment.logical, ==, 0xC105U);
     munit_assert_uint8(comment.page, ==, 3);
     munit_assert_string_equal(comment.text, "line 0\nline 1\nline 2");
 
-    munit_assert_true(comment_repository_find(repository, 0xEABCU, 0, &comment));
+    munit_assert_true(comment_repository_find(&repository, 0xEABCU, 0, &comment));
     munit_assert_uint16(comment.logical, ==, 0xEABCU);
     munit_assert_uint8(comment.page, ==, 0);
     munit_assert_string_equal(comment.text, "single line comment");
 
-    comment_repository_destroy(repository);
+    comment_repository_destroy(&repository);
 
     return MUNIT_OK;
 }

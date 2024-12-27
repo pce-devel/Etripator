@@ -41,13 +41,6 @@
 
 #define COMMENT_ARRAY_INC 16
 
-/// Comment repository.
-struct CommentRepositoryImpl {
-    size_t size;       //< Size of comment repository.
-    size_t last;       //< Last element in the repository.
-    Comment *comments; //< Comments.
-};
-
 /// Get comment index by its address.
 /// \param [in]  repository  Coment repository.
 /// \param [in]  logical     Logical address.
@@ -66,25 +59,21 @@ static int comment_repository_index(CommentRepository* repository, uint16_t logi
 }
 
 // Create comment repository.
-CommentRepository* comment_repository_create() {
-    CommentRepository *repository;
-    repository = (CommentRepository*)malloc(sizeof(CommentRepository));
-    if(repository == NULL) {
-        ERROR_MSG("Failed to create comment repository: %s", strerror(errno));
-    } else {
-        repository->last  = 0;
-        repository->comments = NULL;
+bool comment_repository_create(CommentRepository *repository) {
+    assert(repository != NULL);
+    bool ret = true;
 
-        repository->size = COMMENT_ARRAY_INC;
-        repository->comments = (Comment*)malloc(repository->size * sizeof(Comment));
-        if(repository->comments == NULL) {
-            ERROR_MSG("Failed to create comments: %s", strerror(errno));
-            comment_repository_destroy(repository);
-            free(repository);
-            repository = NULL;
-        }
-    }    
-    return repository;
+    repository->last  = 0;
+    repository->comments = NULL;
+
+    repository->size = COMMENT_ARRAY_INC;
+    repository->comments = (Comment*)malloc(repository->size * sizeof(Comment));
+    if(repository->comments == NULL) {
+        ERROR_MSG("Failed to create comments: %s", strerror(errno));
+        comment_repository_destroy(repository);
+        ret = false;
+    }
+    return ret;
 }
 
 // Release comment repository resources.

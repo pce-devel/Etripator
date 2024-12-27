@@ -45,12 +45,18 @@ typedef struct {
     char*    text;    //< Comment text.
 } Comment;
 
-typedef struct CommentRepositoryImpl CommentRepository;
+/// Comment repository.
+typedef struct {
+    size_t size;       //< Size of comment repository.
+    size_t last;       //< Last element in the repository.
+    Comment *comments; //< Comments.
+} CommentRepository;
 
 /// Create comment repository.
-/// \return A pointer to a comment repository.
-/// \return NULL if an error occured.
-CommentRepository* comment_repository_create();
+/// \param [in out] repository Comment repository.
+/// \return true if the repository was succesfully initialized
+/// \return false if an error occured
+bool comment_repository_create(CommentRepository* repository);
 
 /// Release comment repository resources.
 /// \param [in,out] repository Comment repository.
