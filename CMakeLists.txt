@@ -50,6 +50,8 @@ set(etripator_SRC
     rom.c
     cd.c
     ipl.c
+    output.c
+#    wla_dx.c
 )
 
 set(etripator_HDR
@@ -69,6 +71,8 @@ set(etripator_HDR
     rom.h
     cd.h
     ipl.h
+    output.h
+#    wla_dx.h
 )
 
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
