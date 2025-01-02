@@ -239,7 +239,7 @@ static bool code_extract(FILE *out, SectionArray *arr, int index, MemoryMap *map
     if(current->size <= 0) {
         current->size = compute_size(arr, index, arr->count, map);
     }
-    if (!label_extract(current, map, labels)) {
+    if (!label_extract(labels, map, current)) {
         // ...
     } else {
         /* Process opcodes */

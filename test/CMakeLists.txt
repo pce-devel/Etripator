@@ -157,3 +157,31 @@ add_unit_test(
     LIBRARIES cwalk jansson
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
+
+add_unit_test(
+    NAME output
+    SOURCES
+        output.c
+        ${PROJECT_SOURCE_DIR}/output.c
+        ${PROJECT_SOURCE_DIR}/message.c
+        ${PROJECT_SOURCE_DIR}/message/console.c
+    LIBRARIES cwalk
+    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+)
+
+add_unit_test(
+    NAME decode
+    SOURCES
+        decode.c
+        ${PROJECT_SOURCE_DIR}/decode.c
+        ${PROJECT_SOURCE_DIR}/opcodes.c
+        ${PROJECT_SOURCE_DIR}/memory.c
+        ${PROJECT_SOURCE_DIR}/memory_map.c
+        ${PROJECT_SOURCE_DIR}/section.c
+        ${PROJECT_SOURCE_DIR}/label.c
+        ${PROJECT_SOURCE_DIR}/comment.c
+        ${PROJECT_SOURCE_DIR}/message.c
+        ${PROJECT_SOURCE_DIR}/message/console.c
+    LIBRARIES cwalk jansson
+    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+)

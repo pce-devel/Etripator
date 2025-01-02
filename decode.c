@@ -96,33 +96,36 @@ static void print_label(FILE *out, Label *label) {
 }
 
 /* Finds any jump address from the current section. */
-bool label_extract(Section *section, MemoryMap *map, LabelRepository *repository) {
+bool label_extract(LabelRepository *labels, MemoryMap *map, Section *section) {
+    assert(labels != NULL);
+    assert(map != NULL);
+    assert(section != NULL);
+
     int i;
-    uint8_t inst;
-    uint8_t data[6];
+    
     char buffer[32];
 
-    uint16_t logical;
     uint8_t page;
 
-    const Opcode *opcode;
+    const size_t begin = section->logical;
+    const size_t end = begin + section->size;
+    size_t logical;
+    bool ret = true;
 
     if (section->type != SECTION_TYPE_CODE) {
-        return 1;
-    }
-
-    /* Walk along section */
-    for (logical = section->logical; logical < (section->logical + section->size); logical += opcode->size) {
+        ret = false;
+    } else for (logical = begin; ret && (logical < end); ) {
         /* Read instruction */
-        inst = memory_map_read(map, logical);
-        opcode = opcode_get(inst);
+        uint8_t inst = memory_map_read(map, logical);
+        const Opcode *opcode = opcode_get(inst);
+
+        uint8_t data[6] = {0};
+        uint16_t jump = 0;
         /* Read data (if any) */
         for (i = 0; i < (opcode->size - 1); i++) {
             data[i] = memory_map_read(map, logical + i + 1);
         }
-
         if (opcode_is_local_jump(inst)) {
-            uint16_t jump;
             int delta;
             /* For BBR* and BBS* displacement is stored in the 2nd byte */
             i = (((inst)&0x0F) == 0x0F) ? 1 : 0;
@@ -136,27 +139,22 @@ bool label_extract(Section *section, MemoryMap *map, LabelRepository *repository
             jump = logical + delta;
             page = memory_map_page(map, jump);
             /* Create label name */
-            snprintf(buffer, 32, "l%04x_%02d", jump, page);
-
+            snprintf(buffer, sizeof(buffer), "l%04x_%02d", jump, page);
             /* Insert offset to repository */
-            if (!label_repository_add(repository, buffer, jump, page, NULL)) {
-                return 0;
-            }
+            ret = label_repository_add(labels, buffer, jump, page, NULL);
             INFO_MSG("%04x short jump to %04x (%02x)", logical, jump, page);
         } else if (opcode_is_far_jump(inst)) {
-            uint16_t jump = data[0] | (data[1] << 8);
+            jump = data[0] | (data[1] << 8);
             page = memory_map_page(map, jump);
             /* Create label name */
-            snprintf(buffer, 32, "l%04x_%02d", jump, page);
+            snprintf(buffer, sizeof(buffer), "l%04x_%02d", jump, page);
             /* Insert offset to repository */
-            if (!label_repository_add(repository, buffer, jump, page, NULL)) {
-                return 0;
-            }
-
+            ret = label_repository_add(labels, buffer, jump, page, NULL);
             INFO_MSG("%04x long jump to %04x (%02x)", logical, jump, page);
         }
+        logical += opcode->size;
     }
-    return 1;
+    return ret;
 }
 
 static int data_extract_binary(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository) {

@@ -42,13 +42,15 @@
 #include "memory_map.h"
 #include "comment.h"
 
+// [todo] decoder struct
+
 /// Finds any jump address from the current section.
-/// \param [in] section Current section.
+/// \param [in out] labels Label repository.
 /// \param [in] map Memory map.
-/// \param [in out] repository Label repository.
+/// \param [in] section Current section.
 /// \return true upon success.
 /// \return false if an error occured.
-bool label_extract(Section *section, MemoryMap *map, LabelRepository *repository);
+bool label_extract(LabelRepository *labels, MemoryMap *map, Section *section);
 
 /// Process data section. The result will be output has a binary file or an asm file containing hex values or strings.
 /// \param [out] out File output.

@@ -44,6 +44,9 @@ typedef struct {
     uint16_t logical;     //< Logical address
     uint8_t  page;        //< Memory page
     char*    description; //< Description (optional) 
+    uint32_t file_id;     //< Id of the file in the output registry where the label was written
+    size_t line;          //< Current line.
+    size_t column;        //< Cursor position in the current line.
 } Label;
 
 /// Label repository.
