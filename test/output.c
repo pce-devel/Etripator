@@ -38,16 +38,6 @@
 #include "message.h"
 #include "message/console.h"
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
-    message_printer_init();    
-    console_message_printer_init();
-    return NULL;
-}
-
-void tear_down(void* fixture __attribute__((unused))) {
-    message_printer_destroy();
-}
-
 static char g_buffer[1024];
 
 void* open_mem_output(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
@@ -353,6 +343,68 @@ MunitResult output_fill_n_test(const MunitParameter params[] __attribute__((unus
     return MUNIT_OK;
 }
 
+MunitResult output_byte_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+    Output output = {
+        .filename = "ram0",
+        .stream = (FILE*)fixture
+    };
+
+    munit_assert_not_null(output.stream);
+    
+    munit_assert_true(output_byte(&output, 0xE7));
+    munit_assert_size(2, ==, output.column);
+    munit_assert_size(0, ==, output.line);
+    munit_assert_memory_equal(2, "e7", &g_buffer[0]);
+    
+    munit_assert_true(output_byte(&output, 0x9A));
+    munit_assert_size(4, ==, output.column);
+    munit_assert_size(0, ==, output.line);
+    munit_assert_memory_equal(2, "9a", &g_buffer[2]);
+    
+    munit_assert_true(output_byte(&output, 0x05));
+    munit_assert_size(6, ==, output.column);
+    munit_assert_size(0, ==, output.line);
+    munit_assert_memory_equal(2, "05", &g_buffer[4]);
+    
+    munit_assert_true(output_byte(&output, 0xC0));
+    munit_assert_size(8, ==, output.column);
+    munit_assert_size(0, ==, output.line);
+    munit_assert_memory_equal(2, "c0", &g_buffer[6]);
+
+    munit_assert_true(output_byte(&output, 0x00));
+    munit_assert_size(10, ==, output.column);
+    munit_assert_size(0, ==, output.line);
+    munit_assert_memory_equal(2, "00", &g_buffer[8]);
+
+    return MUNIT_OK;
+}
+
+MunitResult output_word_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+    Output output = {
+        .filename = "ram0",
+        .stream = (FILE*)fixture
+    };
+
+    munit_assert_not_null(output.stream);
+    
+    munit_assert_true(output_word(&output, 0xA45C));
+    munit_assert_size(4, ==, output.column);
+    munit_assert_size(0, ==, output.line);
+    munit_assert_memory_equal(4, "a45c", &g_buffer[0]);
+    
+    munit_assert_true(output_word(&output, 0x0701));
+    munit_assert_size(8, ==, output.column);
+    munit_assert_size(0, ==, output.line);
+    munit_assert_memory_equal(4, "0701", &g_buffer[4]);
+
+    munit_assert_true(output_word(&output, 0x0000));
+    munit_assert_size(12, ==, output.column);
+    munit_assert_size(0, ==, output.line);
+    munit_assert_memory_equal(4, "0000", &g_buffer[8]);
+
+    return MUNIT_OK;
+}
+
 static MunitTest output_tests[] = {
     { "/char", output_char_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL }, 
     { "/newline", output_newline_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
@@ -363,6 +415,8 @@ static MunitTest output_tests[] = {
     { "/fill_to", output_fill_to_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
     { "/fill_n", output_fill_n_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
     { "/string", output_string_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/byte", output_byte_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/word", output_word_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 

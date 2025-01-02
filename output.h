@@ -94,6 +94,12 @@ bool output_char(Output *output, char c);
 /// \return false if an error occured
 bool output_byte(Output *output, uint8_t c);
 
+/// Write a single hexadecimal 16 bits word
+/// \param [in] w Word to be output
+/// \return true if the byte was succesfully written
+/// \return false if an error occured
+bool output_word(Output *output, uint16_t w);
+
 /// Write null terminated string
 /// \param [in out] output File output
 /// \param [in] str Null terminated string to be output
