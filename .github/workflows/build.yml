@@ -31,4 +31,4 @@ jobs:
     - name: Test
       working-directory: ${{github.workspace}}
       shell: bash
-      run: cmake --build ./build --target test
+      run: ctest --test-dir ./build --output-on-failure
