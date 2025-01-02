@@ -160,7 +160,7 @@ static char hex(uint8_t b) {
     char c;
     b &= 0x0FU;
     if(b >= 10U) {
-        c = (b - 10U) + 'A';
+        c = (b - 10U) + 'a';
     } else {
         c = b + '0';
     }
@@ -173,6 +173,19 @@ bool output_byte(Output *output, uint8_t c) {
     if(output_char(output, hex(c>>4)) != true) {
         // ...
     } else if(output_char(output, hex(c)) != true) {
+        // ...
+    } else {
+        ret = true;
+    }
+    return ret;
+}
+
+// Write a single hexadecimal 16 bits word
+bool output_word(Output *output, uint16_t w) {
+    bool ret = false;
+    if(output_byte(output, w >> 8) != true) {
+        // ...
+    } else if(output_byte(output, w & 0xFFU) != true) {
         // ...
     } else {
         ret = true;
