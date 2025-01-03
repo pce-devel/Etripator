@@ -63,11 +63,13 @@ MunitResult output_char_test(const MunitParameter params[] __attribute__((unused
     munit_assert_true(output_char(&output, '@'));
     munit_assert_size(1, ==, output.column);
     munit_assert_size(0, ==, output.line);
-    munit_assert_char('@', ==, g_buffer[0]);
     
     munit_assert_true(output_char(&output, '='));
     munit_assert_size(2, ==, output.column);
     munit_assert_size(0, ==, output.line);
+
+    fflush(output.stream);
+    munit_assert_char('@', ==, g_buffer[0]);
     munit_assert_char('=', ==, g_buffer[1]);
     
     return MUNIT_OK;
@@ -84,16 +86,18 @@ MunitResult output_newline_test(const MunitParameter params[] __attribute__((unu
     munit_assert_true(output_newline(&output));
     munit_assert_size(0, ==, output.column);
     munit_assert_size(1, ==, output.line);
-    munit_assert_char('\n', ==, g_buffer[0]);
     
     munit_assert_true(output_char(&output, '+'));
     munit_assert_size(1, ==, output.column);
     munit_assert_size(1, ==, output.line);
-    munit_assert_char('+', ==, g_buffer[1]);
 
     munit_assert_true(output_newline(&output));
     munit_assert_size(0, ==, output.column);
     munit_assert_size(2, ==, output.line);
+
+    fflush(output.stream);
+    munit_assert_char('\n', ==, g_buffer[0]);
+    munit_assert_char('+', ==, g_buffer[1]);
     munit_assert_char('\n', ==, g_buffer[2]);
 
     return MUNIT_OK;
@@ -105,7 +109,7 @@ MunitResult output_string_test(const MunitParameter params[] __attribute__((unus
         .stream = (FILE*)fixture
     };
 
-    const char *expected = "this is a test\nfoobar";
+    const char expected[] = "this is a test\nfoobar";
 
     munit_assert_not_null(output.stream);
 
@@ -123,9 +127,8 @@ MunitResult output_string_test(const MunitParameter params[] __attribute__((unus
     munit_assert_size(6, ==, output.column);
     munit_assert_size(1, ==, output.line);
 
-    fputc('\0', output.stream);
-
-    munit_assert_string_equal(expected, g_buffer);
+    fflush(output.stream);
+    munit_assert_memory_equal(sizeof(expected)-1, expected, g_buffer);
 
     return MUNIT_OK;
 }
@@ -136,7 +139,7 @@ MunitResult output_inline_comment_test(const MunitParameter params[] __attribute
         .stream = (FILE*)fixture
     };
 
-    const char *expected = 
+    const char expected[] = 
     "[^_^]                                                                           ; line#0\n"
     "                                                                                ; line#1\n"
     "                                                                                ; line#2";
@@ -153,15 +156,12 @@ MunitResult output_inline_comment_test(const MunitParameter params[] __attribute
     munit_assert_size(5, ==, output.column);
     munit_assert_size(0, ==, output.line);
 
-    munit_assert_memory_equal(output.column, expected, g_buffer);
-
     munit_assert_true(output_inline_comment(&output, "line#0\nline#1\nline#2"));
     munit_assert_size(88, ==, output.column);
     munit_assert_size(2, ==, output.line);
     
-    fputc('\0', output.stream);
-
-    munit_assert_string_equal(expected, g_buffer);
+    fflush(output.stream);
+    munit_assert_memory_equal(sizeof(expected)-1, expected, g_buffer);
 
     return MUNIT_OK;
 }
@@ -172,7 +172,7 @@ MunitResult output_comment_test(const MunitParameter params[] __attribute__((unu
         .stream = (FILE*)fixture
     };
 
-    const char *expected = 
+    const char expected[] = 
     "[^_^]\n" 
     "; line#0\n"
     "; line#1\n"
@@ -190,17 +190,14 @@ MunitResult output_comment_test(const MunitParameter params[] __attribute__((unu
     munit_assert_size(5, ==, output.column);
     munit_assert_size(0, ==, output.line);
 
-    munit_assert_memory_equal(output.column, expected, g_buffer);
-
     munit_assert_true(output_newline(&output));
 
     munit_assert_true(output_comment(&output, "line#0\nline#1\nline#2"));
     munit_assert_size(0, ==, output.column);
     munit_assert_size(4, ==, output.line);
     
-    fputc('\0', output.stream);
-
-    munit_assert_string_equal(expected, g_buffer);
+    fflush(output.stream);
+    munit_assert_memory_equal(sizeof(expected)-1, expected, g_buffer);
 
     return MUNIT_OK;
 }
@@ -211,7 +208,7 @@ MunitResult output_comment_address_test(const MunitParameter params[] __attribut
         .stream = (FILE*)fixture
     };
 
-    const char *expected =
+    const char expected[] =
     "[=_o]                                                                           ; page: $000 logical: $e082\n"
     "                                                                                ; page: $1a5 logical: $94c0";
 
@@ -226,8 +223,6 @@ MunitResult output_comment_address_test(const MunitParameter params[] __attribut
     munit_assert_size(5, ==, output.column);
     munit_assert_size(0, ==, output.line);
 
-    munit_assert_memory_equal(output.column, expected, g_buffer);
-
     munit_assert_true(output_address_comment(&output, 0x000, 0xE082));
     munit_assert_size(107, ==, output.column);
     munit_assert_size(0, ==, output.line);
@@ -239,10 +234,9 @@ MunitResult output_comment_address_test(const MunitParameter params[] __attribut
     munit_assert_size(107, ==, output.column);
     munit_assert_size(1, ==, output.line);
     
-    fputc('\0', output.stream);
-
-    munit_assert_string_equal(expected, g_buffer);
-
+    fflush(output.stream);
+    munit_assert_memory_equal(sizeof(expected)-1, expected, g_buffer);
+    
     return MUNIT_OK;
 }
 
@@ -266,7 +260,7 @@ MunitResult output_label_test(const MunitParameter params[] __attribute__((unuse
         }
     };
 
-    const char *expected =
+    const char expected[] =
     "routine:                                                                        ; page: $000 logical: $e082\n"
     "; function\n"
     "; do something\n"
@@ -284,10 +278,9 @@ MunitResult output_label_test(const MunitParameter params[] __attribute__((unuse
     munit_assert_size(107, ==, output.column);
     munit_assert_size(3, ==, output.line);
     
-    fputc('\0', output.stream);
-
-    munit_assert_string_equal(expected, g_buffer);
-
+    fflush(output.stream);
+    munit_assert_memory_equal(sizeof(expected)-1, expected, g_buffer);
+    
     return MUNIT_OK;
 }
 
@@ -307,6 +300,7 @@ MunitResult output_fill_to_test(const MunitParameter params[] __attribute__((unu
     munit_assert_size(60, ==, output.column);
     munit_assert_size(0, ==, output.line);
 
+    fflush(output.stream);
     for(size_t i=0; i<30; i++) {
         munit_assert_char('x', ==, g_buffer[i]);
     }
@@ -333,6 +327,7 @@ MunitResult output_fill_n_test(const MunitParameter params[] __attribute__((unus
     munit_assert_size(17, ==, output.column);
     munit_assert_size(0, ==, output.line);
 
+    fflush(output.stream);
     for(size_t i=0; i<10; i++) {
         munit_assert_char('.', ==, g_buffer[i]);
     }
@@ -349,32 +344,32 @@ MunitResult output_byte_test(const MunitParameter params[] __attribute__((unused
         .stream = (FILE*)fixture
     };
 
+    const char expected[] = "e79a05c000";
+
     munit_assert_not_null(output.stream);
     
     munit_assert_true(output_byte(&output, 0xE7));
     munit_assert_size(2, ==, output.column);
     munit_assert_size(0, ==, output.line);
-    munit_assert_memory_equal(2, "e7", &g_buffer[0]);
     
     munit_assert_true(output_byte(&output, 0x9A));
     munit_assert_size(4, ==, output.column);
     munit_assert_size(0, ==, output.line);
-    munit_assert_memory_equal(2, "9a", &g_buffer[2]);
     
     munit_assert_true(output_byte(&output, 0x05));
     munit_assert_size(6, ==, output.column);
     munit_assert_size(0, ==, output.line);
-    munit_assert_memory_equal(2, "05", &g_buffer[4]);
     
     munit_assert_true(output_byte(&output, 0xC0));
     munit_assert_size(8, ==, output.column);
     munit_assert_size(0, ==, output.line);
-    munit_assert_memory_equal(2, "c0", &g_buffer[6]);
-
+ 
     munit_assert_true(output_byte(&output, 0x00));
     munit_assert_size(10, ==, output.column);
     munit_assert_size(0, ==, output.line);
-    munit_assert_memory_equal(2, "00", &g_buffer[8]);
+ 
+    fflush(output.stream);
+    munit_assert_memory_equal(sizeof(expected)-1, expected, g_buffer);
 
     return MUNIT_OK;
 }
@@ -385,22 +380,24 @@ MunitResult output_word_test(const MunitParameter params[] __attribute__((unused
         .stream = (FILE*)fixture
     };
 
+    const char expected[] = "a45c07010000";
+
     munit_assert_not_null(output.stream);
     
     munit_assert_true(output_word(&output, 0xA45C));
     munit_assert_size(4, ==, output.column);
     munit_assert_size(0, ==, output.line);
-    munit_assert_memory_equal(4, "a45c", &g_buffer[0]);
     
     munit_assert_true(output_word(&output, 0x0701));
     munit_assert_size(8, ==, output.column);
     munit_assert_size(0, ==, output.line);
-    munit_assert_memory_equal(4, "0701", &g_buffer[4]);
 
     munit_assert_true(output_word(&output, 0x0000));
     munit_assert_size(12, ==, output.column);
     munit_assert_size(0, ==, output.line);
-    munit_assert_memory_equal(4, "0000", &g_buffer[8]);
+
+    fflush(output.stream);
+    munit_assert_memory_equal(sizeof(expected)-1, expected, g_buffer);
 
     return MUNIT_OK;
 }
