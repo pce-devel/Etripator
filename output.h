@@ -68,10 +68,10 @@ void output_registry_destroy(OutputRegistry *registry);
 /// Find the registry entry associated to a given filename.
 /// \param [in out] registry Output registry
 /// \param [in] filename Filename to be added
-/// \param [out] id Index of the entry in the registry (if found)
+/// \param [out] output Pointer to the corresponding output in the registry (or NULL if it was not found).
 /// \return true if the entry was found
 /// \return false otherwise
-bool output_find(const OutputRegistry *registry, const char *filename, uint32_t *id);
+bool output_find(const OutputRegistry *registry, const char *filename, Output **output);
 
 /// Open output file for writing data at the end of the file.
 /// \param [in out] output File output

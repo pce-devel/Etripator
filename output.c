@@ -106,17 +106,24 @@ void output_registry_destroy(OutputRegistry *registry) {
 }
 
 // Find the registry entry associated to a given filename.
-bool output_find(const OutputRegistry *registry, const char *filename, uint32_t *id) {
+bool output_find(const OutputRegistry *registry, const char *filename, Output **output) {
     assert(registry != NULL);
     assert(filename != NULL);
-    assert(id != NULL);
+    assert(output != NULL);
 
     bool ret = false;
     size_t i;
-    for(i=0; (i<registry->count) && (ret == false); i++) {
-        ret = (strcmp(filename, registry->data[i].filename) == 0);
+    for(i=0; (i<registry->count); i++) {
+        if(strcmp(filename, registry->data[i].filename) == 0) {
+            break;
+        }
     }
-    *id = i;
+    if(i<registry->count) {
+        *output = &registry->data[i];
+        ret = true;
+    } else {
+        *output = NULL;
+    }
     return ret;
 }
 

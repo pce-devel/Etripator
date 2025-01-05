@@ -402,6 +402,50 @@ MunitResult output_word_test(const MunitParameter params[] __attribute__((unused
     return MUNIT_OK;
 }
 
+MunitResult output_registry_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+    OutputRegistry registry = {0};
+
+    const char* filename[] = {
+        "bank0.s",
+        "math.s",
+        "The_36th_Chamber.asm"
+    };
+
+    munit_assert_true(output_registry_add(&registry, filename[0]));
+    munit_assert_true(output_registry_add(&registry, filename[1]));
+    munit_assert_true(output_registry_add(&registry, filename[2]));
+    munit_assert_true(output_registry_add(&registry, filename[1]));
+
+    munit_assert_ptr_not_null(registry.data);
+    munit_assert_size(3, ==, registry.count);
+
+    Output *entry = NULL;
+    munit_assert_true(output_find(&registry, filename[2], &entry));
+    munit_assert_ptr_not_null(entry);
+    munit_assert_string_equal(filename[2], entry->filename);
+    munit_assert_uint32(2, ==, entry->id);
+
+    munit_assert_true(output_find(&registry, filename[0], &entry));
+    munit_assert_ptr_not_null(entry);
+    munit_assert_string_equal(filename[0], entry->filename);
+    munit_assert_uint32(0, ==, entry->id);
+
+    munit_assert_true(output_find(&registry, filename[1], &entry));
+    munit_assert_ptr_not_null(entry);
+    munit_assert_string_equal(filename[1], entry->filename);
+    munit_assert_uint32(1, ==, entry->id);
+
+    munit_assert_false(output_find(&registry, "evil_kult.S", &entry));
+    munit_assert_ptr_null(entry);
+
+    output_registry_destroy(&registry);
+
+    munit_assert_false(output_find(&registry, filename[0], &entry));
+    munit_assert_ptr_null(entry);
+
+    return MUNIT_OK;
+}
+
 static MunitTest output_tests[] = {
     { "/char", output_char_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL }, 
     { "/newline", output_newline_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
@@ -414,6 +458,7 @@ static MunitTest output_tests[] = {
     { "/string", output_string_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
     { "/byte", output_byte_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
     { "/word", output_word_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
+    { "/registry", output_registry_test, open_mem_output, close_mem_output, MUNIT_TEST_OPTION_NONE, NULL },
     { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
 };
 
