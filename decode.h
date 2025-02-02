@@ -41,6 +41,7 @@
 #include "section.h"
 #include "memory_map.h"
 #include "comment.h"
+#include "output.h"
 
 // [todo] decoder struct
 
@@ -76,17 +77,16 @@ bool data_extract(FILE *out, Section *section, MemoryMap *map, LabelRepository *
 int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, LabelRepository *repository, CommentRepository *comments, int extra_infos);
 
 /// Computes section size.
+/// \param [in] map Memory map.
 /// \param [in] sections Section array.
 /// \param [in] index Index of the current section.
-/// \param [in] count Number of sections.
-/// \param [in] map Memory map.
 /// \return Section size.
-int32_t compute_size(SectionArray *sections, int index, int count, MemoryMap *map);
+int32_t compute_size(MemoryMap *map, SectionArray *sections, int index);
 
 /// Output hardware IO port and RAM labels.
-/// \param [out] out File output.
+/// \param [out] output File output.
 /// \param [in] map Memory map.
-/// \param [in] repository Label repository.
-void label_dump(FILE *out, MemoryMap *map, LabelRepository *repository);
+/// \param [in] labels Label repository.
+void label_dump(Output *output, MemoryMap *map, LabelRepository *labels);
 
 #endif // ETRIPATOR_DECODE_H

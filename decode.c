@@ -809,7 +809,7 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 }
 
 /* Computes section size. */
-int32_t compute_size(SectionArray *sections, int index, int count, MemoryMap *map) {
+int32_t compute_size(MemoryMap *map, SectionArray *sections, int index) {
     uint8_t i;
     uint8_t data[7];
     Section *current = &sections->data[index];
@@ -819,7 +819,7 @@ int32_t compute_size(SectionArray *sections, int index, int count, MemoryMap *ma
     // Search for the closest section past the current one.
     // This also ensures that we don't cross the current page.
     uint32_t max_offset = 0xffffffff;
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < sections->count; i++) {
         if (i != index) {
             if (current->page == sections->data[i].page) {
                 uint32_t offset_current = current->offset & 0x1fff;
@@ -878,16 +878,36 @@ int32_t compute_size(SectionArray *sections, int index, int count, MemoryMap *ma
 }
 
 /* Output hardware IO port and RAM labels. */
-void label_dump(FILE *out, MemoryMap *map, LabelRepository *repository) {
-    int count = label_repository_size(repository);
-    for (int i = 0; i < count; i++) {
-        Label label;
-        if (label_repository_get(repository, i, &label)) {
+void label_dump(Output *output, MemoryMap *map, LabelRepository *labels) {
+    bool ret = true;
+    const int count = label_repository_size(labels);
+    for (int i = 0; ret && (i < count); i++) {
+        Label label = {0};
+        if (label_repository_get(labels, i, &label)) {
             // IO port and RAM
-            if ((label.page == 0xff) || (label.page == 0xf8)) {
-                print_comment(out, label.description);
-                fprintf(out, "%s .equ $%04x\n", label.name, label.logical);
+            if ((label.page == 0xFFU) || (label.page == 0xF8U)) {
+                ret = false;
+                /*
+                ; comment if any
+                label .equ $logical
+                */
+                if(output_comment(output, label.description) != true) {
+                    // ..(
+                } else if(output_string(output, label.name) != true) {
+                    // ..
+                } else if(output_string(output, " .equ $") != true) {
+                    // ..
+                } else if(output_byte(output, label.logical >> 8) != true) {
+                    // ..
+                } else if(output_byte(output, label.logical & 0xFFU) != true) {
+                    // ..
+                } else if(output_newline(output) != true) {
+                    // ..
+                } else {
+                    ret = true;
+                }
             }
         }
     }
 }
+

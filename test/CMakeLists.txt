@@ -174,6 +174,7 @@ add_unit_test(
     SOURCES
         decode.c
         ${PROJECT_SOURCE_DIR}/decode.c
+        ${PROJECT_SOURCE_DIR}/output.c
         ${PROJECT_SOURCE_DIR}/opcodes.c
         ${PROJECT_SOURCE_DIR}/memory.c
         ${PROJECT_SOURCE_DIR}/memory_map.c
