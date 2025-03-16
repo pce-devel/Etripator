@@ -145,7 +145,7 @@ static int section_overlap(const Section *a, const Section *b) {
             const Section *tmp = b;
             b = a;
             a = tmp;
-        }        
+        }
         if(a->type != b->type) {
             ret = (b->logical < (a->logical + a->size)) ? -1 : 0;
         } else if(b->logical <= (a->logical + a->size)) {
@@ -200,7 +200,7 @@ int section_array_add(SectionArray *arr, const Section* in) {
     }
 
     if(ret > 0) {
-        arr->data[arr->count] = *in;   
+        arr->data[arr->count] = *in;
         arr->count++;
     }
     return ret;
@@ -223,7 +223,7 @@ void section_array_tidy(SectionArray *arr) {
     assert(arr->count != 0);
 
     Section *section = calloc(arr->count, sizeof(Section));
-    
+ 
     qsort(arr->data, arr->count, sizeof(Section), section_compare);
 
     size_t j = 0;
@@ -238,7 +238,8 @@ void section_array_tidy(SectionArray *arr) {
             if(overlap == -1) {
                 WARNING_MSG("Section %s and %s overlaps!", arr->data[i].name, section[j].name);
             }
-            section[++j] = arr->data[i];
+            j++;
+            section[j] = arr->data[i];
         }
     }
     free(arr->data);

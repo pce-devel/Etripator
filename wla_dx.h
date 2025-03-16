@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2026 Vincent Cruz.
+  copyright (c) 2009--2024 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -33,53 +33,15 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "../section.h"
+#ifndef ETRIPATOR_WLA_DX_OUTPUT_H
+#define ETRIPATOR_WLA_DX_OUTPUT_H
 
-#include "../jsonhelpers.h"
-#include "../message.h"
-#include <jansson.h>
-#include <errno.h>
-#include <stdlib.h>
+#include "config.h"
+#include "memory_map.h"
+#include "label.h"
+#include "section.h"
 
-// Save sections to a JSON file
-bool section_save(const SectionArray *arr, const char *filename) {
-    bool ret = false;
-    FILE *out = fopen(filename, "wb");
-    if(out == NULL) {
-        ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
-    } else {
-        fprintf(out, "{\n");
-        for(size_t i=0; i<arr->count; i++) {
-            const Section *current = &arr->data[i];
-            fprintf(out, "    \"%s\": {\n", current->name);
-            fprintf(out, "        \"type\": \"%s\",\n", section_type_name(current->type));
-            fprintf(out, "        \"page\": \"%02x\",\n", current->page);
-            fprintf(out, "        \"logical\": \"%04x\",\n", current->logical);
-            fprintf(out, "        \"offset\": \"%x\",\n", current->offset);
-            fprintf(out, "        \"size\": %d,\n", current->size);
-            fprintf(out, "        \"mpr\": [");
-            for(int j=0; j<8; j++) {
-                fprintf(out, "\"%02x\"%x", current->mpr[j], (j<7) ? ',' : ']');
-            }
-            fprintf(out, "\n");
-            fprintf(out, "        \"output\": \"%s\"", current->output);
-            if(current->type == SECTION_TYPE_DATA) {
-                fprintf(out, ",\n        \"data\": {\n");
-                fprintf(out, "               \"type\": \"%s\",\n", data_type_name(current->data.type));
-                fprintf(out, "               \"element_size\": %d,\n", current->data.element_size);
-                fprintf(out, "               \"elements_per_line\": %d\n", current->data.elements_per_line);
-                fprintf(out, "            }\n");
-            }
-            if(current->description) {
-                fputc(',', out);
-                json_print_description(out, "description", current->description);
-            }
-            fprintf(out, "\n}\n");
-        }
-        fprintf(out, "}\n");
-        fclose(out);
+///
+bool wla_dx_output(MemoryMap *map, LabelRepository *labels,  SectionArray *sections, const char* filename);
 
-        ret = true;
-    }
-    return 1;
-}
+#endif // ETRIPATOR_WLA_DX_OUTPUT_H

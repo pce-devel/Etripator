@@ -102,7 +102,7 @@ bool label_extract(LabelRepository *labels, MemoryMap *map, Section *section) {
     assert(section != NULL);
 
     int i;
-    
+
     char buffer[32];
 
     uint8_t page;

@@ -78,9 +78,9 @@ bool irq_read(MemoryMap* map, SectionArray *out) {
                 .logical  = (hi << 8) | lo,
                 .size     = 0,
                 .mpr      = {
-                    [0] = 0xFFU, // I/O
-                    [1] = 0xF8U, // RAM
-                    // [2..7] : 0 // ROM                    
+                    [0] = 0xFFU,    // I/O
+                    [1] = 0xF8U,    // RAM
+                    [2 ... 7] = 0,  // ROM
                 },
                 .description = NULL,
             };

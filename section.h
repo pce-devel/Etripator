@@ -145,11 +145,10 @@ void section_delete(Section *ptr);
 bool section_load(SectionArray *arr, const char *filename);
 
 // Save sections to a JSON file.
-// \param [in] ptr Sections to be saved.
-// \param [in] count Number of sections. 
+// \param [in] arr Sections to be saved.
 // \param [in] filename Output filename.
 // \return true if the sections were succesfully saved.
 // \return false if an error occured.
-bool section_save(const Section *ptr, int n, const char *filename); // [todo] use SectionArray
+bool section_save(const SectionArray *arr, const char *filename);
 
 #endif // ETRIPATOR_SECTION_H

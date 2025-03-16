@@ -83,7 +83,7 @@ bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size,
 
             size_t sector_id = start / 2048;
             size_t sector_offset = start % 2048;
-            
+
             size_t file_offset = (sector_id * sector_size) + sector_offset;
 
             size_t current_page = physical >> 0x0D;
@@ -105,8 +105,8 @@ bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size,
             physical += count;
             remaining -= count;
         }
-  
-    }    
+
+    }
     if(in) {
         fclose(in);
     }

@@ -55,6 +55,9 @@
 #include <ipl.h>
 #include <section.h>
 #include <comment.h>
+#include <output.h>
+
+#include <wla_dx.h>                 // [todo]
 
 #include "options.h"
 
@@ -220,15 +223,21 @@ static bool fill_label_reporitory(LabelRepository *labels, SectionArray *arr) {
     return ret;
 }
 
-static bool output_main(MemoryMap *map, LabelRepository *labels, const CommandLineOptions *options) {
+static bool output_main(OutputRegistry *registry, MemoryMap *map, LabelRepository *labels, const CommandLineOptions *options) {
     bool ret = false;
-    FILE *out = fopen(options->main_filename, "w");
-    if (out == NULL) {
-        ERROR_MSG("Unable to open %s : %s", options->main_filename, strerror(errno));
+    uint32_t id = 0xFFFFFFFFU;
+    Output *output = NULL;
+
+    if(output_find(registry, options->main_filename, &output) != true) {
+        // ...
     } else {
-        label_dump(out, map, labels);
-        fclose(out);
-        ret = true;
+        if(output_begin(output) != true) {
+            ERROR_MSG("Unable to open %s : %s", options->main_filename, strerror(errno));
+        } else {
+            label_dump(output, map, labels);
+            output_end(output);
+            ret = true;
+        }
     }
     return ret;
 }
@@ -237,7 +246,7 @@ static bool code_extract(FILE *out, SectionArray *arr, int index, MemoryMap *map
     bool ret = false;
     Section *current = &arr->data[index];
     if(current->size <= 0) {
-        current->size = compute_size(arr, index, arr->count, map);
+        current->size = compute_size(map, arr, index);
     }
     if (!label_extract(labels, map, current)) {
         // ...
@@ -314,6 +323,8 @@ int main(int argc, const char **argv) {
 
     CommentRepository comments = {0};
 
+    OutputRegistry output = {0};
+
     section_array_reset(&section_arr);
 
     atexit(exit_callback);
@@ -346,7 +357,17 @@ int main(int argc, const char **argv) {
         // ...
     } else {
         section_array_tidy(&section_arr);
-        if(!output_main(&map, &labels, &options)) {
+
+        bool ret = true;
+        if(options.main_filename) {
+            ret = output_registry_add(&output, options.main_filename);
+        }
+        for(size_t i=0; ret && (i<section_arr.count); i++) {
+            const Section *s = section_array_get(&section_arr, i);
+            ret = output_registry_add(&output, s->output);
+        }
+
+        if(!output_main(&output, &map, &labels, &options)) {
             // ...
         } else {
             ret = EXIT_SUCCESS;
@@ -356,9 +377,13 @@ int main(int argc, const char **argv) {
             if (label_output(&labels, &options)) {
                 ret = EXIT_FAILURE;
             }
+
+            (void)wla_dx_output(&map, &labels, &section_arr, "foobar.sym");
+            
         }
     }
 
+    output_registry_destroy(&output);
     label_repository_destroy(&labels);
     comment_repository_destroy(&comments);
     memory_map_destroy(&map);
