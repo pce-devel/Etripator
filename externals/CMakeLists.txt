@@ -1,5 +1,4 @@
-add_library(argparse STATIC argparse/argparse.c argparse/argparse.h)
-
+add_subdirectory(cargs)
 add_subdirectory(cwalk)
 
 add_library(munit STATIC ${CMAKE_CURRENT_LIST_DIR}/munit/munit.c)

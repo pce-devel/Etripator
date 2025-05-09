@@ -101,7 +101,7 @@ static bool label_output(LabelRepository *repository, CommandLineOptions *option
 }
 
 // log command line
-static bool log_cli(int argc, const char* argv[]) {
+static bool log_cli(int argc, char* argv[]) {
     bool ret = false;
 
     size_t len = 0;
@@ -311,7 +311,7 @@ static bool disassemble(SectionArray *arr, MemoryMap *map, LabelRepository *labe
 }
 
 /* ---------------------------------------------------------------- */
-int main(int argc, const char **argv) {
+int main(int argc, char **argv) {
     int ret = EXIT_FAILURE;
 
     CommandLineOptions options = {0};
@@ -351,35 +351,36 @@ int main(int argc, const char **argv) {
         // ...
     } else if (!load_irq(&map, &section_arr, &options)) {
         // ...
-    } else if (!reset_output(&section_arr)) {
-        // ...
-    } else if (!fill_label_reporitory(&labels, &section_arr)) {
-        // ...
     } else {
         section_array_tidy(&section_arr);
-
-        bool ret = true;
-        if(options.main_filename) {
-            ret = output_registry_add(&output, options.main_filename);
-        }
-        for(size_t i=0; ret && (i<section_arr.count); i++) {
-            const Section *s = section_array_get(&section_arr, i);
-            ret = output_registry_add(&output, s->output);
-        }
-
-        if(!output_main(&output, &map, &labels, &options)) {
+        if (!reset_output(&section_arr)) {
+            // ...
+        } else if (!fill_label_reporitory(&labels, &section_arr)) {
             // ...
         } else {
-            ret = EXIT_SUCCESS;
-            if(!disassemble(&section_arr, &map, &labels, &comments, &options)) {
-                ret = EXIT_FAILURE;
+            bool ret = true;
+            if(options.main_filename) {
+                ret = output_registry_add(&output, options.main_filename);
             }
-            if (label_output(&labels, &options)) {
-                ret = EXIT_FAILURE;
+            for(size_t i=0; ret && (i<section_arr.count); i++) {
+                const Section *s = section_array_get(&section_arr, i);
+                ret = output_registry_add(&output, s->output);
             }
 
-            (void)wla_dx_output(&map, &labels, &section_arr, "foobar.sym");
-            
+            if(!output_main(&output, &map, &labels, &options)) {
+                // ...
+            } else {
+                ret = EXIT_SUCCESS;
+                if(!disassemble(&section_arr, &map, &labels, &comments, &options)) {
+                    ret = EXIT_FAILURE;
+                }
+                if (label_output(&labels, &options)) {
+                    ret = EXIT_FAILURE;
+                }
+
+                (void)wla_dx_output(&map, &labels, &section_arr, "foobar.sym");
+                
+            }
         }
     }
 

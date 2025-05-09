@@ -87,7 +87,7 @@ set_target_properties(etripator_cli
 )
 target_include_directories(etripator_cli PRIVATE ${CMAKE_SOURCE_DIR})
 target_include_directories(etripator_cli PUBLIC externals)
-target_link_libraries(etripator_cli etripator argparse)
+target_link_libraries(etripator_cli etripator cargs)
 
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
 set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)

@@ -40,10 +40,10 @@
 
 /* Command line options */
 typedef struct {
-    int extract_irq;
-    int cdrom;
+    bool extract_irq;
+    bool cdrom;
     int sector_size;
-    int address;
+    bool address;
     const char *cfg_filename;
     const char *rom_filename;
     const char *main_filename;
@@ -53,7 +53,7 @@ typedef struct {
 } CommandLineOptions;
 
 /// Extract command line options
-bool cli_opt_get(CommandLineOptions *options, int argc, const char** argv);
+bool cli_opt_get(CommandLineOptions *options, int argc, char** argv);
 
 /// Release allocated resources during command line parsing
 void cli_opt_release(CommandLineOptions *options);

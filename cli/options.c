@@ -35,109 +35,243 @@
 */
 #include "options.h"
 
-#include <argparse/argparse.h>
+#include <cargs.h>
 
 #include <message.h>
 
-struct payload_t {
-    size_t capacity;
-    size_t size;
-    const char ***array;
+enum {
+    CLI_OPTION_ID_IRQ_DETECT = 0,
+    CLI_OPTION_ID_CD,
+    CLI_OPTION_ID_MAIN_OUT,
+    CLI_OPTION_ID_LABELS_IN,
+    CLI_OPTION_ID_HELP,
+    CLI_OPTION_ID_LABELS_OUT,
+    CLI_OPTION_ID_COMMENTS_IN,
+    CLI_OPTION_ID_ADDR_PRINT,
+    CLI_OPTION_ID_SECTOR_SIZE,
+    CLI_OPTION_ID_COUNT,
+    CLI_OPTION_ID_ERROR = '?'
+} CLIOptionID;
+
+static struct cag_option g_options[] = {
+    {.identifier = CLI_OPTION_ID_IRQ_DETECT,
+     .access_letters = "i",
+     .access_name = "irq-detect",
+     .value_name = NULL,
+     .description = "automatically detect and extract irq vectors when disassembling a ROM, or extract opening code and gfx from CDROM IPL data"},
+    {.identifier = CLI_OPTION_ID_CD,
+     .access_letters = "c",
+     .access_name = "cd",
+     .value_name = NULL,
+     .description = "cdrom image disassembly. Irq detection and rom. Header jump is not performed"},
+    {.identifier = CLI_OPTION_ID_MAIN_OUT,
+     .access_letters = "o",
+     .access_name = "out",
+     .value_name = "FILENAME",
+     .description = "main asm file containing includes for all sections as long the irq vector table if the irq-detect option is enabled"},
+    {.identifier = CLI_OPTION_ID_LABELS_IN,
+     .access_letters = "l",
+     .access_name = "labels",
+     .value_name = "FILENAME",
+     .description = "labels definition filename"},
+    {.identifier = CLI_OPTION_ID_HELP,
+     .access_letters = "h",
+     .access_name = "help",
+     .value_name = NULL,
+     .description = "Shows the command help"},
+    {.identifier = CLI_OPTION_ID_LABELS_OUT,
+     .access_letters = NULL,
+     .access_name = "labels-out",
+     .value_name = "FILENAME",
+     .description = "Shows the command help"},
+    {.identifier = CLI_OPTION_ID_COMMENTS_IN,
+     .access_letters = NULL,
+     .access_name = "comments",
+     .value_name = "FILENAME",
+     .description = "comments description filename"},
+    {.identifier = CLI_OPTION_ID_ADDR_PRINT,
+     .access_letters = NULL,
+     .access_name = "address",
+     .value_name = NULL,
+     .description = "print statement address as comment"},
+    {.identifier = CLI_OPTION_ID_SECTOR_SIZE,
+     .access_letters = NULL,
+     .access_name = "sector_size",
+     .value_name = "SIZE",
+     .description = "Sector size in bytes (2048 or 2352) (cd only)"},
 };
 
-static int opt_callback(struct argparse *self, const struct argparse_option *options) {
-    struct payload_t *payload = (struct payload_t*)options->data;
-    size_t last = payload->size++;
-    if(payload->capacity <= payload->size) {
-        payload->capacity += 4;
-        const char **tmp = (const char**)realloc(*payload->array, payload->capacity*sizeof(const char*));
-        if(tmp == NULL) {
-            return 0;
-        }
-        memset(tmp+last, 0, 4*sizeof(const char*));
-        *payload->array = tmp;
-    }
-    (*payload->array)[last] = *(char**)options->value;
-    return 1;
-}
-
-// Extract command line options
-bool cli_opt_get(CommandLineOptions *options, int argc, const char** argv) {
-    static const char *const usages[] = {
-        "etripator [options] [--] <cfg.json> <in>",
-        NULL
-    };
-
-    bool ret = false;
-
-    char *dummy;
-    struct payload_t labels_payload = { 0, 0, &options->labels_in };
-    struct payload_t comments_payload = {0, 0, &options->comments_in};
-
-    struct argparse_option arg_opt[] = {
-        OPT_HELP(),
-        OPT_BOOLEAN('i', "irq-detect", &options->extract_irq, "automatically detect and extract irq vectors when disassembling a ROM, or extract opening code and gfx from CDROM IPL data", NULL, 0, 0),
-        OPT_BOOLEAN('c', "cd", &options->cdrom, "cdrom image disassembly. Irq detection and rom. Header jump is not performed", NULL, 0, 0),
-        OPT_STRING('o', "out", &options->main_filename, "main asm file containing includes for all sections as long the irq vector table if the irq-detect option is enabled", NULL, 0, 0),
-        OPT_STRING('l', "labels", &dummy, "labels definition filename", opt_callback, (intptr_t)&labels_payload, 0),
-        OPT_STRING(0, "labels-out", &options->labels_out, "extracted labels output filename. Otherwise the labels will be written to <in>.YYMMDDhhmmss.lbl", NULL, 0, 0),
-        OPT_STRING(0, "comments", &dummy, "comments description filename", opt_callback, (intptr_t)&comments_payload, 0),
-        OPT_BOOLEAN(0, "address", &options->address, "print statement address as comment", NULL, 0, 0),
-        OPT_INTEGER(0, "sector_size", &options->sector_size, "2352 bytes sectors (cd only)", NULL, 0, 0),
-        OPT_END(),
-    };
-
-    struct argparse argparse;
-
-    options->extract_irq = 0;
-    options->cdrom = 0;
+static void cliopt_reset(CommandLineOptions *options) {
+    options->extract_irq = false;
+    options->cdrom = false;
     options->cfg_filename  = NULL;
     options->rom_filename  = NULL;
     options->main_filename = "main.asm";
     options->labels_in = NULL;
     options->labels_out = NULL;
     options->comments_in = NULL;
-    options->address = 0;
+    options->address = false;
     options->sector_size = 2048;
+}
 
-    argparse_init(&argparse, arg_opt, usages, 0);
-    argparse_describe(&argparse, "\nEtripator : a PC Engine disassembler", "  ");
-    argc = argparse_parse(&argparse, argc, argv);
-    if(!argc) {
-        // ...
-    } else if((options->sector_size != 2048) && (options->sector_size != 2352)) {
-       ERROR_MSG("invalid sector size (must be 2048 or 2352).");
-    } else if(argc != 2) {
-        if((options->extract_irq) && (argc == 1)) {
-            /* Config file is optional with automatic irq vector extraction. */
-            options->cfg_filename =  NULL;
-            options->rom_filename = argv[0];
-            ret = true;
-        }
-        else {
-            // ...
-        }
-    }
-    else {
-        options->cfg_filename = argv[0];
-        options->rom_filename = argv[1];
+static bool cliopt_validate_input(const char *filename) {
+    bool ret = false;
+    struct stat infos = {0};
+
+    if(filename == NULL) {
+        ERROR_MSG("missing argument");
+    } else if(strlen(filename) == 0) {
+        ERROR_MSG("empty argument");
+    } else if(lstat(filename, &infos) < 0) {
+        ERROR_MSG("invalid filename: %s", strerror(errno));
+    } else if(!S_ISREG(infos.st_mode)) {
+        ERROR_MSG("%s is not a regular file", filename);
+    } else {
         ret = true;
     }
-
-    if(!ret) {
-        argparse_usage(&argparse);
-    }
-
     return ret;
 }
 
-// Release allocated resources during command line parsing
+#define S_WRITE (S_IWUSR | S_IWGRP | S_IWOTH)
+
+static bool cliopt_validate_output(const char *filename) {
+    bool ret = false;
+    struct stat infos = {0};
+
+    if(filename == NULL) {
+        ERROR_MSG("missing argument");
+    } else if(strlen(filename) == 0) {
+        ERROR_MSG("empty argument");
+    } else if(lstat(filename, &infos) < 0) {
+        if(errno != ENOENT) {
+            ERROR_MSG("invalid filename: %s", strerror(errno));
+        } else {
+            ret = true;
+        }
+    } else if(!S_ISREG(infos.st_mode)) {
+        ERROR_MSG("%s is not a regular file", filename);
+    } else if((infos.st_mode & S_WRITE) == 0) { // this is a crude access test
+        ERROR_MSG("%s is not writeable", filename);
+    } else {
+        ret = true;
+    }
+    return ret;
+}
+
+typedef const char* String;
+
+typedef struct {
+    size_t capacity;
+    size_t count;
+    String *data;
+} FilenameList;
+
+static bool cliopt_add_input(FilenameList *list, const char *filename) {
+    bool ret = cliopt_validate_input(filename);
+    if(ret) {
+        if(list->count >= list->capacity) {
+            size_t n = list->capacity + 4U;
+            String *tmp = (String*)realloc(list->data, n * sizeof(String));
+            if(tmp == NULL) {
+                ERROR_MSG("failed to expand filename list: %s", strerror(errno));
+                ret = false;
+            } else {
+                for(size_t i=list->capacity; i<n; i++) {
+                    tmp[i] = NULL;
+                }
+                list->data = tmp;
+                list->capacity = n;
+            }
+        }
+        if(ret) {
+            list->data[list->count] = filename;
+            list->count++;
+        }
+    }
+    return ret;
+}
+
+bool cli_opt_get(CommandLineOptions *out, int argc, char** argv) {
+    bool ret = true;
+
+    cag_option_context context = {0};
+    cag_option_init(&context, g_options, CAG_ARRAY_SIZE(g_options), argc, argv);
+
+    cliopt_reset(out);
+
+    FilenameList labels = {0};
+    FilenameList comments = {0};
+
+    char *end = NULL;
+
+    while (ret && cag_option_fetch(&context)) {
+        switch (cag_option_get_identifier(&context)) {
+            case CLI_OPTION_ID_IRQ_DETECT:
+                out->extract_irq = true;
+                break;          
+            case CLI_OPTION_ID_CD:
+                out->cdrom = true;
+                break;
+            case CLI_OPTION_ID_MAIN_OUT:
+                out->main_filename = cag_option_get_value(&context);
+                ret = cliopt_validate_output(out->main_filename);
+                break;
+            case CLI_OPTION_ID_LABELS_IN:
+                ret = cliopt_add_input(&labels, cag_option_get_value(&context));
+                break;
+            case CLI_OPTION_ID_LABELS_OUT:
+                out->labels_out = cag_option_get_value(&context);
+                ret = cliopt_validate_output(out->labels_out);
+                break;
+            case CLI_OPTION_ID_COMMENTS_IN:
+                ret = cliopt_add_input(&comments, cag_option_get_value(&context));
+                break;
+            case CLI_OPTION_ID_ADDR_PRINT:
+                out->address = true;
+                break;
+            case CLI_OPTION_ID_SECTOR_SIZE:
+                errno = 0;
+                out->sector_size = (int)strtoul(cag_option_get_value(&context), &end, 10);
+                if(errno || (*end != '\0')) {
+                    ERROR_MSG("invalid sector size");
+                    ret = false;
+                } else if((out->sector_size != 2048) && (out->sector_size != 2352)) {
+                    ERROR_MSG("invalid sector size (must be 2048 or 2352).");
+                    ret = false;
+                }
+                break;
+            case CLI_OPTION_ID_HELP:
+                printf("Usage: etripator [options] [--] <cfg.json> <in>\n");
+                cag_option_print(g_options, CAG_ARRAY_SIZE(g_options), stdout);
+                ret = false;
+                break;
+            case CLI_OPTION_ID_ERROR:
+            default:
+                cag_option_print_error(&context, stderr);
+                ret = false;
+                break;
+        }
+    }
+
+    int index = cag_option_get_index(&context);
+    int count = argc - index;
+
+    if(count == 2) {
+        out->cfg_filename = argv[index++];
+        out->rom_filename = argv[index++];
+    } else if((count == 1) && out->extract_irq) {        
+        out->cfg_filename = NULL;
+        out->rom_filename = argv[index++];
+    } else {
+        ret = false;
+    }
+    out->comments_in = comments.data;
+    out->labels_in = labels.data;
+    return ret;
+}
+
 void cli_opt_release(CommandLineOptions *options) {
-    if(options->comments_in) {
-        free(options->comments_in);
-    }
-    if(options->labels_in) {
-        free(options->labels_in);
-    }
-    memset(options, 0, sizeof(CommandLineOptions));
+    free(options->comments_in);
+    free(options->labels_in);
+    cliopt_reset(options);
 }
