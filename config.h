@@ -47,6 +47,7 @@
 
 #include <time.h>
 
+#include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -65,6 +66,16 @@
 #   define strcasecmp _stricmp
 #   define snprintf _snprintf
 #   define access _access
+#endif
+
+#if !defined(__printflike)
+#   define __printflike(fmt, first_arg)
+#   if defined(__has_attribute)
+#       if __has_attribute(__format__)
+#           undef __printflike
+#           define __printflike(fmt, first_arg) __attribute__((__format__(printf, fmt, first_arg)))
+#       endif
+#   endif
 #endif
 
 #endif // ETRIPATOR_CONFIG_H

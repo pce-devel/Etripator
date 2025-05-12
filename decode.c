@@ -142,7 +142,7 @@ bool label_extract(LabelRepository *labels, MemoryMap *map, Section *section) {
             snprintf(buffer, sizeof(buffer), "l%04x_%02d", jump, page);
             /* Insert offset to repository */
             ret = label_repository_add(labels, buffer, jump, page, NULL);
-            INFO_MSG("%04x short jump to %04x (%02x)", logical, jump, page);
+            INFO_MSG("%04x short jump to %04x (%02x)", (uint16_t)logical, jump, page);
         } else if (opcode_is_far_jump(inst)) {
             jump = data[0] | (data[1] << 8);
             page = memory_map_page(map, jump);
@@ -150,7 +150,7 @@ bool label_extract(LabelRepository *labels, MemoryMap *map, Section *section) {
             snprintf(buffer, sizeof(buffer), "l%04x_%02d", jump, page);
             /* Insert offset to repository */
             ret = label_repository_add(labels, buffer, jump, page, NULL);
-            INFO_MSG("%04x long jump to %04x (%02x)", logical, jump, page);
+            INFO_MSG("%04x long jump to %04x (%02x)", (uint16_t)logical, jump, page);
         }
         logical += opcode->size;
     }

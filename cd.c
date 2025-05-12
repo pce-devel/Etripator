@@ -97,7 +97,7 @@ bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size,
             if(fseek(in, (long int)file_offset, SEEK_SET) < 0) {
                 ERROR_MSG("Offset out of bound : %s", strerror(errno));
             } else if(fread(map->memory[map->page[current_page].id].data+bank_offset, 1, count, in) != count) {
-                ERROR_MSG("Failed to read %d bytes : %s", count, strerror(errno));
+                ERROR_MSG("Failed to read %zu bytes : %s", count, strerror(errno));
             } else {
                 ret = true;
             }

@@ -110,7 +110,7 @@ bool message_printer_add(MessagePrinter *printer);
 /// \param line      Line number in the file where the print message command was issued.
 /// \param function  Function where the print message command was issued.
 /// \param format    Format string.
-void message_print(MessageType type, const char* file, size_t line, const char* function, const char* format, ...);
+void message_print(MessageType type, const char* file, size_t line, const char* function, const char* format, ...) __printflike(5, 6);
 
 /// @}
 

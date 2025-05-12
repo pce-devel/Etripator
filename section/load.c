@@ -162,7 +162,7 @@ static bool json_parse_section_mpr(Section *out, const json_t *obj) {
             } else if(!json_validate_int(value, &num)) {
                 ERROR_MSG("Invalid type for mpr value");
             } else if((num < 0) || (num > 0xFF)) {
-                ERROR_MSG("Invalid mpr %d value", index);    
+                ERROR_MSG("Invalid mpr %zu value", index);    
             } else {
                 out->mpr[index] = (uint8_t)num;
                 ret = true;
@@ -263,7 +263,7 @@ static bool json_parse_section_data_string_delimiter(DataConfig *out, const json
             } else if(!json_validate_int(value, &num)) {
                 ERROR_MSG("Invalid type for string delimiter char");
             } else if((num < 0) || (num > 0xFF)) {
-                ERROR_MSG("Invalid char %d value", index);    
+                ERROR_MSG("Invalid char %zu value", index);    
             } else {
                 out->delimiter[index] = (uint8_t)num;
                 ret = true;

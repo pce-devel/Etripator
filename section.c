@@ -189,7 +189,7 @@ int section_array_add(SectionArray *arr, const Section* in) {
         size_t n = arr->capacity + 4U;
         Section *ptr = realloc(arr->data, n*sizeof(Section));
         if(ptr == NULL) {
-            ERROR_MSG("Failed to expand section array buffer", strerror(errno));
+            ERROR_MSG("Failed to expand section array buffer: %s", strerror(errno));
         } else {
             arr->data = ptr;
             arr->capacity = n;
