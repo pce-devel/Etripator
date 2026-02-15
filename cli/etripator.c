@@ -57,12 +57,12 @@
 #include <comment.h>
 #include <output.h>
 
-#include <wla_dx.h>                 // [todo]
+//#include <wla_dx.h>                 // [todo]
 
 #include "options.h"
 
 // exit callback
-void exit_callback() { 
+void exit_callback(void) { 
     message_printer_destroy();
 }
 
@@ -242,7 +242,7 @@ static bool output_main(OutputRegistry *registry, MemoryMap *map, LabelRepositor
     return ret;
 }
 
-static bool code_extract(FILE *out, SectionArray *arr, int index, MemoryMap *map, LabelRepository *labels, CommentRepository *comments, int address) {
+static bool code_extract(Output *output, SectionArray *arr, int index, MemoryMap *map, LabelRepository *labels, CommentRepository *comments, int address) {
     bool ret = false;
     Section *current = &arr->data[index];
     if(current->size <= 0) {
@@ -251,60 +251,88 @@ static bool code_extract(FILE *out, SectionArray *arr, int index, MemoryMap *map
     if (!label_extract(labels, map, current)) {
         // ...
     } else {
-        /* Process opcodes */
+        // Process opcodes.
         uint16_t logical = current->logical;
+        const uint16_t end = logical + current->size;
         do {
-            (void)decode(out, &logical, current, map, labels, comments, address);
-        } while (logical < (current->logical+current->size));
-        fputc('\n', out);
-        ret = true;
+            ret = decode(output, &logical, current, map, labels, comments, address);
+        } while (ret && (logical < end));
+        if(ret) {
+            ret = output_newline(output);
+        }
     }
-    return true;
+    return ret;
 }
 
-static void print_header(FILE *out, Section *current, Section *previous) {
+static bool print_header(Output *output, Section *current, Section *previous) {
+    bool ret = false;
     if(previous && ((previous->logical + previous->size) == current->logical)) {
         // ...
     } else if((current->type != SECTION_TYPE_DATA) || (current->data.type != DATA_TYPE_BINARY)) {
-        /* Print header */
-        fprintf(out, "\t.%s\n"
-                    "\t.bank $%03x\n"
-                    "\t.org $%04x\n",
-                (current->type == SECTION_TYPE_CODE) ? "code" : "data", current->page, current->logical);
+        const char *str = (current->type == SECTION_TYPE_CODE) ? ".code" : ".data";
+        if(output_fill_n(output, ' ', 4U) != true) {
+                // ...
+        } else if(output_string(output, str) != true) {
+            // ... 
+        } else if(output_newline(output) != true) {
+            // ...
+        } else if(output_fill_n(output, ' ', 4U) != true) {
+                // ...
+        } else if(output_string(output, ".bank ") != true) {
+            // ... 
+        } else if(output_8h(output, current->page) != true) {
+            // ...
+        } else if(output_newline(output) != true) {
+            // ...
+        } else if(output_fill_n(output, ' ', 4U) != true) {
+            // ...
+        } else if(output_string(output, ".org ") != true) {
+            // ... 
+        } else if(output_16h(output, current->offset) != true) {
+            // ...
+        } else if(output_newline(output) != true) {
+            // ...
+        } else {
+            ret = true;
+        }
     }
+    return ret;
 }
 
-static bool disassemble(SectionArray *arr, MemoryMap *map, LabelRepository *labels, CommentRepository *comments, CommandLineOptions *options) {
+static bool disassemble(OutputRegistry *registry, SectionArray *arr, MemoryMap *map, LabelRepository *labels, CommentRepository *comments, CommandLineOptions *options) {
     bool ret = true;
     Section *previous = NULL;
     Section *current = NULL;
     for (int i = 0; ret && (i < arr->count); ++i, previous=current) {
-        current = &arr->data[i];
-        FILE *out = fopen(current->output, "ab");
-        if (out == NULL) {
-            ERROR_MSG("Can't open %s : %s", current->output, strerror(errno));
-        } else {
-            if (options->cdrom && (current->offset != ((current->page << 13) | (current->logical & 0x1fff)))) {
-                size_t offset = current->offset;
-                /* Copy CDROM data */
-                if (!cd_load(options->rom_filename, current->offset, current->size, options->sector_size, current->page, current->logical, map)) {
-                    ERROR_MSG("Failed to load CD data (section %d)", i);
-                } else {
-                    ret = false;
-                }
+        Output *output = NULL;
+        if (options->cdrom && (current->offset != ((current->page << 13) | (current->logical & 0x1fff)))) {
+            size_t offset = current->offset;
+            // Copy CDROM data 
+            if (!cd_load(options->rom_filename, current->offset, current->size, options->sector_size, current->page, current->logical, map)) {
+                ERROR_MSG("Failed to load CD data (section %d)", i);
+            } else {
+                ret = false;
             }
+        }
 
-            if(ret) {
-                print_header(out, current, previous);
+        if(ret) {
+            ret = false;
+            current = &arr->data[i];
+            if(output_find(registry, current->output, &output) != true) {
+                ERROR_MSG("No output registered for %s", current->output);
+            } else if(output_begin(output) != true) {
+                ERROR_MSG("Unable to open %s : %s", current->output, strerror(errno));
+            } else {
                 memory_map_mpr(map, current->mpr);
-        
-                if (current->type == SECTION_TYPE_CODE) {
-                    ret = code_extract(out, arr, i, map, labels, comments, options->address); 
+                if(print_header(output, current, previous) != true) {
+                    // ...
+                } else if (current->type == SECTION_TYPE_CODE) {
+                    ret = code_extract(output, arr, i, map, labels, comments, options->address); 
                 } else {
-                    ret = data_extract(out, current, map, labels, comments, options->address);
+                    ret = data_extract(output, current, map, labels, comments, options->address);
                 }
+                output_end(output);
             }
-            fclose(out);
         }
     }
     return ret;
@@ -371,14 +399,14 @@ int main(int argc, char **argv) {
                 // ...
             } else {
                 ret = EXIT_SUCCESS;
-                if(!disassemble(&section_arr, &map, &labels, &comments, &options)) {
+                if(!disassemble(&output, &section_arr, &map, &labels, &comments, &options)) {
                     ret = EXIT_FAILURE;
                 }
                 if (label_output(&labels, &options)) {
                     ret = EXIT_FAILURE;
                 }
 
-                (void)wla_dx_output(&map, &labels, &section_arr, "foobar.sym");
+//                (void)wla_dx_output(&map, &labels, &section_arr, "foobar.sym");
                 
             }
         }

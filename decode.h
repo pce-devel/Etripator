@@ -54,7 +54,7 @@
 bool label_extract(LabelRepository *labels, MemoryMap *map, Section *section);
 
 /// Process data section. The result will be output has a binary file or an asm file containing hex values or strings.
-/// \param [out] out File output.
+/// \param [out] output File output.
 /// \param [in] section Current section.
 /// \param [in] map Memory map.
 /// \param [in] repository Label repository.
@@ -62,10 +62,10 @@ bool label_extract(LabelRepository *labels, MemoryMap *map, Section *section);
 /// \param [in] extra_infos Display extra informations as comments (if none set).
 /// \return true upon success.
 /// \return false if an error occured.
-bool data_extract(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository, CommentRepository *comments, int extra_infos);
+bool data_extract(Output *output, Section *section, MemoryMap *map, LabelRepository *repository, CommentRepository *comments, int extra_infos);
 
 /// Process code section.
-/// \param [out] out File output.
+/// \param [out] output File output.
 /// \param [in out] logical Current logical address.
 /// \param [in] section Current section.
 /// \param [in] map Memory map.
@@ -74,7 +74,7 @@ bool data_extract(FILE *out, Section *section, MemoryMap *map, LabelRepository *
 /// \param [in] extra_infos Display extra informations as comments (if none set).
 /// \return true if rts, rti or brk instruction was decoded.
 /// \return false otherwise.
-int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, LabelRepository *repository, CommentRepository *comments, int extra_infos);
+bool decode(Output *output, uint16_t *logical, Section *section, MemoryMap *map, LabelRepository *repository, CommentRepository *comments, int extra_infos);
 
 /// Computes section size.
 /// \param [in] map Memory map.

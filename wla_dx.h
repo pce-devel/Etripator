@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2024 Vincent Cruz.
+  copyright (c) 2009--2026 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -42,6 +42,6 @@
 #include "section.h"
 
 ///
-bool wla_dx_output(MemoryMap *map, LabelRepository *labels,  SectionArray *sections, const char* filename);
+bool wla_dx_output(MemoryMap *map, LabelRepossitory *labels,  SectionArray *sections, const char* filename);
 
 #endif // ETRIPATOR_WLA_DX_OUTPUT_H

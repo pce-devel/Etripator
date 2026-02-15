@@ -41,7 +41,7 @@ static const char* g_log_filename = "etripator.log";
 /// Check if the log file can be opened and written to.
 /// \return true if the log file was successfully opened.
 /// \return false if an error occured.
-static bool file_message_printer_open() {
+static bool file_message_printer_open(void) {
     bool ret = false;
     int fd = open(g_log_filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     if(fd < 0) {
@@ -56,7 +56,7 @@ static bool file_message_printer_open() {
 
 /// Do nothing.
 /// \return true always.
-static bool file_message_printer_close() {
+static bool file_message_printer_close(void) {
     return true;
 }
 
@@ -85,7 +85,7 @@ static bool file_message_printer_output(MessageType type, const char* file, size
         vfprintf(out, format, args);
         fputc('\n', out);
         fflush(out);
-        if(ferror(out)) {
+        if(ferror(out) != 0) {
             fprintf(stderr, "Failed to output log to %s: %s\n", g_log_filename, strerror(errno));
         } else {
             ret = true;
@@ -95,15 +95,14 @@ static bool file_message_printer_output(MessageType type, const char* file, size
     return ret;
 }
 
-static MessagePrinter g_file_message_printer = {
-    .open   = file_message_printer_open,
-    .close  = file_message_printer_close,
-    .output = file_message_printer_output,
-    .next   = NULL,
-};
-
 /* Setups file message writer. */
-bool file_message_printer_init() {
+bool file_message_printer_init(void) {
+    static MessagePrinter g_file_message_printer = {
+        .open   = file_message_printer_open,
+        .close  = file_message_printer_close,
+        .output = file_message_printer_output,
+        .next   = NULL,
+    };
     return message_printer_add(&g_file_message_printer);
 }
 

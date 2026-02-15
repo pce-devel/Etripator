@@ -10,6 +10,8 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 enable_testing()
 
 include(CheckSymbolExists)
@@ -51,7 +53,7 @@ set(etripator_SRC
     cd.c
     ipl.c
     output.c
-    wla_dx.c
+#    wla_dx.c
 )
 
 set(etripator_HDR
@@ -72,12 +74,14 @@ set(etripator_HDR
     cd.h
     ipl.h
     output.h
-    wla_dx.h
+#    wla_dx.h
 )
 
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
 set_target_properties(etripator PROPERTIES C_STANDARD 11)
 target_link_libraries(etripator PUBLIC jansson cwalk)
+target_include_directories(etripator PRIVATE ${CMAKE_SOURCE_DIR})
+target_include_directories(etripator PUBLIC externals)
 
 add_executable(etripator_cli cli/etripator.c cli/options.c)
 set_target_properties(etripator_cli 

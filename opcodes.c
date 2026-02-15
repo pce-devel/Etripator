@@ -39,7 +39,7 @@
 #define PCE_ARG_COUNT 7
 
 /// Opcode output string
-static char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {
+static const char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {
   {  NULL,         NULL,       NULL,     NULL,     NULL,    NULL,  NULL },
   {  NULL,         NULL,       NULL,     NULL,     NULL,    NULL,  NULL },
   { "#$%02x",      NULL,       NULL,     NULL,     NULL,    NULL,  NULL },
@@ -66,7 +66,7 @@ static char* pce_opstring[PCE_TYPE_COUNT][PCE_ARG_COUNT] = {
 };
 
 // PC engine opcodes
-static Opcode pce_opcode[256] = {
+static const Opcode pce_opcode[256] = {
   /* 00 */  { "brk ", 1 ,  0 },  // BRK                 
   /* 01 */  { "ora ", 2 , 11 },  // ORA  (ZZ, X)        
   /* 02 */  { "sxy ", 1 ,  0 },  // SXY                 
@@ -332,31 +332,30 @@ const Opcode* opcode_get(uint8_t op) {
 
 // Get opcode description
 const char* opcode_format(const Opcode *op, int i) {
-    if((i < 0) || (i >= PCE_ARG_COUNT)) {
-        return NULL;
-    }
-    return pce_opstring[op->type][i];
+    return ((i >= 0) && (i < PCE_ARG_COUNT)) 
+          ? pce_opstring[op->type][i]
+          : NULL;
 }
 
 // Is the instruction a local jump ?
 bool opcode_is_local_jump(uint8_t op) {
     return 
-	    ((op & 0x0F) == 0x0F) || // BBR* and BBS*
-	    (op          == 0x90) || // BCC
-	    (op          == 0xB0) || // BCS
-	    (op          == 0x80) || // BRA
-	    (op          == 0xF0) || // BEQ
-	    (op          == 0x30) || // BMI
-	    (op          == 0xD0) || // BNE
-	    (op          == 0x10) || // BPL
-	    (op          == 0x44) || // BSR
-	    (op          == 0x50) || // BVC
-	    (op          == 0x70);   // BVS
+	    ((op & 0x0FU) == 0x0FU) || // BBR* and BBS*
+	    (op           == 0x90U) || // BCC
+	    (op           == 0xB0U) || // BCS
+	    (op           == 0x80U) || // BRA
+	    (op           == 0xF0U) || // BEQ
+	    (op           == 0x30U) || // BMI
+	    (op           == 0xD0U) || // BNE
+	    (op           == 0x10U) || // BPL
+	    (op           == 0x44U) || // BSR
+	    (op           == 0x50U) || // BVC
+	    (op           == 0x70U);   // BVS
 }
 
 // Is the instruction a "far" jump ?
 bool opcode_is_far_jump(uint8_t op) {
     return
-        (op == 0x4C) || // JMP
-        (op == 0x20);   // JSR
+        (op == 0x4CU) || // JMP
+        (op == 0x20U);   // JSR
 }

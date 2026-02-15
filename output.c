@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2024 Vincent Cruz.
+  copyright s(c) 2009--2026 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -153,6 +153,7 @@ void output_end(Output *output) {
 
 // Write single char
 bool output_char(Output *output, char c) {
+    assert(output != NULL);
     bool ret = false;
     if(fputc(c, output->stream) == EOF) {
         ERROR_MSG("failed to print '%c' to %s: %s", c, output->filename, strerror(errno));
@@ -163,7 +164,7 @@ bool output_char(Output *output, char c) {
     return ret;
 }
 
-static char hex(uint8_t b) {
+static inline char hex(uint8_t b) {
     char c;
     b &= 0x0FU;
     if(b >= 10U) {
@@ -345,5 +346,64 @@ bool output_label(Output *output, Label *label) {
         }
     }
 
+    return ret;
+}
+
+// Print a single byte in hexadecimal format
+bool output_8h(Output *output, uint8_t data) {
+    bool ret = false;
+    if(output_char(output, '$') != true) {
+        // ...
+    } else {
+        ret = output_byte(output, data);
+    }
+    return ret;
+}
+
+// Print a 16 bits value in hexadecimal format
+bool output_16h(Output *output, uint16_t data) {
+    bool ret = false;
+    if(output_char(output, '$') != true) {
+        // ...
+    } else {
+        ret = output_word(output, data);
+    }
+    return ret;
+}
+
+// Write a raw byte to the output stream
+bool output_raw(Output *output, uint8_t data) {
+    bool ret = false;
+    if(fwrite(&data, 1, 1, output->stream) != 1) {
+        ERROR_MSG("failed to write 0x%02x to %s: %s", data, output->filename, strerror(errno));
+    } else {
+        output->column++;
+        ret = true;
+    }
+    return ret;
+}
+
+// [todo]
+bool output_fmt(Output *output, const char *format, ...) {
+    bool ret = true;
+    char *buffer = NULL;
+
+    va_list args;
+    va_start(args, format);
+    int n = vasprintf(&buffer, format, args);
+    va_end(args);
+
+    if(n > 0) {
+        for(size_t i=0; ret && (i<n) && (buffer[i] != '\0'); i++) {
+            if(buffer[i] == '\n') {
+                ret = output_newline(output);
+            } else {
+                ret = output_char(output, buffer[i]);
+            }
+        }
+    } else {
+        ret = false;
+    }
+    free(buffer);
     return ret;
 }

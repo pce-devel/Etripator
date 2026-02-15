@@ -35,6 +35,8 @@
 */
 #include "options.h"
 
+#include <errno.h>
+
 #include <cargs.h>
 
 #include <message.h>

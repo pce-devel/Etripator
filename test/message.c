@@ -53,11 +53,11 @@ MunitResult message_init_test(const MunitParameter params[] __attribute__((unuse
 }
 
 static unsigned int dummy_open_0_call_count;
-static bool dummy_open_0(MessagePrinter *printer) {
+static bool dummy_open_0(void) {
     dummy_open_0_call_count++;
     return true;
 }
-static bool dummy_open_1(MessagePrinter *printer) {
+static bool dummy_open_1(void) {
     dummy_open_0_call_count++;
     return false;
 }
@@ -103,7 +103,7 @@ MunitResult message_add_test(const MunitParameter params[] __attribute__((unused
 
 static int dummy_close_call_count;
 
-static bool dummy_close(MessagePrinter *printer __attribute__((unused))) {
+static bool dummy_close(void) {
     dummy_close_call_count++;
     return true;
 }

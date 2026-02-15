@@ -55,12 +55,12 @@ struct MessagePrinter;
 /// Initializes and allocates any resources necessary for the message printer.
 /// \return true if the message printer was successfully opened.
 /// \return false if an error occured.
-typedef bool (*MessagePrinterOpen)();
+typedef bool (*MessagePrinterOpen)(void);
 
 /// Releases resources used by the message printer.
 /// \return true if the resources used by the message printer were successfully released.
 /// \return false if an error occured.
-typedef bool (*MessagePrinterClose)();
+typedef bool (*MessagePrinterClose)(void);
 
 /// \brief Prints message.
 /// \param [in] type     Message type.
@@ -94,9 +94,9 @@ typedef struct MessagePrinter {
 #endif
 
 /// Setup global message printer list.
-void message_printer_init();
+void message_printer_init(void);
 /// Releases resources used by message printers.
-void message_printer_destroy();
+void message_printer_destroy(void);
 
 /// Opens and adds a new message printer to the global list.
 /// \param [in] printer Message printer to be added to the list.

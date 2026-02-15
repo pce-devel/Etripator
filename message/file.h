@@ -46,7 +46,7 @@
 /// This file will be placed in the current working directory.
 /// \return true if the log file can be written to.
 /// \return false if an error occured.
-bool file_message_printer_init();
+bool file_message_printer_init(void);
 
 /// @}
 

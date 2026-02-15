@@ -1,4 +1,4 @@
-/*
+/* 
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
@@ -40,13 +40,13 @@
 static MessagePrinter* g_message_printer_head = NULL;
 
 /* Setup global message printer list.  */
-void message_printer_init() {
+void message_printer_init(void) {
     g_message_printer_head = NULL;
     // nothing much atm...
 }
 
 /* Releases the resources used by message printers. */
-void message_printer_destroy() {
+void message_printer_destroy(void) {
     for(MessagePrinter *it = g_message_printer_head; it != NULL; it = it->next) {
         if(it->close) {
             it->close();

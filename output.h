@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2024 Vincent Cruz.
+  copyright (c) 2009--2026 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -39,6 +39,39 @@
 #include "config.h"
 
 #include "label.h"
+
+/*
+struct Output;
+typedef struct Output Output;
+
+typedef struct Cursor {
+    size_t line;
+    size_t column;
+} Cursor;
+
+typeded bool (*OutputChar)(Output *output, char c);
+typeded bool (*OutputString)(Output *output, const char *str, size_t len);
+typedef bool (*OutputInteger)(Output *output, const uint8_t *data, size_t size, unsigned int base, endianess);
+typedef bool (*OutputArray)(Output *output, const uint8_t *data, size_t count, size_t size, unsigned int base, endianess);
+typeded bool (*OutputFill)(Output *output, char c, size_t count);
+
+typedef struct Output {
+    uint32_t id;
+
+    Cursor cursor;
+
+    OutputChar output_char;
+    OutputString output_string;
+    OutputInteger output_int;
+    OutputArray output_array;
+    OutputFill output_fill;
+
+
+} Output;
+
+// [todo] SetCursor
+// [todo] GetCursor
+*/
 
 /// File output
 typedef struct {
@@ -157,5 +190,29 @@ bool output_address_comment(Output *output, uint16_t page, uint16_t logical);
 /// \return true if the label was succesfully written
 /// \return false if an error occured
 bool output_label(Output *output, Label *label);
+
+/// Print a single byte in hexadecimal format
+/// \param [in,out] output File output 
+/// \param [in] data Byte to be printed
+/// \return true if the byte was succesfully printed
+/// \return false if an error occured
+bool output_8h(Output *output, uint8_t data);
+
+/// Print a 16 bits value in hexadecimal format
+/// \param [in,out] output File output 
+/// \param [in] data 16 bits value to be printed
+/// \return true if the data was succesfully printed
+/// \return false if an error occured
+bool output_16h(Output *output, uint16_t data);
+
+/// Write a raw byte to the output stream
+/// \param [in,out] output File output 
+/// \param [in] data Byte to be written
+/// \return true if the byte was succesfully written
+/// \return false if an error occured
+bool output_raw(Output *output, uint8_t data);
+
+// [todo]
+bool output_fmt(Output *output, const char *format, ...) __printflike(2,3);
 
 #endif // ETRIPATOR_OUTPUT_H

@@ -47,54 +47,6 @@ static inline int last_column_spacing(int current_char_count) {
     return (current_char_count < ETRIPATOR_LAST_COLUMN) ? (ETRIPATOR_LAST_COLUMN - current_char_count) : 1;
 }
 
-static void print_comment(FILE *out, const char *str) {
-    if(str != NULL) {
-        while (*str != '\0') {
-            fputc(';', out);
-            fputc(' ', out);
-            for (; (*str != '\0') && (*str != '\n'); str++) {
-                fputc(*str, out);
-            }
-            fputc('\n', out);
-            if (*str != '\0') {
-                str++;
-            }
-        }
-    }
-}
-
-static void print_inline_comment(FILE *out, int n, const char *str) {
-    while (*str) {
-        for (; n < ETRIPATOR_LAST_COLUMN; n++) {
-            fputc(' ', out);
-        }
-        n = 0;
-        fputc(';', out);
-        fputc(' ', out);
-        for (; *str && (*str != '\n'); ++str) {
-            fputc(*str, out);
-        }
-        if (*str == '\n') {
-            ++str;
-            if (*str) {
-                fputc('\n', out);
-            }
-        }
-    }
-}
-
-static void print_statement_address(FILE *out, int n, uint16_t logical, uint8_t page) {
-    fprintf(out, "%*c; bank: $%03x logical: $%04x", last_column_spacing(n), ' ', page, logical);
-}
-
-static void print_label(FILE *out, Label *label) {
-    int n = last_column_spacing((int)strlen(label->name) + 1);
-    /* Print description */
-    print_comment(out, label->description);
-    /* Print label with bank and logical address as comments*/
-    fprintf(out, "%s:%*c; bank: $%03x logical: $%04x", label->name, n, ' ', label->page, label->logical);
-}
-
 /* Finds any jump address from the current section. */
 bool label_extract(LabelRepository *labels, MemoryMap *map, Section *section) {
     assert(labels != NULL);
@@ -157,17 +109,18 @@ bool label_extract(LabelRepository *labels, MemoryMap *map, Section *section) {
     return ret;
 }
 
-static int data_extract_binary(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository) {
+static bool data_extract_binary(Output *output, Section *section, MemoryMap *map, LabelRepository *repository) {
     uint16_t logical;
     int32_t i;
-    for (i = 0, logical = section->logical; i < section->size; i++, logical++) {
+    bool ret = true;
+    for (i = 0, logical = section->logical; ret && (i < section->size); i++, logical++) {
         uint8_t data = memory_map_read(map, logical);
-        fwrite(&data, 1, 1, out);
+        ret = output_raw(output, data);
     }
-    return 1;
+    return ret;
 }
 
-static int data_extract_hex(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository,
+static int data_extract_hex(Output *output, Section *section, MemoryMap *map, LabelRepository *repository,
                             CommentRepository *comments, int extra_infos) {
     const int32_t element_size = section->data.element_size;
     const int32_t elements_per_line = section->data.elements_per_line;
@@ -175,7 +128,7 @@ static int data_extract_hex(FILE *out, Section *section, MemoryMap *map, LabelRe
     int32_t i, j;
     uint16_t logical;
 
-    size_t line_offset = ftell(out);
+   //size_t line_offset = ftell(out);
     uint8_t line_page = section->page;
     uint16_t line_logical = section->logical;
 
@@ -186,6 +139,8 @@ static int data_extract_hex(FILE *out, Section *section, MemoryMap *map, LabelRe
     uint8_t data[2] = {0};
     int32_t top = 0;
 
+    bool ret = false;
+
     for (i = 0, j = 0, logical = section->logical; i < section->size; i++, logical++) {
         uint8_t page = memory_map_page(map, logical);
         Label label = {0};
@@ -193,16 +148,22 @@ static int data_extract_hex(FILE *out, Section *section, MemoryMap *map, LabelRe
         if (has_label) {      
             // flush any bytes left in the buffer.
             if (top && (top < element_size)) {
-                fprintf(out, "\n%s.db $%02x", g_spacing, data[0]);
+                ret = output_newline(output);
+                ret = output_fill_n(output, ' ', 4U);
+                ret = output_string(output, ".db");
+                ret = output_char(output, ' ');
+                ret = output_8h(output, data[0]);
+
                 for (int32_t l = 1; l < top; l++) { // useless as top is always equal to 1
-                    fprintf(out, ",$%02x", data[l]);
+                    ret = output_char(output, ',');
+                    ret = output_8h(output, data[l]);
                 }
                 top = 0;
             }
             if (i) {
-                fputc('\n', out);
+                ret = output_newline(output);
             }
-            print_label(out, &label);
+            ret = output_label(output, &label);
             j = 0;
         }
 
@@ -210,13 +171,19 @@ static int data_extract_hex(FILE *out, Section *section, MemoryMap *map, LabelRe
         if (comment_repository_find(comments, logical, page, &dummy)) {
             if (has_comment) {
                 if (top && (top < element_size)) {
-                    fprintf(out, "\n%s.db $%02x", g_spacing, data[0]);
+                    ret = output_newline(output);
+                    ret = output_fill_n(output, ' ', 4U);
+                    ret = output_string(output, ".db");
+                    ret = output_char(output, ' ');
+                    ret = output_8h(output, data[0]);
+
                     for (int32_t l = 1; l < top; l++) { // useless as top is always equal to 1
-                        fprintf(out, ",$%02x", data[l]);
+                        ret = output_char(output, ',');
+                        ret = output_8h(output, data[l]);
                     }
                     top = 0;
                 }
-                print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
+                ret = output_inline_comment(output, comment.text);
             }
             comment = dummy;
             has_comment = true;
@@ -228,63 +195,60 @@ static int data_extract_hex(FILE *out, Section *section, MemoryMap *map, LabelRe
         if (top >= element_size) {
             char sep;
             if (j == 0) {
-                fputc('\n', out);
+                ret = output_newline(output);
 
-                line_offset = ftell(out);
                 line_logical = logical - top + 1;
                 line_page = page;
 
                 const char *data_decl = (top > 1) ? ".dw" : ".db";
 
-                fprintf(out, "%s%s", g_spacing, data_decl);
+                ret = output_fill_n(output, ' ', 4U);
+                ret = output_string(output, data_decl);
+                
                 sep = ' ';
             } else {
                 sep = ',';
             }
-            fputc(sep, out);
-            fputc('$', out);
-            if (top > 1) {
-                while (top--) {
-                    fprintf(out, "%02x", data[top]);
-                }
-            } else {
-                fprintf(out, "%02x", data[0]);
+            ret = output_char(output, sep);
+            while (top > 1) {
+                top--;
+                ret = output_8h(output, data[top]);
             }
-            top = 0;
             j++;
 
             if (j == elements_per_line) {
                 j = 0;
-                int n = (int)(ftell(out) - line_offset);
                 if (has_comment) {
-                    print_inline_comment(out, n, comment.text);
+                    ret = output_inline_comment(output, comment.text);
                     has_comment = false;
                 } else if (extra_infos) {
-                    print_statement_address(out, n, line_logical, line_page);
+                    ret = output_address_comment(output, line_page, line_logical);
                 }
             }
         }
     }
     // flush remaining bytes
     if (top) {
-        int n = (int)(ftell(out) - line_offset);
         if (has_comment) {
-            print_inline_comment(out, n, comment.text);
+            ret = output_inline_comment(output, comment.text);
             has_comment = false;
         } else if (extra_infos) {
-            print_statement_address(out, n, line_logical, line_page);
+            ret = output_address_comment(output, line_page, line_logical);
         }
-        fprintf(out, "\n%s.db $%02x", g_spacing, data[0]);
+        ret = output_fill_to(output, ' ', 10U);                                     // [todo]
+        ret = output_string(output, ".db");
+        ret = output_8h(output, data[0]);
         for (int32_t j = 1; j < top; j++) { // useless as top is always equal to 1
-            fprintf(out, ",$%02x", data[j]);
+            ret = output_char(output, ',');
+            ret = output_8h(output, data[j]);
         }
     }
-    fputc('\n', out);
-    return 1;
+    ret = output_newline(output);
+    return ret;
 }
 
-static int data_extract_string(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository,
-                               CommentRepository *comments, int extra_infos) {
+static bool data_extract_string(Output *output, Section *section, MemoryMap *map, LabelRepository *repository,
+                                CommentRepository *comments, int extra_infos) {
     const int32_t elements_per_line = section->data.elements_per_line;
 
     int32_t i, j, k;
@@ -305,28 +269,28 @@ static int data_extract_string(FILE *out, Section *section, MemoryMap *map, Labe
         Label label = {0};
         bool has_label = label_repository_find(repository, logical, page, &label);
         if (has_label) {
-            if (c) { // close string if neededs
-                fputc('"', out);
+            if (c) { // close string if needed
+                output_char(output, '"'); // [todo]
                 c = 0;
             }
             if (i) {
-                fputc('\n', out);
+                output_newline(output); // [todo]
             }
             j = 0;
-            print_label(out, &label);
+            (void)output_label(output, &label); // [todo]
         }
 
         Comment dummy = {0};
         if (comment_repository_find(comments, logical, page, &dummy)) {
             if (j) {
-                if (c) { // close string if neededs
-                    fputc('"', out);
+                if (c) { // close string if needed
+                    output_char(output, '"'); // [todo]
                     c = 0;
                 }
                 j = 0;
             }
             if (has_comment) {
-                print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
+                output_inline_comment(output, comment.text);
             }
             comment = dummy;
             has_comment = true;
@@ -334,11 +298,12 @@ static int data_extract_string(FILE *out, Section *section, MemoryMap *map, Labe
 
         // display directives
         if (j == 0) {
-            fputc('\n', out);
-            line_offset = ftell(out); // record star of line
+            ///////////////////////////////////////////////////////////////////////
+            output_newline(output);
             line_logical = logical;
             line_page = page;
-            fprintf(out, "%s.db ", g_spacing);
+                (void)output_fill_n(output, ' ', 4U);   // [todo]
+                (void)output_string(output, ".db");     // [todo]
         }
 
         // print char
@@ -346,25 +311,25 @@ static int data_extract_string(FILE *out, Section *section, MemoryMap *map, Labe
             // ascii/printable char
             if (!c) {
                 if (j) {
-                    fputc(',', out);
+                    (void)output_char(output, ',');     // [todo]
                 }
-                fputc('"', out);
+                (void)output_char(output, '"');    // [todo]
                 c = 1;
             }
             if (data == '"') {
-                fputc('\\', out);
+                (void)output_char(output, '\\');    // [todo]
             }
-            fputc(data, out);
+            (void)output_char(output, data);    // [todo]
         } else {
             // otherwise close string and display hex value
             if (c) {
-                fputc('"', out);
+                (void)output_char(output, '"');    // [todo]
                 c = 0;
             }
             if (j) {
-                fputc(',', out);
+                (void)output_char(output, ',');    // [todo]
             }
-            fprintf(out, "$%02x", data);
+            (void)output_fmt(output, "$%02x", data);    // [todo]
         }
 
         bool newline = false;
@@ -384,36 +349,34 @@ static int data_extract_string(FILE *out, Section *section, MemoryMap *map, Labe
         if ((j == elements_per_line) || newline) {
             j = 0;
             if (c) {
-                fputc('"', out);
+                (void)output_char(output, '"');    // [todo]
                 c = 0;
             }
 
-            int n = (int)(ftell(out) - line_offset);
             if (has_comment) {
-                print_inline_comment(out, n, comment.text);
+                output_inline_comment(output, comment.text); // [todo]
                 has_comment = false;
             } else if (extra_infos) {
-                print_statement_address(out, n, line_logical, line_page);
+                output_address_comment(output, line_logical, line_page); // [todo]
             }
         }
     }
     if (j) {
         if (c) {
-            fputc('"', out);
+            (void)output_char(output, '"');    // [todo]
         }
-        int n = (int)(ftell(out) - line_offset);
         if (has_comment) {
-            print_inline_comment(out, n, comment.text);
+            output_inline_comment(output, comment.text); // [todo]
             has_comment = false;
         } else if (extra_infos) {
-            print_statement_address(out, n, line_logical, line_page);
+            output_address_comment(output, line_logical, line_page); // [todo]
         }
     }
-    fputc('\n', out);
-    return 1;
+    (void)output_newline(output);
+    return true;
 }
 
-static int data_extract_jump_table(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository,
+static bool data_extract_jump_table(Output *output, Section *section, MemoryMap *map, LabelRepository *repository,
                                    CommentRepository *comments, int extra_infos) {
     const int32_t elements_per_line = section->data.elements_per_line;
 
@@ -424,7 +387,6 @@ static int data_extract_jump_table(FILE *out, Section *section, MemoryMap *map, 
     Label label;
     Comment comment;
 
-    size_t line_offset = ftell(out);
     uint8_t line_page = section->page;
     uint16_t line_logical = section->logical;
 
@@ -440,16 +402,16 @@ static int data_extract_jump_table(FILE *out, Section *section, MemoryMap *map, 
         bool has_label = label_repository_find(repository, logical, page, &label);
         if (has_label) {
             if (i) {
-                fputc('\n', out);
+                output_newline(output);             // [todo]
             }
-            print_label(out, &label);
+            output_label(output, &label);           // [tood]
             j = 0;
         }
 
         Comment dummy = {0};
         if (comment_repository_find(comments, logical, page, &dummy)) {
             if (has_comment) {
-                print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
+                (void)output_inline_comment(output, comment.text);
             }
             comment = dummy;
             has_comment = true;
@@ -457,24 +419,26 @@ static int data_extract_jump_table(FILE *out, Section *section, MemoryMap *map, 
         }
 
         if (j == 0) {
-            fputc('\n', out);
-            line_offset = ftell(out);
+            (void)output_newline(output);
+            
             line_logical = logical;
             line_page = page;
-            fprintf(out, "%s.dw ", g_spacing);
+
+            (void)output_fill_n(output, ' ', 4U);           // [todo]
+            (void)output_string(output, ".dw");             // [todo]
         }
 
         if (j) {
-            fputc(',', out);
+            (void)output_char(output, ',');
         }
 
         uint16_t jump_logical = data[0] | (data[1] << 8);
         uint8_t jump_page = memory_map_page(map, jump_logical);
 
         if (label_repository_find(repository, jump_logical, jump_page, &label)) {
-            fprintf(out, "%s", label.name);
+            (void)output_string(output, label.name);                // [todo]
         } else {
-            fprintf(out, "$%04x", jump_logical);
+            (void)output_fmt(output, "$%04x", jump_logical);        // [todo]
         }
 
         j++;
@@ -482,44 +446,43 @@ static int data_extract_jump_table(FILE *out, Section *section, MemoryMap *map, 
         if (j == elements_per_line) {
             j = 0;
             if (has_comment) {
-                print_inline_comment(out, (int)(ftell(out) - line_offset), comment.text);
+                (void)output_inline_comment(output, comment.text);      // [todo]
             } else if (extra_infos) {
-                print_statement_address(out, (int)(ftell(out) - line_offset), line_logical, line_page);
+                (void)output_address_comment(output, line_logical, line_page);  // [todo]
             }
         }
     }
     if (j) {
-        int n = (int)(ftell(out) - line_offset);
         if (has_comment) {
-            print_inline_comment(out, n, comment.text);
+            (void)output_inline_comment(output, comment.text);      // [todo]
         } else if (extra_infos) {
-            print_statement_address(out, n, line_logical, line_page);
+            (void)output_address_comment(output, line_logical, line_page);  // [todo]
         }
     }
 
-    return 1;
+    return true;
 }
 
 /* Process data section. The result will be output has a binary file or an asm file containing hex values or strings. */
-bool data_extract(FILE *out, Section *section, MemoryMap *map, LabelRepository *repository,
+bool data_extract(Output *output, Section *section, MemoryMap *map, LabelRepository *repository,
                  CommentRepository *comments, int extra_infos) {
     switch (section->data.type) {
     case DATA_TYPE_BINARY:
-        return data_extract_binary(out, section, map, repository);
+        return data_extract_binary(output, section, map, repository);
     case DATA_TYPE_HEX:
-        return data_extract_hex(out, section, map, repository, comments, extra_infos);
+        return data_extract_hex(output, section, map, repository, comments, extra_infos);
     case DATA_TYPE_STRING:
-        return data_extract_string(out, section, map, repository, comments, extra_infos);
+        return data_extract_string(output, section, map, repository, comments, extra_infos);
     case DATA_TYPE_JUMP_TABLE:
-        return data_extract_jump_table(out, section, map, repository, comments, extra_infos);
+        return data_extract_jump_table(output, section, map, repository, comments, extra_infos);
     default:
         return false;
     }
 }
 
 /* Process code section. */
-int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, LabelRepository *repository,
-           CommentRepository *comments, int extra_infos) {
+bool decode(Output *output, uint16_t *logical, Section *section, MemoryMap *map, LabelRepository *repository,
+            CommentRepository *comments, int extra_infos) {
     int i, delta;
     uint8_t inst, data[6], is_jump;
     char eor;
@@ -547,21 +510,18 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 
 	/* Is there a label ? */
 	if (label_repository_find(repository, current_logical, page, &label)) {
-		print_label(out, &label);
-		fputc('\n', out);
+        (void)output_label(output, &label); // [todo]
+        (void)output_newline(output);       // [todo]
 	}
 
-	/* Offset of the line start */
-	size_t start = ftell(out);
-
 	/* Front spacing */
-	fwrite(g_spacing, 1, 10, out);
+   (void)output_fill_n(output, ' ', 10U); // [todo] ret + value
 
 	/* Print opcode string */
-	fwrite(opcode->name, 1, 4, out);
+    (void)output_string(output, opcode->name);
 
 	/* Add spacing */
-	fwrite(g_spacing, 1, 4, out);
+    (void)output_fill_to(output, ' ', 20U); // [todo] ret + value
 
 	/* End Of Routine (eor) is set to 1 if the instruction is RTI, RTS or BRK */
 	eor = ((inst == 0x40) || (inst == 0x60) || (inst == 0x00));
@@ -622,22 +582,22 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 	}
 
 	if (opcode->type == 1) {
-		fputc('A', out);
+        (void)output_char(output, 'A'); // [todo]
 	} else if (is_jump) {
 		/* BBR* and BBS* */
 		if ((inst & 0x0F) == 0x0F) {
 			uint16_t zp_offset = 0x2000 + data[0];                                            // [todo] RAM may not be in mpr1 ...
 			page = memory_map_page(map, zp_offset);
 			if (label_repository_find(repository, zp_offset, page, &label)) {
-				fprintf(out, "<%s, ", label.name);
+                (void)output_fmt(output, "<%s, ", label.name); // [todo]
 			} else {
-				fprintf(out, "<$%02x, ", data[0]);
+                (void)output_fmt(output, "<$%02x, ", data[0]); // [todo]
 			}
 		}
 		page = memory_map_page(map, offset);
 		// Label name should have been set by the label extraction pass.
 		label_repository_find(repository, offset, page, &label);
-		fwrite(label.name, 1, strlen(label.name), out);
+        (void)output_string(output, label.name);
 	} else {
 		int has_label = 0;
 		if ((inst == 0x43) || (inst == 0x53)) {
@@ -662,7 +622,7 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 				page = memory_map_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "#$%02x, <%s%s", data[0], label.name, extra);
+                    (void)output_fmt(output, "#$%02x, <%s%s", data[0], label.name, extra); // [todo]
 				}
 				break;
 			case PCE_OP_nn_hhll_X:                              /* #$aa, $hhll, X */
@@ -673,7 +633,7 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 				page = memory_map_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "#$%02x, %s%s", data[0], label.name, extra);
+                    (void)output_fmt(output, "#$%02x, %s%s", data[0], label.name, extra); // [todo]
 				}
 				break;
 
@@ -690,7 +650,7 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 				page = memory_map_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "<%s%s", label.name, extra);
+                    (void)output_fmt(output, "<%s%s", label.name, extra); // [todo]
 				}
 				break;
 
@@ -710,7 +670,7 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 				page = memory_map_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "[%s%s", label.name, extra);
+                    (void)output_fmt(output, "[%s%s", label.name, extra); // [todo]
 				}
 				break;
 
@@ -725,7 +685,7 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 				page = memory_map_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "[%s%s", label.name, extra);
+                    (void)output_fmt(output, "[%s%s", label.name, extra); // [todo]
 				}
 				break;
 
@@ -742,7 +702,7 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 				page = memory_map_page(map, offset);
 				has_label = label_repository_find(repository, offset, page, &label);
 				if (has_label) {
-					fprintf(out, "%s%s", label.name, extra);
+                    (void)output_fmt(output, "%s%s", label.name, extra); // [todo]
 				}
 				break;
 
@@ -750,16 +710,16 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 				offset = 0x2000 + data[0];
 				page = memory_map_page(map, offset);
 				if (label_repository_find(repository, offset, page, &label)) {
-					fprintf(out, "<%s, ", label.name);
+                    (void)output_fmt(output, "<%s, ", label.name); // [todo]
 				} else {
-					fprintf(out, "<%02x, ", data[0]);
+                    (void)output_fmt(output, "<%02x, ", data[0]); // [todo]
 				}
 				offset = (data[1] << 8) | data[2];
 				page = memory_map_page(map, offset);
 				if (label_repository_find(repository, offset, page, &label)) {
-					fprintf(out, "%s", label.name);
+                    (void)output_fmt(output, "%s", label.name); // [todo]
 				} else {
-					fprintf(out, "$%04x", offset);
+                    (void)output_fmt(output, "$%04x", offset); // [todo]
 				}
 				has_label = 1;
 				break;
@@ -770,13 +730,13 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 					offset = (data[i] << 8) | data[i + 1];
 					page = memory_map_page(map, offset);
 					if (label_repository_find(repository, offset, page, &label)) {
-						fprintf(out, "%s, ", label.name);
+                        (void)output_fmt(output, "%s, ", label.name); // [todo]
 					} else {
-						fprintf(out, "$%04x, ", offset);
+                        (void)output_fmt(output, "$%04x, ", offset); // [todo]
 					}
 				}
 				/* Size */
-				fprintf(out, "$%02x%02x", data[4], data[5]);
+                (void)output_fmt(output, "$%02x%02x", data[4], data[5]); // [todo]
 				has_label = 1;
 				break;
 
@@ -789,7 +749,7 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 			    const char *format;
 			    i = 0;
 				while((format = opcode_format(opcode, i))) {
-					fprintf(out, format, data[i]);
+                    (void)output_fmt(output, format, data[i]); // [todo]
 					i++;
 				}
 			}
@@ -798,14 +758,13 @@ int decode(FILE *out, uint16_t *logical, Section *section, MemoryMap *map, Label
 
 	/* display inline comments if any */
 	Comment comment = {0};
-	int n = (int)(ftell(out) - start);
 	if(comment_repository_find(comments, current_logical, current_page, &comment)) {
-		print_inline_comment(out, n, comment.text);
+        (void)output_inline_comment(output, comment.text);
 	} else if(extra_infos) {
-		print_statement_address(out, n, current_logical, current_page);
+        (void)output_address_comment(output, current_page, current_logical);
 	}
-	fputc('\n', out);
-	return eor;
+    (void)output_newline(output);
+    return eor ? false : true;
 }
 
 /* Computes section size. */

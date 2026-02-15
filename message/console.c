@@ -40,14 +40,14 @@ static bool g_use_escape_code = false;
 
 /// Tests if the console has support for colors and other things.
 /// \return true always.
-static bool console_message_printer_open() {
+static bool console_message_printer_open(void) {
     g_use_escape_code = isatty(fileno(stdout)) ? true : false;
     return true;
 }
 
 /// Do nothing.
 /// \return true always.
-static bool console_message_printer_close() {
+static bool console_message_printer_close(void) {
     return true;
 }
 
@@ -108,7 +108,7 @@ static MessagePrinter g_console_message_printer = {
 };
 
 /* Setups console message writer. */
-bool console_message_printer_init() {
+bool console_message_printer_init(void) {
     g_use_escape_code = false;
     return message_printer_add(&g_console_message_printer);
 }

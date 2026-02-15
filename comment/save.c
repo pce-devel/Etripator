@@ -65,8 +65,8 @@ bool comment_repository_save(CommentRepository* repository, const char* filename
 
                 if(multiline) {
                     fprintf(stream, "[\n");
-                    for(char *ptr=entry.text, *next=NULL; ptr!=NULL; ptr=next) {
-                        next = strchr(ptr, '\n');
+                    for(char *ptr=entry.text; ptr!=NULL; ) {
+                        char *next = strchr(ptr, '\n');
                         if(next != NULL) {
                             fprintf(stream, "\t\"");
                             fwrite(ptr, 1, next-ptr, stream);
@@ -74,6 +74,7 @@ bool comment_repository_save(CommentRepository* repository, const char* filename
                         } else {
                             fprintf(stream, "\"%s\"\n", ptr);
                         }
+			ptr = next;
                     }
                     fprintf(stream, "]\n");
                 } else {
