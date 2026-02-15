@@ -5,7 +5,7 @@ project(etripator
     LANGUAGES C)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    add_compile_definitions(_XOPEN_SOURCE=700)
+    add_compile_definitions(_DARWIN_C_SOURCE=__DARWIN_C_FULL)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -73,7 +73,6 @@ set(etripator_HDR
 
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
 set_target_properties(etripator PROPERTIES C_STANDARD 11)
-target_compile_definitions(etripator PRIVATE _POSIX_C_SOURCE)
 target_link_libraries(etripator PUBLIC jansson cwalk)
 
 add_executable(etripator_cli cli/etripator.c cli/options.c)

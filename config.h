@@ -36,8 +36,6 @@
 #ifndef ETRIPATOR_CONFIG_H
 #define ETRIPATOR_CONFIG_H
 
-#define _GNU_SOURCE
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
