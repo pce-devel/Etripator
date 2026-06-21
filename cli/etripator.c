@@ -267,7 +267,8 @@ static bool code_extract(Output *output, SectionArray *arr, int index, MemoryMap
 static bool print_header(Output *output, Section *current, Section *previous) {
     bool ret = false;
     if(previous && ((previous->logical + previous->size) == current->logical)) {
-        // ...
+        // No need to print header as both sections are one after another
+        ret = true;
     } else if((current->type != SECTION_TYPE_DATA) || (current->data.type != DATA_TYPE_BINARY)) {
         const char *str = (current->type == SECTION_TYPE_CODE) ? ".code" : ".data";
         if(output_fill_n(output, ' ', 4U) != true) {

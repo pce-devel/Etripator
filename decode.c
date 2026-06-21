@@ -411,7 +411,7 @@ static bool output_jump_table(Output *output, Section *section, MemoryMap *map, 
 
     bool has_comment = false;
 
-    for (i = 0; ret && (i < section->size); i += 2, logical += 2) {
+    for (i = 0; i < section->size; i += 2, logical += 2) {
         const uint8_t page = memory_map_page(map, logical);
         const uint8_t data[2] = {
             [0] = memory_map_read(map, logical),
@@ -423,7 +423,11 @@ static bool output_jump_table(Output *output, Section *section, MemoryMap *map, 
             if (i) {
                 ret = output_newline(output);
             }
-            ret = output_label(output, &label);
+            ret = ret && output_label(output, &label);
+            if(!ret) {
+                ERROR_MSG("failed to outout label: %s (%02x:%04x)", label.name, label.page, label.logical);
+                return false;
+            }
             line_elmnt_index = 0;  // we will jump to a new line
         }
 
@@ -432,7 +436,10 @@ static bool output_jump_table(Output *output, Section *section, MemoryMap *map, 
         if (comment_repository_find(comments, logical, page, &dummy)) {
             // Flush any pending comment
             if (has_comment) {
-                ret = output_inline_comment(output, comment.text);
+                if(!output_inline_comment(output, comment.text)) {
+                    ERROR_MSG("failed to output inline comment (%02x:%04x)", comment.page, comment.logical);
+                    return false;
+                }
             }
             // Save the new comment.
             // It'll be printed at the end of line.
@@ -446,20 +453,29 @@ static bool output_jump_table(Output *output, Section *section, MemoryMap *map, 
 
         // New line
         if (line_elmnt_index == 0) {
-            ret = output_newline(output);
- 
             // Save the logical address and page of the first line element.
             line_logical = logical;
             line_page = page;
 
             // Jump table elements are 2 bytes words
-            ret = output_fill_n(output, ' ', 4U);
-            ret = output_string(output, ".dw");
-        } else {
-            // Print element separator
-            ret = output_char(output, ',');
+            ret = false;
+            if(!output_newline(output)) {
+                // ...
+            } else if(!output_fill_n(output, ' ', 4U)) {
+                // ...
+            } else if(!output_string(output, ".dw")) {
+                // ...
+            } else {
+                ret = true;
+            }
+            if(!ret) {
+                ERROR_MSG("failed to output new line (%02x:%04x)", page, logical);
+                return false;
+            }
+        } else if(!output_char(output, ',')) { // Print element separator
+            ERROR_MSG("failed to output element separator (%02x:%04x)", page, logical);
+            return false;
         }
-
         // Output jump address
         uint16_t jump_logical = data[0] | (data[1] << 8);
         uint8_t jump_page = memory_map_page(map, jump_logical);
@@ -468,21 +484,30 @@ static bool output_jump_table(Output *output, Section *section, MemoryMap *map, 
         } else {
             ret = output_16h(output, jump_logical);
         }
-
+        if(!ret) {
+            ERROR_MSG("failed to output jump table lement (%02x:%04x)", jump_page, jump_logical);
+            return false;
+        }
         // Next item
         line_elmnt_index++;
         // Check if we need to jump to a new line
         if (line_elmnt_index == elements_per_line) {
             line_elmnt_index = 0;
-            ret = output_flush_comment(output, &comment, &has_comment, extra_infos, line_logical, line_page);            
+            if(!output_flush_comment(output, &comment, &has_comment, extra_infos, line_logical, line_page)) {
+                ERROR_MSG("failed to flush comment");
+                return false;
+            }          
         }
     }
     // Flush any pending comment
     if (line_elmnt_index) {
-        ret = output_flush_comment(output, &comment, &has_comment, extra_infos, line_logical, line_page);            
+        if(!output_flush_comment(output, &comment, &has_comment, extra_infos, line_logical, line_page)) {
+            ERROR_MSG("failed to flush comment");
+            return false;
+        }         
     }
 
-    return ret;
+    return true;
 }
 
 /* Process data section. The result will be output has a binary file or an asm file containing hex values or strings. */
@@ -490,14 +515,18 @@ bool data_extract(Output *output, Section *section, MemoryMap *map, LabelReposit
                  CommentRepository *comments, int extra_infos) {
     switch (section->data.type) {
     case DATA_TYPE_BINARY:
+        INFO_MSG("DATA_TYPE_BINARY");
         return data_extract_binary(output, section, map, repository);
     case DATA_TYPE_HEX:
         return data_extract_hex(output, section, map, repository, comments, extra_infos);
     case DATA_TYPE_STRING:
+        INFO_MSG("DATA_TYPE_STRING");
         return data_extract_string(output, section, map, repository, comments, extra_infos);
     case DATA_TYPE_JUMP_TABLE:
+        INFO_MSG("DATA_TYPE_JUMP_TABLE");
         return output_jump_table(output, section, map, repository, comments, extra_infos);
     default:
+        ERROR_MSG("unhandled data type %d", section->data.type);
         return false;
     }
 }
