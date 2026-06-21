@@ -264,7 +264,7 @@ static bool code_extract(Output *output, SectionArray *arr, int index, MemoryMap
     return ret;
 }
 
-static bool print_header(Output *output, Section *current, Section *previous) {
+static bool output_header(Output *output, Section *current, Section *previous) {
     bool ret = false;
     if(previous && ((previous->logical + previous->size) == current->logical)) {
         // No need to print header as both sections are one after another
@@ -325,7 +325,7 @@ static bool disassemble(OutputRegistry *registry, SectionArray *arr, MemoryMap *
                 ERROR_MSG("Unable to open %s : %s", current->output, strerror(errno));
             } else {
                 memory_map_mpr(map, current->mpr);
-                if(print_header(output, current, previous) != true) {
+                if(output_header(output, current, previous) != true) {
                     // ...
                 } else if (current->type == SECTION_TYPE_CODE) {
                     ret = code_extract(output, arr, i, map, labels, comments, options->address); 
