@@ -120,6 +120,9 @@ static bool data_extract_binary(Output *output, Section *section, MemoryMap *map
     return ret;
 }
 
+// [todo] cut this into smaller functions
+// [todo]       -> output .db/dw with spacing
+// [todo]       -> output comma separated elements
 static int data_extract_hex(Output *output, Section *section, MemoryMap *map, LabelRepository *repository,
                             CommentRepository *comments, int extra_infos) {
     const int32_t element_size = section->data.element_size;
@@ -128,7 +131,6 @@ static int data_extract_hex(Output *output, Section *section, MemoryMap *map, La
     int32_t i, j;
     uint16_t logical;
 
-   //size_t line_offset = ftell(out);
     uint8_t line_page = section->page;
     uint16_t line_logical = section->logical;
 
@@ -376,91 +378,111 @@ static bool data_extract_string(Output *output, Section *section, MemoryMap *map
     return true;
 }
 
-static bool data_extract_jump_table(Output *output, Section *section, MemoryMap *map, LabelRepository *repository,
-                                   CommentRepository *comments, int extra_infos) {
+static bool output_flush_comment(Output *output, const Comment *comment, bool *pending, int extra_infos, uint16_t logical, uint8_t page) {
+    bool ret;
+    if (*pending) {
+        // Flush inline comment
+        *pending = false;
+        ret = output_inline_comment(output, comment->text);
+    } else if (extra_infos) {
+        // Print page and logical address as inline comment
+        ret = output_address_comment(output, logical, page);
+    } else {
+        ret = true;
+    }
+    return ret;
+}
+
+static bool output_jump_table(Output *output, Section *section, MemoryMap *map, LabelRepository *repository,
+                              CommentRepository *comments, int extra_infos) {
     const int32_t elements_per_line = section->data.elements_per_line;
 
-    int32_t i, j;
-    uint8_t page;
-    uint16_t logical;
+    bool ret = true;
 
-    Label label;
-    Comment comment;
+    int32_t i;
+
+    Label label = {0};
+    Comment comment = {0};
 
     uint8_t line_page = section->page;
     uint16_t line_logical = section->logical;
+    uint16_t logical = line_logical;
+    int32_t line_elmnt_index = 0;
 
     bool has_comment = false;
 
-    uint8_t data[2] = {0};
+    for (i = 0; ret && (i < section->size); i += 2, logical += 2) {
+        const uint8_t page = memory_map_page(map, logical);
+        const uint8_t data[2] = {
+            [0] = memory_map_read(map, logical),
+            [1] = memory_map_read(map, logical + 1),
+        };
 
-    for (i = 0, j = 0, logical = section->logical; i < section->size; i += 2, logical += 2) {
-        page = memory_map_page(map, logical);
-        data[0] = memory_map_read(map, logical);
-        data[1] = memory_map_read(map, logical + 1);
-
-        bool has_label = label_repository_find(repository, logical, page, &label);
-        if (has_label) {
+        // Check if we need to emit a label for the current address
+        if (label_repository_find(repository, logical, page, &label)) {
             if (i) {
-                output_newline(output);             // [todo]
+                ret = output_newline(output);
             }
-            output_label(output, &label);           // [tood]
-            j = 0;
+            ret = output_label(output, &label);
+            line_elmnt_index = 0;  // we will jump to a new line
         }
 
+        // Check for inline comment
         Comment dummy = {0};
         if (comment_repository_find(comments, logical, page, &dummy)) {
+            // Flush any pending comment
             if (has_comment) {
-                (void)output_inline_comment(output, comment.text);
+                ret = output_inline_comment(output, comment.text);
             }
+            // Save the new comment.
+            // It'll be printed at the end of line.
+            // Note that the line will end if:
+            //   - we printed the number `elements_per_line` items
+            //   - there's comment for an element on the line.
             comment = dummy;
-            has_comment = true;
-            j = 0;
+            has_comment = true; 
+            line_elmnt_index = 0; // we will jump to a new line
         }
 
-        if (j == 0) {
-            (void)output_newline(output);
-            
+        // New line
+        if (line_elmnt_index == 0) {
+            ret = output_newline(output);
+ 
+            // Save the logical address and page of the first line element.
             line_logical = logical;
             line_page = page;
 
-            (void)output_fill_n(output, ' ', 4U);           // [todo]
-            (void)output_string(output, ".dw");             // [todo]
+            // Jump table elements are 2 bytes words
+            ret = output_fill_n(output, ' ', 4U);
+            ret = output_string(output, ".dw");
+        } else {
+            // Print element separator
+            ret = output_char(output, ',');
         }
 
-        if (j) {
-            (void)output_char(output, ',');
-        }
-
+        // Output jump address
         uint16_t jump_logical = data[0] | (data[1] << 8);
         uint8_t jump_page = memory_map_page(map, jump_logical);
-
         if (label_repository_find(repository, jump_logical, jump_page, &label)) {
-            (void)output_string(output, label.name);                // [todo]
+            ret = output_string(output, label.name);
         } else {
-            (void)output_fmt(output, "$%04x", jump_logical);        // [todo]
+            ret = output_16h(output, jump_logical);
         }
 
-        j++;
-
-        if (j == elements_per_line) {
-            j = 0;
-            if (has_comment) {
-                (void)output_inline_comment(output, comment.text);      // [todo]
-            } else if (extra_infos) {
-                (void)output_address_comment(output, line_logical, line_page);  // [todo]
-            }
+        // Next item
+        line_elmnt_index++;
+        // Check if we need to jump to a new line
+        if (line_elmnt_index == elements_per_line) {
+            line_elmnt_index = 0;
+            ret = output_flush_comment(output, &comment, &has_comment, extra_infos, line_logical, line_page);            
         }
     }
-    if (j) {
-        if (has_comment) {
-            (void)output_inline_comment(output, comment.text);      // [todo]
-        } else if (extra_infos) {
-            (void)output_address_comment(output, line_logical, line_page);  // [todo]
-        }
+    // Flush any pending comment
+    if (line_elmnt_index) {
+        ret = output_flush_comment(output, &comment, &has_comment, extra_infos, line_logical, line_page);            
     }
 
-    return true;
+    return ret;
 }
 
 /* Process data section. The result will be output has a binary file or an asm file containing hex values or strings. */
@@ -474,13 +496,15 @@ bool data_extract(Output *output, Section *section, MemoryMap *map, LabelReposit
     case DATA_TYPE_STRING:
         return data_extract_string(output, section, map, repository, comments, extra_infos);
     case DATA_TYPE_JUMP_TABLE:
-        return data_extract_jump_table(output, section, map, repository, comments, extra_infos);
+        return output_jump_table(output, section, map, repository, comments, extra_infos);
     default:
         return false;
     }
 }
 
 /* Process code section. */
+// [todo] 1 function per addressing mode
+// [todo] make a single instruction decode function
 bool decode(Output *output, uint16_t *logical, Section *section, MemoryMap *map, LabelRepository *repository,
             CommentRepository *comments, int extra_infos) {
     int i, delta;
