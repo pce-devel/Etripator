@@ -33,83 +33,73 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <munit.h>
+#include <unity.h>
+#include <unity_fixture.h>
 
-#include <message.h>
-#include <message/console.h>
+#include <fff.h>
 
-#include <memory.h>
+#include <etripator/message.h>
+#include <etripator/memory.h>
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
-    return NULL;
+DEFINE_FFF_GLOBALS;
+
+FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
+
+TEST_GROUP(memory);
+
+TEST_SETUP(memory) {
+    RESET_FAKE(message_print);
+    FFF_RESET_HISTORY();
 }
 
-void tear_down(void* fixture __attribute__((unused))) {
+TEST_TEAR_DOWN(memory) {
 }
 
-MunitResult memory_create_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+TEST(memory, create) {
     Memory mem = {0};
-    bool result = false;
 
     mem.data = NULL;
     mem.length = 0xCAFEU;
-    munit_assert_false(memory_create(&mem, 0U));
-    munit_assert_size(mem.length, ==, 0xCAFEU);
-    munit_assert_ptr_null(mem.data);
+    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
+    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
+    TEST_ASSERT_NULL(mem.data);
 
-    munit_assert_true(memory_create(&mem, 32U));
-    munit_assert_size(mem.length, ==, 32U);
-    munit_assert_ptr_not_null(mem.data);
+    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
+    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
+    TEST_ASSERT_NOT_NULL(mem.data);
 
     memory_destroy(&mem);
-    munit_assert_size(mem.length, ==, 0U);
-    munit_assert_ptr_null(mem.data);
-
-    return MUNIT_OK;
+    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
+    TEST_ASSERT_NULL(mem.data);
 }
 
-MunitResult memory_create_fill(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+TEST(memory, fill) {
     Memory mem = {0};
 
-    munit_assert_false(memory_fill(&mem, 0x7C));
+    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
 
-    munit_assert_true(memory_create(&mem, 256U));
-    munit_assert_size(mem.length, ==, 256U);
-    munit_assert_ptr_not_null(mem.data);
+    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
+    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
+    TEST_ASSERT_NOT_NULL(mem.data);
 
-    munit_assert_true(memory_fill(&mem, 0x7C));
-    for(size_t i=0; i<mem.length; i++) {
-        munit_assert_uint8(mem.data[i], ==, 0x7C);
-    }
+    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
+    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
 
-    munit_assert_true(memory_fill(&mem, 0xA0));
-    for(size_t i=0; i<mem.length; i++) {
-        munit_assert_uint8(mem.data[i], ==, 0xA0);
-    }
+    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
+    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
 
     memory_destroy(&mem);
-
-    return MUNIT_OK;
 }
 
+TEST_GROUP_RUNNER(memory) {
+    RUN_TEST_CASE(memory, create);
+    RUN_TEST_CASE(memory, fill);
+}
 
-static MunitTest memory_tests[] = {
-    { "/create", memory_create_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { "/fill", memory_create_fill, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
-};
+static void run_all_tests(void) {
+    RUN_TEST_GROUP(memory);
+}
 
-static const MunitSuite memory_suite = {
-    "Memory block test suite", memory_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
-};
-
-int main (int argc, char* const* argv) {
-    message_printer_init();    
-    console_message_printer_init();
-
-    int ret = munit_suite_main(&memory_suite, NULL, argc, argv);
-
-    message_printer_destroy();
-
-    return ret;
+int main(int argc, const char * argv[]) {
+    return UnityMain(argc, argv, run_all_tests);
 }
