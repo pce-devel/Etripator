@@ -33,127 +33,112 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <munit.h>
+#include <unity.h>
+#include <unity_fixture.h>
 
 #include <fff.h>
 
-#include <message.h>
-#include <message/console.h>
-
-#include <rom.h>
+#include <etripator/message.h>
+#include <etripator/data.h>
+#include <etripator/rom.h>
 
 DEFINE_FFF_GLOBALS;
 
-// [NOTE] munit is using fileno. If a test fails, munit will loop indefinitely :/
-
-FAKE_VALUE_FUNC(FILE*, __wrap_fopen, const char*, const char*)
-FAKE_VALUE_FUNC(int, __wrap_fileno, FILE*)
-FAKE_VALUE_FUNC(int, __wrap_fstat, int, struct stat*)
-FAKE_VALUE_FUNC(int, __wrap_fseek, FILE*, long, int)
-FAKE_VALUE_FUNC(size_t, __wrap_fread, void*, size_t, size_t, FILE*)
-FAKE_VALUE_FUNC(int, __wrap_fclose, FILE*)
-
-static int fstat_empty_file(int fd __attribute__((unused)), struct stat* infos) {
-    memset(infos, 0, sizeof(struct stat));
-    infos->st_size = 0;
-    return 0;
-}
-
-static size_t g_dummy_file_size;
-
-static int fstat_dummy_file(int fd __attribute__((unused)), struct stat* infos) {
-    infos->st_size = g_dummy_file_size;
-    return 0;
-}
-
-static size_t fread_dummy(void* out, size_t size, size_t nmemb, FILE* in __attribute__((unused))) {
-    uint8_t *ptr = (uint8_t*)out;
-    uint8_t b = 0;
-    for(size_t j=0; j<nmemb; j++) {
-        for(size_t i=0; i<size; i++) {
-            *ptr++ = b++;
-        }
-    }
-    return size*nmemb;
-}
+FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
 
 MemoryMap g_map;
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
-    RESET_FAKE(__wrap_fopen);
-    RESET_FAKE(__wrap_fileno);
-    RESET_FAKE(__wrap_fstat);
-    RESET_FAKE(__wrap_fseek);
-    RESET_FAKE(__wrap_fread);
-    RESET_FAKE(__wrap_fclose);
+TEST_GROUP(rom);
 
-    munit_assert_true(memory_map_init(&g_map));
-
-    return NULL;
+TEST_SETUP(rom) {
+    RESET_FAKE(message_print);
+    FFF_RESET_HISTORY();
+    TEST_ASSERT_TRUE(memory_map_init(&g_map));
 }
 
-void tear_down(void* fixture __attribute__((unused))) {
+TEST_TEAR_DOWN(rom) {
     memory_map_destroy(&g_map);
 }
 
-MunitResult rom_load_small_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
-    __wrap_fopen_fake.return_val = NULL;
-    __wrap_fileno_fake.return_val = -1;
-    __wrap_fstat_fake.return_val = -1;
-    __wrap_fseek_fake.return_val = -1;
-    __wrap_fread_fake.return_val = 0;
-    __wrap_fclose_fake.return_val = -1;
-    
-    munit_assert_false(rom_load("dummy.pce", &g_map));
-
-    __wrap_fopen_fake.return_val = stdin;
-    munit_assert_false(rom_load("dummy.pce", &g_map));
-
-    __wrap_fileno_fake.return_val = 0;
-    munit_assert_false(rom_load("dummy.pce", &g_map));
-
-    __wrap_fstat_fake.custom_fake = fstat_empty_file;
-    munit_assert_false(rom_load("dummy.pce", &g_map));
-
-    g_dummy_file_size = 10U;
-    __wrap_fstat_fake.custom_fake = fstat_dummy_file;
-    munit_assert_false(rom_load("dummy.pce", &g_map));
-
-    __wrap_fseek_fake.return_val = 0;
-    munit_assert_false(rom_load("dummy.pce", &g_map));
-
-    __wrap_fread_fake.custom_fake = fread_dummy;
-    __wrap_fclose_fake.return_val = 0;
-    munit_assert_true(rom_load("dummy.pce", &g_map));
-    munit_assert_not_null(g_map.memory[PCE_MEMORY_ROM].data);
-    munit_assert_size(g_map.memory[PCE_MEMORY_ROM].length, ==, PCE_BANK_SIZE);
-    for (size_t i = 0; i < 128; i++) {
-        munit_assert_int(g_map.page[i].id, ==, PCE_MEMORY_ROM);
-        munit_assert_size(g_map.page[i].bank, ==, 0);
+TEST(rom, create_0x60000) {
+    TEST_ASSERT_FALSE(rom_create(&g_map, 0));
+    TEST_ASSERT_TRUE(rom_create(&g_map, 0x60000U));
+    for (unsigned int i = 0; i < 64; i++) {
+        TEST_ASSERT_EQUAL_INT(PCE_MEMORY_ROM, g_map.page[i].id);
+        TEST_ASSERT_EQUAL_size_t(i & 0x1FU, g_map.page[i].bank);
     }
- 
-    return MUNIT_OK;
+    for (unsigned int i = 64; i < 128; i++) {
+        TEST_ASSERT_EQUAL_INT(PCE_MEMORY_ROM, g_map.page[i].id);
+        TEST_ASSERT_EQUAL_size_t((i & 0x0FU) + 32, g_map.page[i].bank);
+    }
 }
 
-// [todo] test header jump
-// [todo] test ROM > 8kb
+TEST(rom, create_0x80000) {
+    TEST_ASSERT_FALSE(rom_create(&g_map, 0));
+    TEST_ASSERT_TRUE(rom_create(&g_map, 0x80000U));
+    for (unsigned int i = 0; i < 64; i++) {
+        TEST_ASSERT_EQUAL_INT(PCE_MEMORY_ROM, g_map.page[i].id);
+        TEST_ASSERT_EQUAL_size_t(i & 0x3FU, g_map.page[i].bank);
+    }
+    for (unsigned int i = 64; i < 128; i++) {
+        TEST_ASSERT_EQUAL_INT(PCE_MEMORY_ROM, g_map.page[i].id);
+        TEST_ASSERT_EQUAL_size_t((i & 0x1FU) + 32, g_map.page[i].bank);
+    }
+}
 
-static MunitTest rom_tests[] = {
-    { "/load/small", rom_load_small_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
-};
+TEST(rom, create_0xA0000) { 
+    TEST_ASSERT_FALSE(rom_create(&g_map, 0));
+    TEST_ASSERT_TRUE(rom_create(&g_map, 0xA0000U));
+    for (unsigned int i = 0; i < 128; i++) {
+        TEST_ASSERT_EQUAL_INT(PCE_MEMORY_ROM, g_map.page[i].id);
+        TEST_ASSERT_EQUAL_size_t(i % (g_map.memory[PCE_MEMORY_ROM].length / PCE_BANK_SIZE), g_map.page[i].bank);
+    }
+}
 
-static const MunitSuite rom_suite = {
-    "ROM test suite", rom_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
-};
+TEST(rom, load) { 
+    size_t rom_size = 512 + (4*8192); // 32KB + 512B header
+    uint8_t *rom_data = (uint8_t*)malloc(rom_size);
 
-int main (int argc, char* const* argv) {
-    message_printer_init();    
-    console_message_printer_init();
+    // fake header
+    memset(rom_data, 'H', 512U);
+    // fake rom data
+    for(int i=0; i<4; i++) {
+        memset(rom_data+512+(i*8192), '0'+i, 8192); 
+    }
 
-    int ret = munit_suite_main(&rom_suite, NULL, argc, argv);
+    Data *data = data_buffer_create(rom_data, rom_size);
 
-    message_printer_destroy();
+    TEST_ASSERT_TRUE(rom_load(&g_map, data));
 
-    return ret;
+    data_release(data);
+    free(rom_data);
+
+    g_map.mpr[0] = 0xFFU;
+    g_map.mpr[1] = 0xF8U;
+    g_map.mpr[2] = 0x01U;
+    g_map.mpr[3] = 0x02U;
+    g_map.mpr[4] = 0x03U;
+    g_map.mpr[7] = 0x00U;  
+    
+    for(uint16_t addr = 0; addr<0x2000; addr++) {
+        TEST_ASSERT_EQUAL_UINT8('0', memory_map_read(&g_map, 0xE000U + addr));
+        TEST_ASSERT_EQUAL_UINT8('1', memory_map_read(&g_map, 0x4000U + addr));
+        TEST_ASSERT_EQUAL_UINT8('2', memory_map_read(&g_map, 0x6000U + addr));
+        TEST_ASSERT_EQUAL_UINT8('3', memory_map_read(&g_map, 0x8000U + addr));
+    }
+}
+
+TEST_GROUP_RUNNER(rom) {
+    RUN_TEST_CASE(rom, create_0x60000);
+    RUN_TEST_CASE(rom, create_0x80000);
+    RUN_TEST_CASE(rom, create_0xA0000);
+    RUN_TEST_CASE(rom, load);
+}
+
+static void run_all_tests(void) {
+    RUN_TEST_GROUP(rom);
+}
+
+int main(int argc, const char * argv[]) {
+    return UnityMain(argc, argv, run_all_tests);
 }
