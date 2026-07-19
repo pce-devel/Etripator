@@ -33,12 +33,12 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "cd.h"
-#include "message.h"
+#include <etripator/cd.h>
+#include <etripator/utils.h>
+#include <etripator/message.h>
 
 /// Adds CD RAM to memory map.
 bool cd_memory_map(MemoryMap *map) {
-    int i;
     bool ret = false;
     // Allocate CD RAM 
     if(!memory_create(&map->memory[PCE_MEMORY_CD_RAM], PCE_CD_RAM_BANK_COUNT * PCE_BANK_SIZE)) {
@@ -47,6 +47,7 @@ bool cd_memory_map(MemoryMap *map) {
     } else if (!memory_create(&map->memory[PCE_MEMORY_SYSCARD_RAM], PCE_SYSCARD_RAM_BANK_COUNT * PCE_BANK_SIZE)) {
         ERROR_MSG("Failed to allocate system card memory!");
     } else {
+        size_t i;
         // CD RAM is mapped to pages 0x80-0x88 (included).
         for (i = 0; i <= PCE_CD_RAM_BANK_COUNT; i++) {
             map->page[PCE_CD_RAM_FIRST_PAGE + i].id = PCE_MEMORY_CD_RAM;
@@ -67,48 +68,50 @@ bool cd_memory_map(MemoryMap *map) {
 }
 
 /// Load CDROM data from file.
-bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, MemoryMap* map) {
-    bool ret = false;
-    FILE *in = fopen(filename, "rb");
-    if(in == NULL) {
-        ERROR_MSG("Unable to open %s : %s", filename, strerror(errno));
-    } else {
-        size_t remaining = len;
-        size_t physical = (offset & 0x1FFFU) | (page << 0x0D);
-        for(ret=true; ret && remaining; ) {
-            size_t count = 2048 - (start % 2048);
-            if(count > remaining) {
-                count = remaining;
-            }
+bool cd_load(MemoryMap* map, Data *in, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset) {
+    SANITY_CHECK((map != NULL) && (in != NULL), false);
+    SANITY_CHECK(len != 0, false);
 
-            size_t sector_id = start / 2048;
-            size_t sector_offset = start % 2048;
-
-            size_t file_offset = (sector_id * sector_size) + sector_offset;
-
-            size_t current_page = physical >> 0x0D;
-            size_t current_addr = physical & 0x1FFF;
-
-            size_t bank_offset = current_addr + (map->page[current_page].bank * PCE_BANK_SIZE);
-
-            // [todo] test that map->page[current_page].id != PCE_MEMORY_NONE
-
-            ret = false;
-            if(fseek(in, (long int)file_offset, SEEK_SET) < 0) {
-                ERROR_MSG("Offset out of bound : %s", strerror(errno));
-            } else if(fread(map->memory[map->page[current_page].id].data+bank_offset, 1, count, in) != count) {
-                ERROR_MSG("Failed to read %zu bytes : %s", count, strerror(errno));
-            } else {
-                ret = true;
-            }
-            start += count;
-            physical += count;
-            remaining -= count;
+    if (data_open(in) != true) {
+        ERROR_MSG("Failed to CDROM track");
+        return false;
+    }
+    
+    bool ret;
+    size_t remaining = len;
+    size_t physical = (offset & 0x1FFFU) | (page << 0x0D);
+    for(ret=true; ret && remaining; ) {
+        size_t count = 2048 - (start % 2048);
+        if(count > remaining) {
+            count = remaining;
         }
 
+        size_t sector_id = start / 2048;
+        size_t sector_offset = start % 2048;
+
+        size_t file_offset = (sector_id * sector_size) + sector_offset;
+
+        size_t current_page = physical >> 0x0D;
+        size_t current_addr = physical & 0x1FFF;
+
+        size_t bank_offset = current_addr + (map->page[current_page].bank * PCE_BANK_SIZE);
+
+        // [todo] test that map->page[current_page].id != PCE_MEMORY_NONE
+
+        ret = false;
+        size_t nread = 0;
+        if(data_jump(in, file_offset) != true) {
+            ERROR_MSG("Offset out of bound");
+        } else if(data_read(in, map->memory[map->page[current_page].id].data+bank_offset, count, &nread) != true) {
+            ERROR_MSG("Failed to read %zu bytes", count);
+        } else {
+            ret = true;
+        }
+        start += nread;
+        physical += nread;
+        remaining -= nread;
     }
-    if(in) {
-        fclose(in);
-    }
+
+    data_close(in);
     return ret;
 }

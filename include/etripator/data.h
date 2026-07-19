@@ -33,37 +33,51 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <errno.h>
-#include <string.h>
+#ifndef ETRIPATOR_DATA_H
+#define ETRIPATOR_DATA_H
 
-#include "../message.h"
-#include "../jsonhelpers.h"
-#include "../label.h"
+#include "config.h"
+#include "string_view.h"
 
-// Save labels to file
-bool label_repository_save(LabelRepository* repository, const char* filename) {
-    bool ret = false;
-    FILE *stream = fopen(filename, "wb");
-    if(stream == NULL) {
-        ERROR_MSG("Failed to open %s: %s", filename, strerror(errno));
-    } else {
-        int count = label_repository_size(repository);
+/// @defgroup DataGroup Data access
+/// @{
 
-        fprintf(stream, "[\n");
-        for(int i=0; i<count; i++) {
-            Label label;
-            if(label_repository_get(repository, i, &label)) {
-                fprintf(stream, "\t{ \"name\":\"%s\", \"logical\":\"%04x\", \"page\":\"%02x\"", label.name, label.logical, label.page);
-                if(label.description) {
-                    fputc(',', stream);
-                    json_print_description(stream, "description", label.description);
-                }
-                fprintf(stream,"}%c\n", (i<(count-1)) ? ',' : ' ');
-            }
-        }
-        fprintf(stream, "]\n");
-        fclose(stream);
-        ret = true;
-    }
-    return ret;
-}
+struct Data;
+typedef struct Data Data;
+
+/// Create in memory buffer data.
+/// @param [in] buffer Pointer to memory buffer.
+/// @param [in] size Memory buffer size.
+/// @return Pointer to memory buffer data.
+/// @return NULL if buffer is NULL or size is zero.
+Data* data_buffer_create(uint8_t *buffer, size_t size);
+/// Create file data.
+/// @param [in] filename File name.
+/// @param [in] mode [TODO]
+/// @return Pointer to file data.
+/// @return NULL [TODO]
+Data* data_file_create(const char *filename, const char* mode);
+///
+void data_release(Data *data);
+///
+bool data_open(Data *data);
+///
+void data_close(Data *data);
+///
+size_t data_tell(Data *data);
+///
+size_t data_size(Data *data);
+///
+bool data_seek(Data *data, ssize_t delta);
+///
+bool data_jump(Data *data, ssize_t offset);
+///
+bool data_read(Data *data, uint8_t *buffer, size_t size, size_t *nread);
+///
+bool data_write(Data *data, const uint8_t *buffer, size_t size, size_t *nwritten);
+///
+bool data_print(Data *data, StringView s);
+
+/// @}
+
+#endif // ETRIPATOR_DATA_H

@@ -33,16 +33,34 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_ROM_H
-#define ETRIPATOR_ROM_H
+#ifndef ETRIPATOR_STRING_VIEW_H
+#define ETRIPATOR_STRING_VIEW_H
 
-#include "memory_map.h"
+#include "config.h"
 
-/// Load ROM from file and update memory map.
-/// \param [in]  filename ROM filename.
-/// \param [out] map      Memory map.
-/// \return true if the ROM was successfully loaded.
-/// \return false if an error occured.
-bool rom_load(const char* filename, MemoryMap* map);
+/// @addtogroup StringGroup
+/// @{
 
-#endif // ETRIPATOR_ROM_H
+/// @defgroup StringView String view
+/// @{
+
+typedef struct {
+    const char *data;
+    size_t length;
+} StringView;
+
+StringView string_view_from_literal(const char *ptr);
+StringView string_view_from_substring(const char *ptr, size_t length);
+bool string_view_empty(StringView s);
+bool string_view_cmp(const StringView s0, const StringView s1);
+bool string_view_case_cmp(const StringView s0, const StringView s1);
+size_t string_view_find_first(const StringView s, char sep);
+
+// [todo] trim left/right/both
+// [todo] move n left/rigth/both
+// [todo] test if starts with/if ends with
+
+/// @}
+/// @}
+
+#endif // ETRIPATOR_STRING_VIEW_H

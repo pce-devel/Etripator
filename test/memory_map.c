@@ -33,24 +33,32 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <munit.h>
+#include <unity.h>
+#include <unity_fixture.h>
 
-#include <message.h>
-#include <message/console.h>
+#include <fff.h>
 
-#include <memory_map.h>
+#include <etripator/message.h>
+#include <etripator/memory_map.h>
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
-    return NULL;
+DEFINE_FFF_GLOBALS;
+
+FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
+
+TEST_GROUP(memory_map);
+
+TEST_SETUP(memory_map) {
+    RESET_FAKE(message_print);
+    FFF_RESET_HISTORY();
 }
 
-void tear_down(void* fixture __attribute__((unused))) {
+TEST_TEAR_DOWN(memory_map) {
 }
 
-MunitResult memory_map_read_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+TEST(memory_map, read) {
     MemoryMap map = {0};
 
-    munit_assert_true(memory_map_init(&map));
+    TEST_ASSERT_TRUE(memory_map_init(&map));
 
     map.mpr[1] = 0xF8U;
 
@@ -58,31 +66,21 @@ MunitResult memory_map_read_test(const MunitParameter params[] __attribute__((un
     map.memory[PCE_MEMORY_BASE_RAM].data[0x0100] = 0x7E;
     map.memory[PCE_MEMORY_BASE_RAM].data[0x1000] = 0xA9;
 
-    munit_assert_uint8(memory_map_read(&map, 0x2000U), ==, 0xC5);
-    munit_assert_uint8(memory_map_read(&map, 0x2100U), ==, 0x7E);
-    munit_assert_uint8(memory_map_read(&map, 0x3000U), ==, 0xA9);
+    TEST_ASSERT_EQUAL_UINT8(0xC5, memory_map_read(&map, 0x2000U));
+    TEST_ASSERT_EQUAL_UINT8(0x7E, memory_map_read(&map, 0x2100U));
+    TEST_ASSERT_EQUAL_UINT8(0xA9, memory_map_read(&map, 0x3000U));
 
     memory_map_destroy(&map);
-
-    return MUNIT_OK;
 }
 
-static MunitTest memory_map_tests[] = {
-    { "/read", memory_map_read_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
-};
+TEST_GROUP_RUNNER(memory_map) {
+    RUN_TEST_CASE(memory_map, read);
+}
 
-static const MunitSuite memory_map_suite = {
-    "Memory map test suite", memory_map_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
-};
+static void run_all_tests(void) {
+    RUN_TEST_GROUP(memory_map);
+}
 
-int main (int argc, char* const* argv) {
-    message_printer_init();    
-    console_message_printer_init();
-
-    int ret = munit_suite_main(&memory_map_suite, NULL, argc, argv);
-
-    message_printer_destroy();
-
-    return ret;
+int main(int argc, const char * argv[]) {
+    return UnityMain(argc, argv, run_all_tests);
 }

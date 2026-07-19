@@ -33,73 +33,81 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <unity.h>
-#include <unity_fixture.h>
-
-#include <fff.h>
+#include <jansson.h>
 
 #include <etripator/message.h>
-#include <etripator/memory.h>
+#include <etripator/label.h>
 
-DEFINE_FFF_GLOBALS;
+#include "../json_helpers.h"
 
-FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
-
-TEST_GROUP(memory);
-
-TEST_SETUP(memory) {
-    RESET_FAKE(message_print);
-    FFF_RESET_HISTORY();
+static bool label_save(Label *label, Data *out) {
+    bool ret = false;
+    String str;
+    string_init(&str);
+    if(!string_format(&str, "\t{ \"name\":\"%s\", \"logical\":\"%04x\", \"page\":\"%02x\"", label->name.data, label->logical, label->page)) {
+        ERROR_MSG("failed to format output for label %s", label->name.data);    
+    } else if(!data_print(out, string_get_view(&str))) {
+        ERROR_MSG("failed to output label %s", label->name.data);
+    } else {
+        ret = true;
+    }
+    string_release(&str);
+    
+    if(!ret) {
+        return false;
+    }
+    
+    if(!string_view_empty(label->description)) {
+        uint8_t sep = ',';
+        if(!data_write(out, &sep, 1, NULL)) {
+            ERROR_MSG("failed to write description for label %s", label->name.data);
+            return false;
+        }
+        if(!json_print_description(out, "description", label->description)) {
+            ERROR_MSG("failed to write description for label %s", label->name.data);
+            return false;
+        }
+    }
+    uint8_t end = '}';
+    if(!data_write(out, &end, 1, NULL)) {
+        ERROR_MSG("failed to write label %s", label->name.data);
+        return false;
+    }
+    return true;
 }
 
-TEST_TEAR_DOWN(memory) {
-}
+// Save labels to file
+bool label_repository_save(LabelRepository* repository, Data *out) {
+    assert(repository != NULL);
+    assert(out != NULL);
 
-TEST(memory, create) {
-    Memory mem = {0};
+    int count = label_repository_size(repository);
 
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
+    if(!data_print(out, string_view_from_literal("[\n"))) {
+        return false;
+    }
 
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
+    for(int i=0; i<count; i++) {
+        Label label = {0};
+        if(!label_repository_get(repository, i, &label)) {
+            ERROR_MSG("failed to retrieve label #%d", i);
+            return false;
+        }
+        if(!label_save(&label, out)) {
+            return false;
+        }
+        char buffer[2] = {
+            [0] = (i<(count-1)) ? ',' : ' ',
+            [1] = '\n'
+        };
+        if(!data_write(out, (const uint8_t*)buffer, sizeof(buffer), NULL)) {
+            return false;
+        }
+    }
 
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-}
+    if(!data_print(out, string_view_from_literal("]\n"))) {
+        return false;
+    }
 
-TEST(memory, fill) {
-    Memory mem = {0};
-
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
-}
-
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
-}
-
-static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
-}
-
-int main(int argc, const char * argv[]) {
-    return UnityMain(argc, argv, run_all_tests);
+    return true;
 }

@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2024 Vincent Cruz.
+  copyright (c) 2009--2026 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -46,7 +46,7 @@ typedef struct {
 
 static char g_buffer[1024U];
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+void* setup(const MunitParameter params[] __unused, void* user_data __unused) {
     message_printer_init();    
     console_message_printer_init();
 
@@ -75,7 +75,7 @@ void tear_down(void* fixture) {
     message_printer_destroy();
 }
 
-MunitResult label_extract_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult label_extract_test(const MunitParameter params[] __unused, void* fixture) {
     const uint8_t rom[] = {
         0xEA,                   // NOP
         0xEA,                   // NOP
@@ -126,7 +126,7 @@ MunitResult label_extract_test(const MunitParameter params[] __attribute__((unus
     return MUNIT_OK;
 }
 
-MunitResult label_dump_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult label_dump_test(const MunitParameter params[] __unused, void* fixture) {
     Decoder *decoder = (Decoder*)fixture;
 
     const char *expected = 
@@ -154,7 +154,7 @@ MunitResult label_dump_test(const MunitParameter params[] __attribute__((unused)
     return MUNIT_OK;
 }
 
-MunitResult compute_size_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult compute_size_test(const MunitParameter params[] __unused, void* fixture) {
 /*
 	.code
 	.bank 0

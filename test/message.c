@@ -33,23 +33,23 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <munit.h>
+#include <unity.h>
+#include <unity_fixture.h>
 
-#include "../message.c"
+#include "../src/message.c"
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
-    return NULL;
+TEST_GROUP(message);
+
+TEST_SETUP(message) {
 }
 
-void tear_down(void* fixture __attribute__((unused))) {
+TEST_TEAR_DOWN(message) {
 }
 
-MunitResult message_init_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+TEST(message, init) {
     g_message_printer_head = (MessagePrinter*)0xBEEF;
     message_printer_init();
-    munit_assert_ptr_null(g_message_printer_head);
-    
-    return MUNIT_OK;
+    TEST_ASSERT_NULL(g_message_printer_head);
 }
 
 static unsigned int dummy_open_0_call_count;
@@ -62,9 +62,9 @@ static bool dummy_open_1(void) {
     return false;
 }
 
-MunitResult message_add_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+TEST(message, add) {
     message_printer_init();
-    munit_assert_ptr_null(g_message_printer_head);
+    TEST_ASSERT_NULL(g_message_printer_head);
     
     MessagePrinter printer[4] = {
         [0] = { .open = dummy_open_0 },
@@ -74,31 +74,29 @@ MunitResult message_add_test(const MunitParameter params[] __attribute__((unused
     };
 
     dummy_open_0_call_count = 0;
-    munit_assert_true(message_printer_add(&printer[0]));
-    munit_assert_uint(dummy_open_0_call_count, ==, 1);
-    munit_assert_ptr_equal(g_message_printer_head, &printer[0]);
-    munit_assert_null(g_message_printer_head->next);
+    TEST_ASSERT_TRUE(message_printer_add(&printer[0]));
+    TEST_ASSERT_EQUAL_UINT(1, dummy_open_0_call_count);
+    TEST_ASSERT_EQUAL_PTR(&printer[0], g_message_printer_head);
+    TEST_ASSERT_NULL(g_message_printer_head->next);
 
-    munit_assert_true(message_printer_add(&printer[1]));
-    munit_assert_uint(dummy_open_0_call_count, ==, 2);
-    munit_assert_ptr_equal(g_message_printer_head, &printer[1]);
-    munit_assert_ptr_equal(g_message_printer_head->next, &printer[0]);
-    munit_assert_null(printer[0].next);
+    TEST_ASSERT_TRUE(message_printer_add(&printer[1]));
+    TEST_ASSERT_EQUAL_UINT(2, dummy_open_0_call_count);
+    TEST_ASSERT_EQUAL_PTR(&printer[1], g_message_printer_head);
+    TEST_ASSERT_EQUAL_PTR(&printer[0], g_message_printer_head->next);
+    TEST_ASSERT_NULL(printer[0].next);
 
-    munit_assert_false(message_printer_add(&printer[2]));
-    munit_assert_uint(dummy_open_0_call_count, ==, 3);
-    munit_assert_ptr_equal(g_message_printer_head, &printer[1]);
-    munit_assert_ptr_equal(g_message_printer_head->next, &printer[0]);
-    munit_assert_null(g_message_printer_head->next->next);
+    TEST_ASSERT_FALSE(message_printer_add(&printer[2]));
+    TEST_ASSERT_EQUAL_UINT(3, dummy_open_0_call_count);
+    TEST_ASSERT_EQUAL_PTR(&printer[1], g_message_printer_head);
+    TEST_ASSERT_EQUAL_PTR(&printer[0], g_message_printer_head->next);
+    TEST_ASSERT_NULL(g_message_printer_head->next->next);
 
-    munit_assert_true(message_printer_add(&printer[3]));
-    munit_assert_uint(dummy_open_0_call_count, ==, 4);
-    munit_assert_ptr_equal(g_message_printer_head, &printer[3]);
-    munit_assert_ptr_equal(g_message_printer_head->next, &printer[1]);
-    munit_assert_ptr_equal(g_message_printer_head->next->next, &printer[0]);
-    munit_assert_null(g_message_printer_head->next->next->next);
-
-    return MUNIT_OK;
+    TEST_ASSERT_TRUE(message_printer_add(&printer[3]));
+    TEST_ASSERT_EQUAL_UINT(4, dummy_open_0_call_count);
+    TEST_ASSERT_EQUAL_PTR(&printer[3], g_message_printer_head);
+    TEST_ASSERT_EQUAL_PTR(&printer[1], g_message_printer_head->next);
+    TEST_ASSERT_EQUAL_PTR(&printer[0], g_message_printer_head->next->next);
+    TEST_ASSERT_NULL(g_message_printer_head->next->next->next);
 }
 
 static int dummy_close_call_count;
@@ -108,9 +106,9 @@ static bool dummy_close(void) {
     return true;
 }
 
-MunitResult message_destroy_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+TEST(message, destroy) {
     message_printer_init();
-    munit_assert_ptr_null(g_message_printer_head);
+    TEST_ASSERT_NULL(g_message_printer_head);
     
     MessagePrinter printer[4] = {
         [0] = { .open = dummy_open_0, .close = dummy_close },
@@ -123,21 +121,19 @@ MunitResult message_destroy_test(const MunitParameter params[] __attribute__((un
     dummy_close_call_count = 0;
 
     message_printer_init();
-    munit_assert_true(message_printer_add(&printer[0]));
-    munit_assert_true(message_printer_add(&printer[1]));
-    munit_assert_true(message_printer_add(&printer[2]));
-    munit_assert_true(message_printer_add(&printer[3]));
+    TEST_ASSERT_TRUE(message_printer_add(&printer[0]));
+    TEST_ASSERT_TRUE(message_printer_add(&printer[1]));
+    TEST_ASSERT_TRUE(message_printer_add(&printer[2]));
+    TEST_ASSERT_TRUE(message_printer_add(&printer[3]));
 
-    munit_assert_ptr_equal(g_message_printer_head, &printer[3]);
+    TEST_ASSERT_EQUAL_PTR(&printer[3], g_message_printer_head);
 
-    munit_assert_uint(dummy_open_0_call_count, ==, 4);
-    munit_assert_uint(dummy_close_call_count, ==, 0);
+    TEST_ASSERT_EQUAL_UINT(4, dummy_open_0_call_count);
+    TEST_ASSERT_EQUAL_UINT(0, dummy_close_call_count);
 
     message_printer_destroy();
-    munit_assert_uint(dummy_close_call_count, ==, 4);
-    munit_assert_null(g_message_printer_head);
-
-    return MUNIT_OK;
+    TEST_ASSERT_EQUAL_UINT(4, dummy_close_call_count);
+    TEST_ASSERT_NULL(g_message_printer_head);
 }
 
 static unsigned int dummy_print_index = 0;
@@ -145,33 +141,49 @@ static size_t dummy_print_line = 0;
 static unsigned int dummy_print_history[4] = {-1};
 
 static bool dummy_print_0(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    (void)file;
+    (void)function;
+    (void)format;
+    (void)args;
     dummy_print_history[dummy_print_index++] = 0;
-    munit_assert_uint(type, ==, MESSAGE_TYPE_INFO);
-    munit_assert_size(line, ==, dummy_print_line);
+    TEST_ASSERT_EQUAL_UINT(MESSAGE_TYPE_INFO, type);
+    TEST_ASSERT_EQUAL_size_t(dummy_print_line, line);
     return true;
 }
 static bool dummy_print_1(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    (void)file;
+    (void)function;
+    (void)format;
+    (void)args;
     dummy_print_history[dummy_print_index++] = 1;
-    munit_assert_uint(type, ==, MESSAGE_TYPE_INFO);
-    munit_assert_size(line, ==, dummy_print_line);
+    TEST_ASSERT_EQUAL_UINT(MESSAGE_TYPE_INFO, type);
+    TEST_ASSERT_EQUAL_size_t(dummy_print_line, line);
     return true;
 }
 static bool dummy_print_2(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    (void)file;
+    (void)function;
+    (void)format;
+    (void)args;
     dummy_print_history[dummy_print_index++] = 2;
-    munit_assert_uint(type, ==, MESSAGE_TYPE_INFO);
-    munit_assert_size(line, ==, dummy_print_line);
+    TEST_ASSERT_EQUAL_UINT(MESSAGE_TYPE_INFO, type);
+    TEST_ASSERT_EQUAL_size_t(dummy_print_line, line);
     return true;
 }
 static bool dummy_print_3(MessageType type, const char* file, size_t line, const char* function, const char* format, va_list args) {
+    (void)file;
+    (void)function;
+    (void)format;
+    (void)args;
     dummy_print_history[dummy_print_index++] = 3;
-    munit_assert_uint(type, ==, MESSAGE_TYPE_INFO);
-    munit_assert_size(line, ==, dummy_print_line);
+    TEST_ASSERT_EQUAL_UINT(MESSAGE_TYPE_INFO, type);
+    TEST_ASSERT_EQUAL_size_t(dummy_print_line, line);
     return true;
 }
 
-MunitResult message_print_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+TEST(message, print) {
     message_printer_init();
-    munit_assert_ptr_null(g_message_printer_head);
+    TEST_ASSERT_NULL(g_message_printer_head);
     
     MessagePrinter printer[4] = {
         [0] = { .open = dummy_open_0, .close = dummy_close, .output = dummy_print_0 },
@@ -189,43 +201,40 @@ MunitResult message_print_test(const MunitParameter params[] __attribute__((unus
     }
 
     message_printer_init();
-    munit_assert_true(message_printer_add(&printer[0]));
-    munit_assert_true(message_printer_add(&printer[1]));
-    munit_assert_true(message_printer_add(&printer[2]));
-    munit_assert_true(message_printer_add(&printer[3]));
+    TEST_ASSERT_TRUE(message_printer_add(&printer[0]));
+    TEST_ASSERT_TRUE(message_printer_add(&printer[1]));
+    TEST_ASSERT_TRUE(message_printer_add(&printer[2]));
+    TEST_ASSERT_TRUE(message_printer_add(&printer[3]));
 
-    munit_assert_ptr_equal(g_message_printer_head, &printer[3]);
+    TEST_ASSERT_EQUAL_PTR(&printer[3], g_message_printer_head);
 
-    munit_assert_uint(dummy_open_0_call_count, ==, 4);
-    munit_assert_uint(dummy_close_call_count, ==, 0);
+    TEST_ASSERT_EQUAL_UINT(4, dummy_open_0_call_count);
+    TEST_ASSERT_EQUAL_UINT(0, dummy_close_call_count);
 
     dummy_print_line = __LINE__; INFO_MSG("test");
-    munit_assert_uint(dummy_print_index, ==, 4);
-    munit_assert_uint(dummy_print_history[0], ==, 3);
-    munit_assert_uint(dummy_print_history[1], ==, 2);
-    munit_assert_uint(dummy_print_history[2], ==, 1);
-    munit_assert_uint(dummy_print_history[3], ==, 0);
+    TEST_ASSERT_EQUAL_UINT(4, dummy_print_index);
+    TEST_ASSERT_EQUAL_UINT(3, dummy_print_history[0]);
+    TEST_ASSERT_EQUAL_UINT(2, dummy_print_history[1]);
+    TEST_ASSERT_EQUAL_UINT(1, dummy_print_history[2]);
+    TEST_ASSERT_EQUAL_UINT(0, dummy_print_history[3]);
 
     message_printer_destroy();
-    munit_assert_uint(dummy_close_call_count, ==, 4);
-    munit_assert_null(g_message_printer_head);
-
-    return MUNIT_OK;
+    TEST_ASSERT_EQUAL_UINT(4, dummy_close_call_count);
+    TEST_ASSERT_NULL(g_message_printer_head);
 }
 
 
-static MunitTest message_tests[] = {
-    { "/init", message_init_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { "/add", message_add_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { "/destroy", message_destroy_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { "/print", message_print_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
-};
+TEST_GROUP_RUNNER(message) {
+    RUN_TEST_CASE(message, init);
+    RUN_TEST_CASE(message, add);
+    RUN_TEST_CASE(message, destroy);
+    RUN_TEST_CASE(message, print);
+}
 
-static const MunitSuite message_suite = {
-    "message testt suite", message_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
-};
+static void run_all_tests(void) {
+    RUN_TEST_GROUP(message);
+}
 
-int main (int argc, char* const* argv) {
-    return munit_suite_main(&message_suite, NULL, argc, argv);
+int main(int argc, const char * argv[]) {
+    return UnityMain(argc, argv, run_all_tests);
 }

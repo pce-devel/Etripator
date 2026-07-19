@@ -33,34 +33,18 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_CD_H
-#define ETRIPATOR_CD_H
+#ifndef ETRIPATOR_JSON_HELPERS_H
+#define ETRIPATOR_JSON_HELPERS_H
 
-#include "config.h"
-#include "memory_map.h"
+#include <etripator/config.h>
+#include <etripator/string_view.h>
+#include <etripator/string.h>
+#include <etripator/data.h>
 
-#define PCE_CD_RAM_BANK_COUNT 8U
-#define PCE_SYSCARD_RAM_BANK_COUNT 24U
+#include <jansson.h>
 
-#define PCE_CD_RAM_FIRST_PAGE 0x80U
-#define PCE_SYSCARD_RAM_FIRST_PAGE 0x68U
+bool json_validate_int(const json_t* obj, int* out);
+bool json_load_description(const json_t* obj, const char *key, String *out);
+bool json_print_description(Data *out, const char *key, StringView description);
 
-/// Adds CD RAM to memory map.
-/// \param map Memory map.
-/// \return true if the CD RAM and SYSCARD RAM memory areas were successfully created.
-/// \return false if an error occured.
-bool cd_memory_map(MemoryMap *map);
-
-/// Load CDROM data from file.
-/// \param [in]  filename    CDROM data filename.
-/// \param [in]  start       CDROM data offset.
-/// \param [in]  len         CDROM data length (in bytes).
-/// \param [in]  sector_size CD sector size.
-/// \param [in]  page        Memory page.
-/// \param [in]  offset      Memory page offset.
-/// \param [out] map         Memory map.
-/// \return true
-/// \return false
-bool cd_load(const char* filename, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset, MemoryMap* map);
-
-#endif // ETRIPATOR_CD_H
+#endif // ETRIPATOR_JSON_HELPERS_H

@@ -1,4 +1,4 @@
-/* 
+/*
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
@@ -33,58 +33,50 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "message.h"
+#ifndef ETRIPATOR_CONFIG_H
+#define ETRIPATOR_CONFIG_H
 
-#include <cwalk.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <errno.h>
+#include <assert.h>
 
-static MessagePrinter* g_message_printer_head = NULL;
+#include <stdint.h>
+#include <stdbool.h>
 
-/* Setup global message printer list.  */
-void message_printer_init(void) {
-    g_message_printer_head = NULL;
-    // nothing much atm...
-}
+#include <time.h>
 
-/* Releases the resources used by message printers. */
-void message_printer_destroy(void) {
-    for(MessagePrinter *it = g_message_printer_head; it != NULL; it = it->next) {
-        if(it->close) {
-            it->close();
-        }
-    }
-    g_message_printer_head = NULL;
-}
+#include <sys/cdefs.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-/* Adds a new message printer to the global list. */
-bool message_printer_add(MessagePrinter *printer) {
-    bool ret = false;
-    if((printer != NULL) && (printer->open != NULL)) {
-        ret = printer->open();
-        if(ret) {
-            printer->next = g_message_printer_head;
-            g_message_printer_head = printer;
-        }
-    }
-    return ret;
-}
+#include <string.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <ctype.h>
 
-/* Dispatch messages to printers. */
-void message_print(MessageType type, const char* file, size_t line, const char* function, const char* format, ...) {
-    assert(file != NULL);
-    assert(function != NULL);
-    const char* filename;
-    size_t length;
-    cwk_path_get_basename(file, &filename, &length);
-    if(filename == NULL) {
-        filename = file;
-    }
-    for(MessagePrinter *it=g_message_printer_head; it != NULL; it = it->next) {
-        if(it->output != NULL) {
-            va_list args; 
-            va_start(args, format);
-            (void)it->output(type, filename, line, function, format, args);
-            va_end(args);
-        }
-    }
-}
+#if defined(__linux__) || defined(__APPLE__)
+#   include <sys/time.h>
+#   include <unistd.h>
+#endif
 
+#if defined(_MSC_VER)
+#   define strncasecmp _strnicmp
+#   define strcasecmp _stricmp
+#   define snprintf _snprintf
+#   define access _access
+#endif
+
+#if !defined(__printflike)
+#   define __printflike(fmt, first_arg)
+#   if defined(__has_attribute)
+#       if __has_attribute(__format__)
+#           undef __printflike
+#           define __printflike(fmt, first_arg) __attribute__((__format__(printf, fmt, first_arg)))
+#       endif
+#   endif
+#endif
+
+#endif // ETRIPATOR_CONFIG_H

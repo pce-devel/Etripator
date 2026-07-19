@@ -37,23 +37,27 @@
 #define ETRIPATOR_LABEL_H
 
 #include "config.h"
+#include "string_view.h"
+#include "data.h"
 
 /// Label.
 typedef struct {
-    char*    name;        //< Offset in the repository name buffer
-    uint16_t logical;     //< Logical address
-    uint8_t  page;        //< Memory page
-    char*    description; //< Description (optional) 
-    uint32_t file_id;     //< Id of the file in the output registry where the label was written
-    size_t line;          //< Current line.
-    size_t column;        //< Cursor position in the current line.
+    StringView  name;       //< Name
+    uint16_t logical;       //< Logical address
+    uint8_t  page;          //< Memory page
+    StringView description; //< Description (optional) 
+    uint32_t file_id;       //< Id of the file in the output registry where the label was written
+    size_t line;            //< Current line.
+    size_t column;          //< Cursor position in the current line.
 } Label;
+
+typedef struct LabelImpl LabelImpl;
 
 /// Label repository.
 typedef struct {
-    size_t size;   //< Size of label repository.
-    size_t last;   //< Last element in the repository.
-    Label *labels; //< Labels.
+    size_t     size;   //< Size of label repository.
+    size_t     last;   //< Last element in the repository.
+    LabelImpl* labels; //< Labels.
 } LabelRepository;
 
 /// Create label repository.
@@ -68,13 +72,33 @@ void label_repository_destroy(LabelRepository* repository);
 
 /// Add label (or inline description) to repository.
 /// \param [in,out] repository Label repository.
-/// \param [in]     name        Name. If the name is NULL, then this label is an inline description.
+/// \param [in]     name        Name. If the name is empty, then this label is an inline description.
 /// \param [in]     logical     Logical address.
 /// \param [in]     page        Memory page.
 /// \param [in]     description Description (optional if name is set, mandatory otherwise).
 /// \return true if the entry was successfully added to the repository.
 /// \return false if an error occured.
-bool label_repository_add(LabelRepository* repository, const char* name, uint16_t logical, uint8_t page, const char *description);
+bool label_repository_add(LabelRepository* repository, uint16_t logical, uint8_t page, StringView name, StringView description);
+
+/// Update label name.
+/// Note that the entry will be removed if the update process will leave it without a name or description.
+/// \param [in,out] repository Label repository.
+/// \param [in]     logical     Logical address.
+/// \param [in]     page        Memory page.
+/// \param [in]     name        Name.
+/// \return true if the entry was successfully updated.
+/// \return false if the entry was not found or if an error occured.
+bool label_repository_update_name(LabelRepository* repository, uint16_t logical, uint8_t page, const StringView name);
+
+/// Update label description.
+/// Note that the entry will be removed if the update process will leave it without a name or description.
+/// \param [in,out] repository Label repository.
+/// \param [in]     logical     Logical address.
+/// \param [in]     page        Memory page.
+/// \param [in]     description Description.
+/// \return true if the entry was successfully updated.
+/// \return false if the entry was not found or if an error occured.
+bool label_repository_update_description(LabelRepository* repository, uint16_t logical, uint8_t page, const StringView description);
 
 /// Find a label by its address.
 /// \param [in]  repository  Label repository.
@@ -107,16 +131,17 @@ void label_repository_delete(LabelRepository* repository, uint16_t first, uint16
 
 /// Load labels from file.
 /// \param [out] repository Label repository.
-/// \param [in]  filename Input filename.
-/// \return true if the labels contained in the file was succesfully added to the repository.
+/// \param [in]  in         Input data.
+/// \return true if the labels were succesfully added to the repository.
 /// \return false if an error occured.
-bool label_repository_load(LabelRepository* repository, const char* filename);
+bool label_repository_load(LabelRepository* repository, Data *in);
 
+// [todo]
 /// Save labels to file.
 /// \param [in] reposity Label repository.
-/// \param [in] filename Configuration file.
-/// \return true if the labels in the repository were succesfully written to the file.
+/// \param [in] out      Output.
+/// \return true if the labels in the repository were succesfully written.
 /// \return false if an error occured.
-bool label_repository_save(LabelRepository* repository, const char* filename);
+bool label_repository_save(LabelRepository* repository, Data *out);
 
 #endif // ETRIPATOR_LABEL_H

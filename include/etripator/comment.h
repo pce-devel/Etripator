@@ -37,19 +37,25 @@
 #define ETRIPATOR_COMMENT_H
 
 #include "config.h"
+#include "string.h"
+
+/// @defgroup Comments Comments management
+/// @{
 
 /// Comment.
 typedef struct {
     uint16_t logical; //< Logical address.
-    uint8_t  page;    //< Memory page.
-    char*    text;    //< Comment text.
+    uint8_t page;     //< Memory page.
+    StringView text;  //< Comment text.
 } Comment;
+
+typedef struct CommentImpl CommentImpl;
 
 /// Comment repository.
 typedef struct {
-    size_t size;       //< Size of comment repository.
-    size_t last;       //< Last element in the repository.
-    Comment *comments; //< Comments.
+    size_t size;           //< Size of comment repository.
+    size_t last;           //< Last element in the repository.
+    CommentImpl* comments; //< Comments.
 } CommentRepository;
 
 /// Create comment repository.
@@ -69,7 +75,7 @@ void comment_repository_destroy(CommentRepository* repository);
 /// \param [in]     text        Comment text.
 /// \return true if the comment was successfully added to the repository.
 /// \return false if an error occured.
-bool comment_repository_add(CommentRepository* repository, uint16_t logical, uint8_t page, const char *text);
+bool comment_repository_add(CommentRepository* repository, uint16_t logical, uint8_t page, StringView text);
 
 /// Find a comment by its address.
 /// \param [in]  repository  Comment repository.
@@ -79,6 +85,16 @@ bool comment_repository_add(CommentRepository* repository, uint16_t logical, uin
 /// \return true if a comment was found.
 /// \return 0 otherwise.
 bool comment_repository_find(CommentRepository* repository, uint16_t logical, uint8_t page, Comment *out);
+
+/// Update comment text.
+/// Note that the comment will be removed if the text is empty.
+/// \param [in,out] repository  Comment repository.
+/// \param [in]     logical     Logical address.
+/// \param [in]     page        Memory page.
+/// \param [in]     text        Comment text.
+/// \return true if the comment text was successfully updated.
+/// \return false if the comment was not found or if an error occured.
+bool comment_repository_update(CommentRepository* repository, uint16_t logical, uint8_t page, StringView text);
 
 /// Get the number of comments stored in the repository.
 /// \param [in] repository Comment repository.
@@ -113,5 +129,7 @@ bool comment_repository_load(CommentRepository* repository, const char* filename
 /// \return true if the comments were succesfully saved.
 /// \return false if an error occured.
 bool comment_repository_save(CommentRepository* repository, const char* filename);
+
+/// @}
 
 #endif // ETRIPATOR_COMMENT_H

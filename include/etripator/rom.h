@@ -33,91 +33,24 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_OPCODES_H
-#define ETRIPATOR_OPCODES_H
+#ifndef ETRIPATOR_ROM_H
+#define ETRIPATOR_ROM_H
 
-#include "config.h"
+#include "memory_map.h"
+#include "data.h"
 
-/// @defgroup Opcode Opcode
-///@{
+/// Create memory map for ROM data.
+/// \param [in] size ROM size in bytes.
+/// \param [out] map Memory map.
+/// \return true if the memory map was succesfully created.
+/// \return false if an error occured.
+bool rom_create(MemoryMap* map, size_t size);
 
-/// Opcode types:
-/// -# `OPC`
-/// -# `OPC A`
-/// -# `OPC #nn`
-/// -# `OPC #nn, ZZ`
-/// -# `OPC #nn, ZZ, X`
-/// -# `OPC #nn, hhll`
-/// -# `OPC #nn, hhll, X`
-/// -# `OPC ZZ`
-/// -# `OPC ZZ, X`
-/// -# `OPC ZZ, Y`
-/// -# `OPC (ZZ)`
-/// -# `OPC (ZZ, X)`
-/// -# `OPC (ZZ), Y`
-/// -# `OPC ZZ, hhll`
-/// -# `OPC hhll`
-/// -# `OPC (hhll)`
-/// -# `OPC hhll, X`
-/// -# `OPC hhll, Y`
-/// -# `OPC shsl,dhdl,hhll` 
-/// -# `OPC l_hhll` (label)
-/// -# `OPC ZZ, l_hhll` (label)
-/// -# `OPC [hhll, X]` 
-/// -# `.db OPC` (unsupported opcode output as raw binary data)
-enum PCE_ADDRESSING_MODE {    
-    PCE_OP = 0,
-    PCE_OP_A,
-    PCE_OP_nn,
-    PCE_OP_nn_ZZ,
-    PCE_OP_nn_ZZ_X,
-    PCE_OP_nn_hhll,
-    PCE_OP_nn_hhll_X,
-    PCE_OP_ZZ,
-    PCE_OP_ZZ_X,
-    PCE_OP_ZZ_Y,
-    PCE_OP__ZZ__,
-    PCE_OP__ZZ_X__,
-    PCE_OP__ZZ__Y_,
-    PCE_OP_ZZ_hhll,   
-    PCE_OP_hhll,
-    PCE_OP__hhll__,
-    PCE_OP_hhll_X,
-    PCE_OP_hhll_Y,
-    PCE_OP_shsl_dhdl_hhll, 
-    PCE_OP__lbl__,
-    PCE_OP_ZZ_lbl,
-    PCE_OP__hhll_X__,
-    PCE_unknown
-};
+/// Load ROM and update memory map.
+/// \param [out] map   Memory map.
+/// \param [in]  input Input data.
+/// \return true if the ROM was successfully loaded.
+/// \return false if an error occured.
+bool rom_load(MemoryMap* map, Data* input);
 
-#define OPCODE_NAME_MAX_LEN 5U
-
-/// Opcode
-typedef struct {
-  char    name[OPCODE_NAME_MAX_LEN]; //< name
-  uint8_t size; //< size in bytes
-  uint8_t type; //< addressing type
-} Opcode;
-
-/// Get opcode description
-/// \param [in] op Opcode id
-/// \return Pointer to opcode description
-const Opcode* opcode_get(uint8_t op);
-
-/// Get opcode format string
-/// \param [in] op Pointer to opcode description
-/// \param [in] i  Opcode argument id
-/// \return Argument format string
-/// \return NULL if the argument id is out of opcode argument count
-const char* opcode_format(const Opcode *op, int i);
-
-/// Is the instruction a local jump ?
-bool opcode_is_local_jump(uint8_t op);
-
-/// Is the instruction a "far" jump ?
-bool opcode_is_far_jump(uint8_t op);
-
-/// @}
-
-#endif // ETRIPATOR_OPCODES_H
+#endif // ETRIPATOR_ROM_H

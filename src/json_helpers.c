@@ -33,14 +33,14 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include "jsonhelpers.h"
+#include "json_helpers.h"
 
-#include <errno.h>
-#include <string.h>
+#include <etripator/utils.h>
 
 bool json_validate_int(const json_t* obj, int* out) {
-    assert(obj != NULL);
-    assert(out != NULL);
+    SANITY_CHECK(obj != NULL, false);
+    SANITY_CHECK(out != NULL, false);
+
     bool ret = false;
     if(json_is_string(obj)) {
         const char *str = json_string_value(obj);
@@ -50,8 +50,9 @@ bool json_validate_int(const json_t* obj, int* out) {
             str++;
         }
         errno = 0;
-        *out = strtoul(str, NULL, 16);
-        if(errno == 0) {
+        char *end;
+        *out = strtoul(str, &end, 16);
+        if((errno == 0) && (*end == '\0')) {
             ret = true;
         }
     } else if(json_is_integer(obj)) {
@@ -61,61 +62,65 @@ bool json_validate_int(const json_t* obj, int* out) {
     return ret;
 }
 
-bool json_load_description(const json_t* obj, const char *key, char **out) {
-    assert(out != NULL);
-    assert(out && (*out == NULL));
+bool json_load_description(const json_t* obj, const char *key, String *out) {
+    SANITY_CHECK(out != NULL, false);
 
-    bool ret = false;
-    char *buffer = NULL;
     json_t *tmp = json_object_get(obj, key);
-    
     if(tmp == NULL) {
-        ret = true;
-    } else {
-        if(json_is_string(tmp)) {
-            buffer = strdup(json_string_value(tmp));
-        } else if (json_is_array(tmp)) {
-            int index;
-            json_t* value;
-            size_t len = 0;
-            json_array_foreach(tmp, index, value) {
-                if(json_is_string(value)) {
-                    const char *str = json_string_value(value);
-                    if(buffer != NULL) {
-                        buffer[len-1] = '\n';
-                    }
-                    size_t n = len + strlen(str) + 1;
-                    char *ptr = realloc(buffer, n);
-                    if(ptr == NULL) {
-                        free(buffer);
-                        buffer = NULL;
-                        break;
-                    }
-                    memcpy(ptr+len, str, strlen(str));
-                    ptr[n-1] = '\0';
-                    buffer = ptr;
-                    len = n;
+       return true;
+    }
+
+    if(json_is_string(tmp)) {
+        return string_copy(out, json_string_value(tmp), json_string_length(tmp));
+    } 
+    
+    if (json_is_array(tmp)) {
+        const size_t len = json_array_size(tmp);
+        size_t index;
+        json_t* value;
+        json_array_foreach(tmp, index, value) {
+            if(!json_is_string(value)) {
+                continue;
+            }
+            if(!string_append(out, json_string_value(value), json_string_length(value))) {
+                return false;
+            }
+            if(index < (len-1)) {
+                if(!string_append_n(out, '\n', 1)) {
+                    return false;
                 }
             }
         }
-        ret = (buffer != NULL);
     }
-    *out = buffer;
-    return ret;
+    return true;
 }
 
-void json_print_description(FILE *out, const char *key, const char *str) {
-    assert(out != NULL);
-    assert(key != NULL);
-    assert(str != NULL);
-    fprintf(out, "\"%s\":[", key);
-    while(*str) {
-        fprintf(out, "\n\t\t\t\"");
-        for(;*str && (*str != '\n'); str++) {
-            fputc(*str, out);
+bool json_print_description(Data *out, const char *key, StringView description) {
+    SANITY_CHECK(out != NULL, false);
+    SANITY_CHECK(key != NULL, false);
+    
+    String s;
+    string_init(&s);
+
+    (void)string_append_format(&s, "\"%s\":[", key);
+    if(!string_view_empty(description)) {
+        for(const char *str=description.data; *str; ) {
+            (void)string_append(&s, "\n\t\t\"", 4U);
+            for(;*str && (*str != '\n'); str++) {
+                (void)string_append_n(&s, *str, 1U);
+            }
+            (void)string_append_format(&s, "\"%c", *str ? ',' : ' ');
+            if(*str) {
+                str++;
+            }
         }
-        fprintf(out, "\"%c", *str ? ',' : ' ');
-        if(*str) str++;
+        (void)string_append(&s, "\n\t", 2U);
     }
-    fprintf(out, "\n\t]");
+    (void)string_append_n(&s, ']', 1U);
+
+    size_t nwritten = 0;
+    size_t len = string_length(&s);
+    bool ret = data_write(out, (const uint8_t*)string_const_ptr(&s), len, &nwritten);
+    string_release(&s);
+    return ret && (nwritten == len);
 }

@@ -1,8 +1,19 @@
-cmake_minimum_required (VERSION 3.30)
+cmake_minimum_required(VERSION 4.3.0)
 
 project(etripator
-    VERSION 0.9.0
-    LANGUAGES C)
+    VERSION 1.0.0
+    LANGUAGES C
+)
+
+if(NOT CMAKE_BUILD_TYPE)
+    message(STATUS, "No build type specified. Force build type to Debug.")
+    set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+option(BUILD_TESTS "Enable unit tests" ON)
+
+set(CMAKE_C_STANDARDS 11)
+add_compile_options(-Wall -Wextra -Wshadow)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     add_compile_definitions(_DARWIN_C_SOURCE=__DARWIN_C_FULL)
@@ -15,67 +26,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 enable_testing()
 
 include(CheckSymbolExists)
-
 check_symbol_exists(strdup "string.h" HAVE_STRDUP)
 
-if(NOT CMAKE_BUILD_TYPE)
-    message(STATUS, "No build type specified. Force build type to Debug.")
-    set(CMAKE_BUILD_TYPE "Debug")
-endif()
-
-find_package(Doxygen)
 find_package(Jansson)
-
-set(CMAKE_C_STANDARDS 11)
 
 add_subdirectory(externals EXCLUDE_FROM_ALL)
 
-set(etripator_SRC
-    message.c 
-    message/file.c
-    message/console.c
-    jsonhelpers.c
-    decode.c
-    section.c
-    section/load.c
-    section/save.c
-    opcodes.c
-    comment.c
-    comment/load.c
-    comment/save.c
-    label.c
-    label/load.c
-    label/save.c
-    irq.c
-    memory.c
-    memory_map.c
-    rom.c
-    cd.c
-    ipl.c
-    output.c
-#    wla_dx.c
-)
+add_subdirectory(src)
 
-set(etripator_HDR
-    config.h
-    message.h
-    message/file.h
-    message/console.h
-    jsonhelpers.h
-    decode.h
-    section.h
-    opcodes.h
-    comment.h
-    label.h
-    irq.h
-    memory.h
-    memory_map.h
-    rom.h
-    cd.h
-    ipl.h
-    output.h
-#    wla_dx.h
-)
+#[[
 
 add_library(etripator STATIC ${etripator_SRC} ${etripator_HDR})
 set_target_properties(etripator PROPERTIES C_STANDARD 11)
@@ -93,6 +52,14 @@ target_include_directories(etripator_cli PRIVATE ${CMAKE_SOURCE_DIR})
 target_include_directories(etripator_cli PUBLIC externals)
 target_link_libraries(etripator_cli etripator cargs)
 
+#]]
+
+if(BUILD_TESTS)
+    add_subdirectory(test)
+endif()
+
+find_package(Doxygen)
+
 set(DOXYFILE_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxyfile.in)
 set(DOXYFILE ${CMAKE_CURRENT_BINARY_DIR}/doxyfile)
 
@@ -106,6 +73,3 @@ add_custom_target(doc
     VERBATIM
 )
 
-add_subdirectory(test)
-
-install(TARGETS etripator_cli DESTINATION bin)

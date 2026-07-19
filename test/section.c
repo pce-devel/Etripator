@@ -39,13 +39,13 @@
 #include "message/console.h"
 
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+void* setup(const MunitParameter params[] __unused, void* user_data __unused) {
     message_printer_init();    
     console_message_printer_init();
     return NULL;
 }
 
-void tear_down(void* fixture __attribute__((unused))) {
+void tear_down(void* fixture __unused) {
     message_printer_destroy();
 }
 

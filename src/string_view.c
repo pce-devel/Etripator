@@ -33,39 +33,71 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_MEMORY_H
-#define ETRIPATOR_MEMORY_H
+#include <etripator/string_view.h>
+#include <string.h>
 
-#include "config.h"
+StringView string_view_from_literal(const char *ptr) {
+    return (StringView) {
+        .data = ptr,
+        .length = ptr ? strlen(ptr) : 0,
+    };
+}
 
-/// @defgroup Memory Memory block
-///@{
+StringView string_view_from_substring(const char *ptr, size_t length) {
+    return (StringView) {
+        .data = ptr,
+        .length = length,
+    };
+}
 
-/// Memory block.
-typedef struct {
-    size_t   length; ///< Byte array length.
-    uint8_t *data; ///< Byte array.
-} Memory;
+bool string_view_empty(StringView s) {
+    return (s.data == NULL) || (s.length == 0);
+}
 
-/// Creates a new memory block.
-/// \param [out] memory Memory block.
-/// \param [in]  length Memory block size (in bytes).
-/// \return true if the memory block was successfully created.
-/// \return false if an error occured.
-///         @note memory is left untouched if an error occured.
-bool memory_create(Memory *memory, size_t length);
+bool string_view_cmp(StringView s0, StringView s1) {
+    assert(s0.data != NULL);
+    assert(s1.data != NULL);
+    if(s0.length != s1.length) {
+        return false;
+    }
+    for(size_t i=0; i<s0.length; i++) {
+        if(s0.data[i] != s1.data[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
-/// Releases memory block resources.
-/// \param [in out] mem Memory block.
-void memory_destroy(Memory *memory);
+bool string_view_case_cmp(StringView s0, StringView s1) {
+    assert(s0.data != NULL);
+    assert(s1.data != NULL);
+    if(s0.length != s1.length) {
+        return false;
+    }
+    for(size_t i=0; i<s0.length; i++) {
+        char u = s0.data[i];
+        char v = s1.data[i];
+        if(u != v) {
+            if((u >= 'A') && (u <= 'Z')) {
+                u = u + 'a' - 'A';
+            }
+            if((v >= 'A') && (v <= 'Z')) {
+                v = v + 'a' - 'A';
+            }
+            if(u != v) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
-/// Fills a memory block with a given byte value.
-/// \param [in out] mem Memory block.
-/// \param [in] c Byte value.
-/// \return true if the memory block was successfully filled.
-/// \return false if the memory block is invalid (0 size or unallocated).
-bool memory_fill(Memory *memory, uint8_t c);
-
-/// @}
-
-#endif // ETRIPATOR_MEMORY_H
+size_t string_view_find_first(const StringView s, char sep) {
+    if(s.data == NULL) {
+        return 0;
+    }
+    size_t i;
+    for(i=0; (i<s.length) && (s.data[i]!=sep); i++) {
+    }
+    return i;
+}

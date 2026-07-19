@@ -1,7 +1,3 @@
-if("${CMAKE_C_COMPILER_ID}" IN_LIST "GNU;Clang;AppleClang")
-    add_compile_options(-Wall -Wshadow -Wextra)
-endif()
-
 function(add_unit_test)
     set(options )
     set(oneValueArgs NAME)
@@ -14,7 +10,7 @@ function(add_unit_test)
     list(REMOVE_DUPLICATES ut_WRAP)
 
     add_executable(${target_name} ${ut_SOURCES})
-    target_link_libraries(${target_name} PRIVATE ${ut_LIBRARIES} munit)
+    target_link_libraries(${target_name} PRIVATE ${ut_LIBRARIES} unity fff)
     target_include_directories(${target_name} PRIVATE ${ut_INCLUDE_DIRECTORIES} ${EXTRA_INCLUDE})
     set_target_properties(${target_name} PROPERTIES C_STANDARD 11)
 
@@ -37,65 +33,168 @@ function(add_unit_test)
     )
 endfunction()
 
+cmake_path(SET ETRIPATOR_SRC_DIR NORMALIZE "${PROJECT_SOURCE_DIR}/src")
+cmake_path(SET ETRIPATOR_INC_DIR NORMALIZE "${PROJECT_SOURCE_DIR}/include")
+
 add_unit_test(
-    NAME message
+    NAME utils
     SOURCES 
-        message.c 
-    LIBRARIES cwalk
-    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+        utils.c
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
+)
+
+add_unit_test(
+    NAME string
+    SOURCES 
+        string.c
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
+)
+
+add_unit_test(
+    NAME string_view
+    SOURCES 
+        string_view.c
+        ${ETRIPATOR_SRC_DIR}/string_view.c
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
+)
+
+add_unit_test(
+    NAME data
+    SOURCES 
+        data/buffer.c
+        data.c
+        ${ETRIPATOR_SRC_DIR}/data/buffer.c
+        ${ETRIPATOR_SRC_DIR}/data.c
+        ${ETRIPATOR_SRC_DIR}/string_view.c
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
 )
 
 add_unit_test(
     NAME memory
     SOURCES 
         memory.c 
-        ${PROJECT_SOURCE_DIR}/memory.c
-        ${PROJECT_SOURCE_DIR}/message.c
-        ${PROJECT_SOURCE_DIR}/message/console.c
+        ${ETRIPATOR_SRC_DIR}/memory.c
     LIBRARIES cwalk
-    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
 )
 
 add_unit_test(
     NAME memory_map
     SOURCES 
         memory_map.c 
-        ${PROJECT_SOURCE_DIR}/memory_map.c
-        ${PROJECT_SOURCE_DIR}/memory.c
-        ${PROJECT_SOURCE_DIR}/message.c
-        ${PROJECT_SOURCE_DIR}/message/console.c
+        ${ETRIPATOR_SRC_DIR}/memory_map.c
+        ${ETRIPATOR_SRC_DIR}/memory.c
     LIBRARIES cwalk
-    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
 )
 
-if(CMAKE_COMPILER_IS_GNUCC)
-    add_unit_test(
-        NAME rom
-        SOURCES 
-            rom.c 
-            ${PROJECT_SOURCE_DIR}/rom.c
-            ${PROJECT_SOURCE_DIR}/memory_map.c
-            ${PROJECT_SOURCE_DIR}/memory.c
-            ${PROJECT_SOURCE_DIR}/message.c
-            ${PROJECT_SOURCE_DIR}/message/console.c
-        LIBRARIES cwalk fff
-        INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
-        WRAP fopen fileno fstat fseek fread fclose
-    )
-endif()
+add_unit_test(
+    NAME rom
+    SOURCES 
+        rom.c 
+        ${ETRIPATOR_SRC_DIR}/rom.c
+        ${ETRIPATOR_SRC_DIR}/memory_map.c
+        ${ETRIPATOR_SRC_DIR}/memory.c
+        ${ETRIPATOR_SRC_DIR}/data.c
+        ${ETRIPATOR_SRC_DIR}/data/buffer.c
+        ${ETRIPATOR_SRC_DIR}/string_view.c
+    LIBRARIES cwalk
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
+)
 
 add_unit_test(
     NAME cd
     SOURCES 
         cd.c 
-        ${PROJECT_SOURCE_DIR}/cd.c
-        ${PROJECT_SOURCE_DIR}/memory_map.c
-        ${PROJECT_SOURCE_DIR}/memory.c
-        ${PROJECT_SOURCE_DIR}/message.c
-        ${PROJECT_SOURCE_DIR}/message/console.c
+        ${ETRIPATOR_SRC_DIR}/cd.c
+        ${ETRIPATOR_SRC_DIR}/memory_map.c
+        ${ETRIPATOR_SRC_DIR}/memory.c
+        ${ETRIPATOR_SRC_DIR}/data.c
+        ${ETRIPATOR_SRC_DIR}/data/buffer.c
+        ${ETRIPATOR_SRC_DIR}/string_view.c
     LIBRARIES cwalk
-    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
 )
+
+add_unit_test(
+    NAME message
+    SOURCES 
+        message.c 
+    LIBRARIES cwalk
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
+)
+
+add_unit_test(
+    NAME label
+    SOURCES 
+        label.c 
+        ${ETRIPATOR_SRC_DIR}/label.c
+        ${ETRIPATOR_SRC_DIR}/label/load.c
+        ${ETRIPATOR_SRC_DIR}/label/save.c
+        ${ETRIPATOR_SRC_DIR}/string.c
+        ${ETRIPATOR_SRC_DIR}/string_view.c
+        ${ETRIPATOR_SRC_DIR}/data.c
+        ${ETRIPATOR_SRC_DIR}/data/buffer.c
+        ${ETRIPATOR_SRC_DIR}/json_helpers.c
+    LIBRARIES cwalk jansson
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
+)
+
+add_unit_test(
+    NAME comment
+    SOURCES 
+        comment.c 
+        ${ETRIPATOR_SRC_DIR}/comment.c
+        ${ETRIPATOR_SRC_DIR}/string.c
+        ${ETRIPATOR_SRC_DIR}/string_view.c
+    LIBRARIES cwalk
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
+)
+
+add_unit_test(
+    NAME json_helpers
+    SOURCES 
+        json_helpers.c 
+        ${ETRIPATOR_SRC_DIR}/json_helpers.c
+        ${ETRIPATOR_SRC_DIR}/string.c
+        ${ETRIPATOR_SRC_DIR}/string_view.c
+        ${ETRIPATOR_SRC_DIR}/data.c
+        ${ETRIPATOR_SRC_DIR}/data/buffer.c
+    LIBRARIES cwalk jansson
+    INCLUDE_DIRECTORIES
+        ${ETRIPATOR_INC_DIR}
+)
+
+#[[
+add_unit_test(
+    NAME disasm
+    SOURCES 
+        disasm.c
+        ${ETRIPATOR_SRC_DIR}/string.c
+        ${ETRIPATOR_SRC_DIR}/label.c
+        ${ETRIPATOR_SRC_DIR}/memory_map.c
+        ${ETRIPATOR_SRC_DIR}/memory.c
+        ${ETRIPATOR_SRC_DIR}/data.c
+        ${ETRIPATOR_SRC_DIR}/data/buffer.c
+        ${ETRIPATOR_SRC_DIR}/rom.c
+    INCLUDE_DIRECTORIES
+        ${PROJECT_SOURCE_DIR}
+        ${ETRIPATOR_INC_DIR}
+)
+#]]
+
+#[[
 
 add_unit_test(
     NAME label
@@ -131,17 +230,6 @@ add_unit_test(
         ${PROJECT_SOURCE_DIR}/section/load.c
         ${PROJECT_SOURCE_DIR}/message.c
         ${PROJECT_SOURCE_DIR}/jsonhelpers.c
-        ${PROJECT_SOURCE_DIR}/message/console.c
-    LIBRARIES cwalk jansson
-    INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
-)
-
-add_unit_test(
-    NAME opcodes
-    SOURCES 
-        opcodes.c 
-        ${PROJECT_SOURCE_DIR}/opcodes.c
-        ${PROJECT_SOURCE_DIR}/message.c
         ${PROJECT_SOURCE_DIR}/message/console.c
     LIBRARIES cwalk jansson
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
@@ -186,3 +274,4 @@ add_unit_test(
     LIBRARIES cwalk jansson
     INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR}
 )
+#]]

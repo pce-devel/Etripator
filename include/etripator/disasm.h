@@ -33,15 +33,11 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#ifndef ETRIPATOR_JSON_HELPERS_H
-#define ETRIPATOR_JSON_HELPERS_H
+#ifndef ETRIPATOR_DISASM_H
+#define ETRIPATOR_DISASM_H
 
 #include "config.h"
 
-#include <jansson.h>
+// [todo] nothing atm
 
-bool json_validate_int(const json_t* obj, int* out);
-bool json_load_description(const json_t* obj, const char *key, char **out);
-void json_print_description(FILE *out, const char *key, const char *str);
-
-#endif // ETRIPATOR_JSON_HELPERS_H
+#endif // ETRIPATOR_DISASM_H

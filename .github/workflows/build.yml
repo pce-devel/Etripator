@@ -7,10 +7,10 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
           submodules: 'recursive'
 
@@ -21,7 +21,7 @@ jobs:
     - name: Configure
       shell: bash
       working-directory: ${{github.workspace}}
-      run: cmake -Bbuild -S . -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: cmake -Bbuild -S . -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTS:BOOL=TRUE
 
     - name: Build
       working-directory: ${{github.workspace}}
