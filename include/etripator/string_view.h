@@ -33,73 +33,34 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <unity.h>
-#include <unity_fixture.h>
+#ifndef ETRIPATOR_STRING_VIEW_H
+#define ETRIPATOR_STRING_VIEW_H
 
-#include <fff.h>
+#include "config.h"
 
-#include <etripator/message.h>
-#include <etripator/memory.h>
+/// @addtogroup StringGroup
+/// @{
 
-DEFINE_FFF_GLOBALS;
+/// @defgroup StringView String view
+/// @{
 
-FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
+typedef struct {
+    const char *data;
+    size_t length;
+} StringView;
 
-TEST_GROUP(memory);
+StringView string_view_from_literal(const char *ptr);
+StringView string_view_from_substring(const char *ptr, size_t length);
+bool string_view_empty(StringView s);
+bool string_view_cmp(const StringView s0, const StringView s1);
+bool string_view_case_cmp(const StringView s0, const StringView s1);
+size_t string_view_find_first(const StringView s, char sep);
 
-TEST_SETUP(memory) {
-    RESET_FAKE(message_print);
-    FFF_RESET_HISTORY();
-}
+// [todo] trim left/right/both
+// [todo] move n left/rigth/both
+// [todo] test if starts with/if ends with
 
-TEST_TEAR_DOWN(memory) {
-}
+/// @}
+/// @}
 
-TEST(memory, create) {
-    Memory mem = {0};
-
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-}
-
-TEST(memory, fill) {
-    Memory mem = {0};
-
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
-}
-
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
-}
-
-static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
-}
-
-int main(int argc, const char * argv[]) {
-    return UnityMain(argc, argv, run_all_tests);
-}
+#endif // ETRIPATOR_STRING_VIEW_H

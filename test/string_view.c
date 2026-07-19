@@ -27,7 +27,7 @@
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
  
-  You should have received a copy of the GNU General Public License
+  You should have received ax copy of the GNU General Public License
   along with Etripator.  If not, see <http://www.gnu.org/licenses/>.
 
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
@@ -36,68 +36,79 @@
 #include <unity.h>
 #include <unity_fixture.h>
 
-#include <fff.h>
+#include <etripator/string_view.h>
 
-#include <etripator/message.h>
-#include <etripator/memory.h>
+TEST_GROUP(string_view);
 
-DEFINE_FFF_GLOBALS;
-
-FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
-
-TEST_GROUP(memory);
-
-TEST_SETUP(memory) {
-    RESET_FAKE(message_print);
-    FFF_RESET_HISTORY();
+TEST_SETUP(string_view) {
 }
 
-TEST_TEAR_DOWN(memory) {
+TEST_TEAR_DOWN(string_view) {
 }
 
-TEST(memory, create) {
-    Memory mem = {0};
+TEST(string_view, empty) {
+    StringView s;
+    s.data = "   something something... ";
+    s.length = strlen(s.data);
+    TEST_ASSERT_FALSE(string_view_empty(s));
 
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
+    s.data = NULL;
+    TEST_ASSERT_TRUE(string_view_empty(s));
 
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
+    s.data = "what?";
+    s.length = 0;
+    TEST_ASSERT_TRUE(string_view_empty(s));
 
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
+    s = (StringView) {0};
+    TEST_ASSERT_TRUE(string_view_empty(s));
 }
 
-TEST(memory, fill) {
-    Memory mem = {0};
+TEST(string_view, cmp) {
+    StringView s0;
+    StringView s1;
+    
+    s0 = string_view_from_literal(" bleep! ");
+    s1 = string_view_from_substring(" bleep!  #", 8U);
+    TEST_ASSERT_TRUE(string_view_cmp(s0, s1));
 
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
+    s1 = string_view_from_literal(" bleep? ");
+    TEST_ASSERT_FALSE(string_view_cmp(s0, s1));
 
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
+    s0 = string_view_from_literal(" bleep!  bloop! ");
+    TEST_ASSERT_FALSE(string_view_cmp(s0, s1));
 }
 
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
+TEST(string_view, case_cmp) {
+    StringView s0;
+    StringView s1;
+    
+    s0 = string_view_from_literal(" bleep! ");
+    s1 = string_view_from_substring(" blEeP!  #", 8U);
+    TEST_ASSERT_TRUE(string_view_case_cmp(s0, s1));
+
+    s1 = string_view_from_literal(" blEAp! ");
+    TEST_ASSERT_FALSE(string_view_case_cmp(s0, s1));
+
+    s0 = string_view_from_literal(" bleep!  bloop! ");
+    TEST_ASSERT_FALSE(string_view_case_cmp(s0, s1));
+}
+
+TEST(string_view, find_first) {
+    StringView s = string_view_from_literal("first;second;third;");
+    TEST_ASSERT_EQUAL(string_view_find_first(s, ';'), 5U);
+    TEST_ASSERT_EQUAL(string_view_find_first(s, '#'), s.length);
+    TEST_ASSERT_EQUAL(string_view_find_first((StringView){0}, '-'), 0);
+}
+
+TEST_GROUP_RUNNER(string_view) {
+    RUN_TEST_CASE(string_view, empty);
+    RUN_TEST_CASE(string_view, cmp);
+    RUN_TEST_CASE(string_view, case_cmp);
+    RUN_TEST_CASE(string_view, find_first);
 }
 
 static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
+    RUN_TEST_GROUP(string_view);
 }
 
 int main(int argc, const char * argv[]) {

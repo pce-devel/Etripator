@@ -39,65 +39,63 @@
 #include <fff.h>
 
 #include <etripator/message.h>
-#include <etripator/memory.h>
+#include <etripator/utils.h>
 
 DEFINE_FFF_GLOBALS;
 
 FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
 
-TEST_GROUP(memory);
+TEST_GROUP(utils);
 
-TEST_SETUP(memory) {
+TEST_SETUP(utils) {
     RESET_FAKE(message_print);
     FFF_RESET_HISTORY();
 }
 
-TEST_TEAR_DOWN(memory) {
+TEST_TEAR_DOWN(utils) {
 }
 
-TEST(memory, create) {
-    Memory mem = {0};
-
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
+bool dummy_test(bool value) {
+    SANITY_CHECK(value, false);
+    return true;
 }
 
-TEST(memory, fill) {
-    Memory mem = {0};
-
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
+void dummy_inc(bool value, int *i) {
+    SANITY_CHECK(value);
+    *i += 1;
 }
 
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
+TEST(utils, sanity_check) {
+    TEST_ASSERT_TRUE(dummy_test(true));
+    TEST_ASSERT_FALSE(dummy_test(false));
+
+    int i = 1;
+    dummy_inc(true, &i);
+    TEST_ASSERT_EQUAL_INT(i, 2);
+
+    dummy_inc(false, &i);
+    TEST_ASSERT_EQUAL_INT(i, 2);
+}
+
+TEST(utils, container_of) {
+    struct Foo {
+        int i0;
+        char d[4];
+        int i1;
+        short s2;
+    } foo;
+
+    int *ptr = &foo.i1;
+    TEST_ASSERT_EQUAL_PTR(&foo, CONTAINER_OF(ptr, struct Foo, i1));
+}
+
+TEST_GROUP_RUNNER(utils) {
+    RUN_TEST_CASE(utils, sanity_check);
+    RUN_TEST_CASE(utils, container_of);
 }
 
 static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
+    RUN_TEST_GROUP(utils);
 }
 
 int main(int argc, const char * argv[]) {

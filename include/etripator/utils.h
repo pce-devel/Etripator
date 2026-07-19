@@ -33,73 +33,35 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <unity.h>
-#include <unity_fixture.h>
+#ifndef ETRIPATOR_UTILS_H
+#define ETRIPATOR_UTILS_H
 
-#include <fff.h>
+#include "message.h"
 
-#include <etripator/message.h>
-#include <etripator/memory.h>
+#define STRINGIFY_IMPL(s) #s
+#define STRINGIFY(s) STRINGIFY_IMPL(s)
 
-DEFINE_FFF_GLOBALS;
+#define CONCAT_IMPL(s0, s1) s0 ## s1
+#define CONCAT(s0, s1) CONCAT_IMPL(s0, s1)
 
-FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
+#define SAME_TYPE(a, b) __builtin_types_compatible_p(__typeof__(a), __typeof__(b))
 
-TEST_GROUP(memory);
+#define CONTAINER_OF(ptr, type, member) \
+({ \
+    _Static_assert(SAME_TYPE(*(ptr),  ((type*)0)->member) || SAME_TYPE(*(ptr), void), #ptr " pointer type mismatch"); \
+    ((type*)(((char*)ptr) - offsetof(type, member))); \
+})
 
-TEST_SETUP(memory) {
-    RESET_FAKE(message_print);
-    FFF_RESET_HISTORY();
-}
+#define SANITY_RET_IMPL() return 
 
-TEST_TEAR_DOWN(memory) {
-}
+#define SANITY_RET_IMPL_VAL(retval) return (retval)
 
-TEST(memory, create) {
-    Memory mem = {0};
+#define SANITY_CHECK(expr, ...) \
+do { \
+    if(__builtin_expect(!(expr), 0)) { \
+        ERROR_MSG("(%s) evaluation failed", STRINGIFY(expr)); \
+        SANITY_RET_IMPL ## __VA_OPT__(_VAL) (__VA_ARGS__); \
+    } \
+} while(0)
 
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-}
-
-TEST(memory, fill) {
-    Memory mem = {0};
-
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
-}
-
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
-}
-
-static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
-}
-
-int main(int argc, const char * argv[]) {
-    return UnityMain(argc, argv, run_all_tests);
-}
+#endif // ETRIPATOR_UTILS_H

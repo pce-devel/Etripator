@@ -33,63 +33,62 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <munit.h>
+#include <unity.h>
+#include <unity_fixture.h>
 
-#include <message.h>
-#include <message/console.h>
+#include <fff.h>
 
-#include <cd.h>
+#include <etripator/message.h>
+#include <etripator/data.h>
+#include <etripator/cd.h>
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
-    return NULL;
+DEFINE_FFF_GLOBALS;
+
+FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
+
+TEST_GROUP(cd);
+
+TEST_SETUP(cd) {
+    RESET_FAKE(message_print);
+    FFF_RESET_HISTORY();
 }
 
-void tear_down(void* fixture __attribute__((unused))) {
+TEST_TEAR_DOWN(cd) {
 }
 
-MunitResult cd_memory_map_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
-    MemoryMap map = {};
+TEST(cd, memory_map) {
+    MemoryMap map = {0};
+    TEST_ASSERT_TRUE(memory_map_init(&map));
 
-    munit_assert_true(memory_map_init(&map));
-    munit_assert_true(cd_memory_map(&map));
+    TEST_ASSERT_TRUE(cd_memory_map(&map));
 
-    munit_assert_not_null(map.memory[PCE_MEMORY_CD_RAM].data);
-    munit_assert_size(map.memory[PCE_MEMORY_CD_RAM].length, ==, PCE_CD_RAM_BANK_COUNT*PCE_BANK_SIZE);
+    TEST_ASSERT_NOT_NULL(map.memory[PCE_MEMORY_CD_RAM].data);
+    TEST_ASSERT_EQUAL_size_t(PCE_CD_RAM_BANK_COUNT*PCE_BANK_SIZE, map.memory[PCE_MEMORY_CD_RAM].length);
     for(size_t i=0; i<PCE_CD_RAM_BANK_COUNT; i++) {
-        munit_assert_int(map.page[PCE_CD_RAM_FIRST_PAGE+i].id, ==, PCE_MEMORY_CD_RAM);
-        munit_assert_size(map.page[PCE_CD_RAM_FIRST_PAGE+i].bank, ==, i);
+        TEST_ASSERT_EQUAL_INT(PCE_MEMORY_CD_RAM, map.page[PCE_CD_RAM_FIRST_PAGE+i].id);
+        TEST_ASSERT_EQUAL_size_t(i, map.page[PCE_CD_RAM_FIRST_PAGE+i].bank);
     }
 
-    munit_assert_not_null(map.memory[PCE_MEMORY_SYSCARD_RAM].data);
-    munit_assert_size(map.memory[PCE_MEMORY_SYSCARD_RAM].length, ==, PCE_SYSCARD_RAM_BANK_COUNT*PCE_BANK_SIZE);
+    TEST_ASSERT_NOT_NULL(map.memory[PCE_MEMORY_SYSCARD_RAM].data);
+    TEST_ASSERT_EQUAL_size_t(PCE_SYSCARD_RAM_BANK_COUNT*PCE_BANK_SIZE, map.memory[PCE_MEMORY_SYSCARD_RAM].length);
     for(size_t i=0; i<PCE_SYSCARD_RAM_BANK_COUNT; i++) {
-        munit_assert_int(map.page[PCE_SYSCARD_RAM_FIRST_PAGE+i].id, ==, PCE_MEMORY_SYSCARD_RAM);
-        munit_assert_size(map.page[PCE_SYSCARD_RAM_FIRST_PAGE+i].bank, ==, i);
+        TEST_ASSERT_EQUAL_INT(PCE_MEMORY_SYSCARD_RAM, map.page[PCE_SYSCARD_RAM_FIRST_PAGE+i].id);
+        TEST_ASSERT_EQUAL_size_t(i, map.page[PCE_SYSCARD_RAM_FIRST_PAGE+i].bank);
     }
 
     memory_map_destroy(&map);
-
-    return MUNIT_OK;
 }
 
 // [todo] cd_load
 
-static MunitTest cd_tests[] = {
-    { "/memory_map", cd_memory_map_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
-};
+TEST_GROUP_RUNNER(cd) {
+    RUN_TEST_CASE(cd, memory_map);
+}
 
-static const MunitSuite cd_suite = {
-    "CDROM test suite", cd_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
-};
+static void run_all_tests(void) {
+    RUN_TEST_GROUP(cd);
+}
 
-int main (int argc, char* const* argv) {
-    message_printer_init();    
-    console_message_printer_init();
-
-    int ret = munit_suite_main(&cd_suite, NULL, argc, argv);
-
-    message_printer_destroy();
-
-    return ret;
+int main(int argc, const char * argv[]) {
+    return UnityMain(argc, argv, run_all_tests);
 }

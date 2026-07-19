@@ -33,73 +33,71 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <unity.h>
-#include <unity_fixture.h>
+#include <etripator/string_view.h>
+#include <string.h>
 
-#include <fff.h>
-
-#include <etripator/message.h>
-#include <etripator/memory.h>
-
-DEFINE_FFF_GLOBALS;
-
-FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
-
-TEST_GROUP(memory);
-
-TEST_SETUP(memory) {
-    RESET_FAKE(message_print);
-    FFF_RESET_HISTORY();
+StringView string_view_from_literal(const char *ptr) {
+    return (StringView) {
+        .data = ptr,
+        .length = ptr ? strlen(ptr) : 0,
+    };
 }
 
-TEST_TEAR_DOWN(memory) {
+StringView string_view_from_substring(const char *ptr, size_t length) {
+    return (StringView) {
+        .data = ptr,
+        .length = length,
+    };
 }
 
-TEST(memory, create) {
-    Memory mem = {0};
-
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
+bool string_view_empty(StringView s) {
+    return (s.data == NULL) || (s.length == 0);
 }
 
-TEST(memory, fill) {
-    Memory mem = {0};
-
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
+bool string_view_cmp(StringView s0, StringView s1) {
+    assert(s0.data != NULL);
+    assert(s1.data != NULL);
+    if(s0.length != s1.length) {
+        return false;
+    }
+    for(size_t i=0; i<s0.length; i++) {
+        if(s0.data[i] != s1.data[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
+bool string_view_case_cmp(StringView s0, StringView s1) {
+    assert(s0.data != NULL);
+    assert(s1.data != NULL);
+    if(s0.length != s1.length) {
+        return false;
+    }
+    for(size_t i=0; i<s0.length; i++) {
+        char u = s0.data[i];
+        char v = s1.data[i];
+        if(u != v) {
+            if((u >= 'A') && (u <= 'Z')) {
+                u = u + 'a' - 'A';
+            }
+            if((v >= 'A') && (v <= 'Z')) {
+                v = v + 'a' - 'A';
+            }
+            if(u != v) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
-static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
-}
-
-int main(int argc, const char * argv[]) {
-    return UnityMain(argc, argv, run_all_tests);
+size_t string_view_find_first(const StringView s, char sep) {
+    if(s.data == NULL) {
+        return 0;
+    }
+    size_t i;
+    for(i=0; (i<s.length) && (s.data[i]!=sep); i++) {
+    }
+    return i;
 }

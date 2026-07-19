@@ -33,160 +33,319 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <munit.h>
-#include "../section.c"
-#include "message.h"
-#include "message/console.h"
+#include <unity.h>
+#include <unity_fixture.h>
 
+#include <fff.h>
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
-    message_printer_init();    
-    console_message_printer_init();
-    return NULL;
+#include <etripator/message.h>
+
+#include "../src/section.c"
+
+DEFINE_FFF_GLOBALS;
+
+FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
+
+TEST_GROUP(section);
+
+TEST_SETUP(section) {
+    RESET_FAKE(message_print);
+    FFF_RESET_HISTORY();
 }
 
-void tear_down(void* fixture __attribute__((unused))) {
-    message_printer_destroy();
+TEST_TEAR_DOWN(section) {
 }
 
-MunitResult section_load_test(const MunitParameter params[], void* fixture) {
-    (void)params;
-    (void)fixture;
+TEST(section, section_type_name) {
+    TEST_ASSERT_EQUAL_STRING("data", section_type_name(SECTION_TYPE_DATA).data);
+    TEST_ASSERT_EQUAL_STRING("code", section_type_name(SECTION_TYPE_CODE).data);
+    TEST_ASSERT_EQUAL_STRING("unknown", section_type_name(SECTION_TYPE_UNKNOWN).data);
+    TEST_ASSERT_EQUAL_STRING("unknown", section_type_name(SECTION_TYPE_COUNT).data);
+}
 
-    static const Section bank0_0[4] = {
-        { "cdbios_functions", SECTION_TYPE_CODE, 0, 0xe000, 0x0000, 0x504, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } }, 
-        { "unknown.0", SECTION_TYPE_DATA, 0, 0xe504, 0x0504, 0x05, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
-        { "ex_colorcmd.impl", SECTION_TYPE_CODE, 0, 0xe509, 0x0509, 0xce, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
-        { "unknown.1", SECTION_TYPE_DATA, 0, 0xe5d7, 0x05d7, 0x03, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } }
-    };
+TEST(section, data_type_name) {
+    TEST_ASSERT_EQUAL_STRING("binary", data_type_name(DATA_TYPE_BINARY).data);
+    TEST_ASSERT_EQUAL_STRING("hex", data_type_name(DATA_TYPE_HEX).data);
+    TEST_ASSERT_EQUAL_STRING("string", data_type_name(DATA_TYPE_STRING).data);
+    TEST_ASSERT_EQUAL_STRING("jumptable", data_type_name(DATA_TYPE_JUMP_TABLE).data);
+    TEST_ASSERT_EQUAL_STRING("unknown", data_type_name(DATA_TYPE_UNKNOWN).data);
+    TEST_ASSERT_EQUAL_STRING("unknown", data_type_name(DATA_TYPE_COUNT).data);
+}
 
-    static const Section bank0_1[9] = {
-        { "ex_satclr.impl", SECTION_TYPE_CODE, 0, 0xe5da, 0x05da, 0x26, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } }, 
-        { "unknown.2", SECTION_TYPE_DATA, 0, 0xf8a9, 0x18a9, 0x0f, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
-        { "bm_free.impl", SECTION_TYPE_CODE, 0, 0xf8b8, 0x18b8, 0x575, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
-        { "jump_table.0", SECTION_TYPE_DATA, 0, 0xfe2d, 0x1e2d, 0x2a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
-        { "grp_bios.impl", SECTION_TYPE_CODE, 0, 0xfe57, 0x1e57, 0x18, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
-        { "jump_table.1", SECTION_TYPE_DATA, 0, 0xfe70, 0x1e70, 0x22, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
-        { "ex_memopen.impl", SECTION_TYPE_CODE, 0, 0xfe92, 0x1e92, 0x30, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
-        { "unknown.3", SECTION_TYPE_DATA, 0, 0xfec2, 0x1ec2, 0x134, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_UNKNOWN, 8, 16 } },
-        { "irq_vectors", SECTION_TYPE_DATA, 0, 0xfff6, 0x1ff6, 0x0a, { 0xff, 0xf8, 0, 0, 0, 0, 0, 0 }, "syscard.asm", { DATA_TYPE_HEX, 2, 1 } }
-    };
- 
-    SectionArray arr = {0};
-    section_array_reset(&arr);
-
-    int i, j, k;
-    int ret;
-    ret = section_load(&arr, "./data/bank0_0.json");
-    section_array_tidy(&arr);
-    munit_assert_int(ret, !=, 0);
-    munit_assert_int(arr.count, ==, 4);
-
-    for(i=0; i<arr.count; i++) {
-        munit_assert_string_equal(bank0_0[i].name, arr.data[i].name);
-        munit_assert_int(bank0_0[i].type, ==, arr.data[i].type);
-        munit_assert_uint8(bank0_0[i].page, ==, arr.data[i].page);
-        munit_assert_uint16(bank0_0[i].logical, ==, arr.data[i].logical);
-        munit_assert_uint32(bank0_0[i].offset, ==, arr.data[i].offset);
-        munit_assert_int32(bank0_0[i].size, ==, arr.data[i].size);
-        munit_assert_memory_equal(8, bank0_0[i].mpr, arr.data[i].mpr);
-        munit_assert_int32(bank0_0[i].data.element_size, ==, arr.data[i].data.element_size);
-        munit_assert_int32(bank0_0[i].data.elements_per_line, ==, arr.data[i].data.elements_per_line);
-        munit_assert_string_equal(bank0_0[i].output, arr.data[i].output);
+TEST(section, section_compare) {
+    Section s[2];
+    for(size_t i=0; i<2; i++) {
+        section_reset(&s[i]);
     }
 
-    ret = section_load(&arr, "./data/bank0_1.json");
-    section_array_tidy(&arr);
-    munit_assert_int(ret, !=, 0);
-    munit_assert_int(arr.count, ==, 13);
-    for(i=0, k=0; k<4; i++, k++) {
-        munit_assert_string_equal(bank0_0[k].name, arr.data[i].name);
-        munit_assert_int(bank0_0[k].type, ==, arr.data[i].type);
-        munit_assert_uint8(bank0_0[k].page, ==, arr.data[i].page);
-        munit_assert_uint16(bank0_0[k].logical, ==, arr.data[i].logical);
-        munit_assert_uint32(bank0_0[k].offset, ==, arr.data[i].offset);
-        munit_assert_int32(bank0_0[k].size, ==, arr.data[i].size);
-        munit_assert_memory_equal(8, bank0_0[k].mpr, arr.data[i].mpr);
-        munit_assert_int32(bank0_0[k].data.element_size, ==, arr.data[i].data.element_size);
-        munit_assert_int32(bank0_0[k].data.elements_per_line, ==, arr.data[i].data.elements_per_line);
-        munit_assert_string_equal(bank0_0[k].output, arr.data[i].output);
+    s[0].base.page = 0xF7;
+    s[0].base.logical = 0xC59A;
+
+    s[1].base.page = 0xF7;
+    s[1].base.logical = 0xC59A;
+    TEST_ASSERT_EQUAL(0, section_compare(&s[0], &s[1]));
+
+    s[1].base.page = 0xFF;
+    s[1].base.logical = 0xE081;
+    TEST_ASSERT_LESS_THAN(0, section_compare(&s[0], &s[1]));
+
+    s[1].base.page = 0xF7;
+    s[1].base.logical = 0xC5AD;
+    TEST_ASSERT_LESS_THAN(0, section_compare(&s[0], &s[1]));
+
+    s[0].base.logical = 0xD000;
+    TEST_ASSERT_GREATER_THAN(0, section_compare(&s[0], &s[1]));
+
+    s[0].base.page = 0xF8;
+    s[0].base.logical = 0xC5AD;
+    TEST_ASSERT_GREATER_THAN(0, section_compare(&s[0], &s[1]));
+}
+
+TEST(section, section_overlap) {
+    Section s[2];
+     for(size_t i=0; i<2; i++) {
+        section_reset(&s[i]);
     }
-    for(k=0; k<9; i++, k++) {
-        munit_assert_string_equal(bank0_1[k].name, arr.data[i].name);
-        munit_assert_int(bank0_1[k].type, ==, arr.data[i].type);
-        munit_assert_uint8(bank0_1[k].page, ==, arr.data[i].page);
-        munit_assert_uint16(bank0_1[k].logical, ==, arr.data[i].logical);
-        munit_assert_uint32(bank0_1[k].offset, ==, arr.data[i].offset);
-        munit_assert_int32(bank0_1[k].size, ==, arr.data[i].size);
-        munit_assert_memory_equal(8, bank0_1[k].mpr, arr.data[i].mpr);
-        munit_assert_int32(bank0_1[k].data.element_size, ==, arr.data[i].data.element_size);
-        munit_assert_int32(bank0_1[k].data.elements_per_line, ==, arr.data[i].data.elements_per_line);
-        munit_assert_string_equal(bank0_1[k].output, arr.data[i].output);
+
+    s[0].base.type = SECTION_TYPE_DATA;
+    s[0].base.logical = 0xE900;
+    s[0].base.page = 0xFF;
+    s[0].base.size = 0x100;
+
+    s[1].base.type = SECTION_TYPE_CODE;
+    s[1].base.logical = s[0].base.logical;
+    s[1].base.page = s[0].base.page;
+    s[1].base.size = 0x100;
+    
+    TEST_ASSERT_EQUAL(-1, section_overlap(&s[0], &s[1]));
+
+    s[1].base.logical = 0xE8E0;
+    TEST_ASSERT_EQUAL(-1, section_overlap(&s[0], &s[1]));
+
+    s[1].base.logical = 0xF004;
+    TEST_ASSERT_EQUAL(0, section_overlap(&s[0], &s[1]));
+
+    s[1] = s[0];
+    s[1].base.logical = 0xE8E0;
+    TEST_ASSERT_EQUAL(1, section_overlap(&s[0], &s[1]));
+
+    s[1].data.type = DATA_TYPE_STRING;
+    TEST_ASSERT_EQUAL(-1, section_overlap(&s[0], &s[1]));
+
+    s[1].base.logical = 0xF004;
+    TEST_ASSERT_EQUAL(0, section_overlap(&s[0], &s[1]));
+
+    s[1].base.page = 0xE0;
+    TEST_ASSERT_EQUAL(0, section_overlap(&s[0], &s[1]));
+}
+
+TEST(section, section_merge) {
+    Section s[2];
+    for(size_t i=0; i<2; i++) {
+        section_reset(&s[i]);
     }
 
-    section_array_delete(&arr);
-    return MUNIT_OK;
+    s[0].base.logical = 0xE900;
+    s[0].base.size = 0x100;
+
+    s[1].base.logical = 0xE9A0;
+    s[1].base.size = 0x10;
+
+    section_merge(&s[0], &s[1]);
+    TEST_ASSERT_EQUAL(0xE900, s[0].base.logical);
+    TEST_ASSERT_EQUAL(0x100, s[0].base.size);
+
+    s[1].base.logical = 0xE9E0;
+    s[1].base.size = 0x60;
+
+    section_merge(&s[0], &s[1]);
+    TEST_ASSERT_EQUAL(0xE900, s[0].base.logical);
+    TEST_ASSERT_EQUAL(0x140, s[0].base.size);
+
+    s[1].base.logical = 0xEB00;
+    s[1].base.size = 0x20;
+
+    section_merge(&s[0], &s[1]);
+    TEST_ASSERT_EQUAL(0xE900, s[0].base.logical);
+    TEST_ASSERT_EQUAL(0x220, s[0].base.size);
+
+    s[1].base.logical = 0xE800;
+    s[1].base.size = 0x10;
+
+    section_merge(&s[0], &s[1]);
+    TEST_ASSERT_EQUAL(0xE800, s[0].base.logical);
+    TEST_ASSERT_EQUAL(0x320, s[0].base.size);
+
+    s[1].base.logical = 0xE7C0;
+    s[1].base.size = 0x200;
+
+    section_merge(&s[0], &s[1]);
+    TEST_ASSERT_EQUAL(0xE7C0, s[0].base.logical);
+    TEST_ASSERT_EQUAL(0x360, s[0].base.size);
+
+
+    s[1].base.logical = 0xE600;
+    s[1].base.size = 0x600;
+
+    section_merge(&s[0], &s[1]);
+    TEST_ASSERT_EQUAL(0xE600, s[0].base.logical);
+    TEST_ASSERT_EQUAL(0x600, s[0].base.size);
 }
 
-MunitResult section_overlap_test(const MunitParameter params[], void* fixture) {
-    Section a = {
-        .type = SECTION_TYPE_CODE,
-        .page = 0x01,
+TEST(section, section_array_add) {
+    SectionArray array = {0};
+
+    do {
+        Section section = {
+            .code = {
+                .base = {
+                    .type = SECTION_TYPE_CODE,
+                    .page = 0x07,
+                    .logical = 0xC5A6,
+                    .mpr = { 0, 1, 2, 3, 4, 5, 6, 7 },
+                    .offset = 0xCDEF,
+                    .size = 123,
+                    .output = string_view_from_literal("output"),
+                    .name = string_view_from_literal("name"),
+                    .description = string_view_from_literal("description"),
+                },
+            },
+        };
+
+        TEST_ASSERT_EQUAL(1, section_array_add(&array, &section));
+    } while(0);
+
+    do {
+        Section section = {
+            .data = {
+                .base = {
+                    .type = SECTION_TYPE_DATA,
+                    .page = 0x01,
+                    .logical = 0xA0FD,
+                    .mpr = { 0xFF, 0xF4, 0, 1, 2, 3, 4, 0x00 },
+                    .offset = 0x0000,
+                    .size = 32,
+                    .output = string_view_from_literal("data.asm"),
+                    .name = string_view_from_literal("d00"),
+                    .description = string_view_from_literal("data"),
+                },
+                .hex = {
+                    .type = DATA_TYPE_HEX, 
+                    .element_size = 98,
+                    .elements_per_line = 76,
+                },
+            },
+        };
+
+        TEST_ASSERT_EQUAL(1, section_array_add(&array, &section));
+    } while(0);
+
+    TEST_ASSERT_EQUAL(2, array.count);
+    TEST_ASSERT_EQUAL(4, array.capacity);
+    
+    Section value = {0};
+    TEST_ASSERT_TRUE(section_array_get(&array, 0, &value));
+
+    TEST_ASSERT_EQUAL(SECTION_TYPE_CODE, value.base.type);
+    TEST_ASSERT_EQUAL(0x07, value.base.page);
+    TEST_ASSERT_EQUAL(0xC5A6, value.base.logical);
+    TEST_ASSERT_EQUAL(0xCDEF, value.base.offset);
+    TEST_ASSERT_EQUAL(123, value.base.size);
+
+    TEST_ASSERT_EQUAL(0, value.base.mpr[0]);
+    TEST_ASSERT_EQUAL(1, value.base.mpr[1]);
+    TEST_ASSERT_EQUAL(2, value.base.mpr[2]);
+    TEST_ASSERT_EQUAL(3, value.base.mpr[3]);
+    TEST_ASSERT_EQUAL(4, value.base.mpr[4]);
+    TEST_ASSERT_EQUAL(5, value.base.mpr[5]);
+    TEST_ASSERT_EQUAL(6, value.base.mpr[6]);
+    TEST_ASSERT_EQUAL(7, value.base.mpr[7]);
+
+    TEST_ASSERT_EQUAL_STRING("output", value.base.output.data);
+    TEST_ASSERT_EQUAL_STRING("name", value.base.name.data);
+    TEST_ASSERT_EQUAL_STRING("description", value.base.description.data);
+
+    value = (Section) {0};
+    TEST_ASSERT_TRUE(section_array_get(&array, 1, &value));
+
+    TEST_ASSERT_EQUAL(SECTION_TYPE_DATA, value.base.type);
+    TEST_ASSERT_EQUAL(0x01, value.base.page);
+    TEST_ASSERT_EQUAL(0xA0FD, value.base.logical);
+    TEST_ASSERT_EQUAL(0x0000, value.base.offset);
+    TEST_ASSERT_EQUAL(32, value.base.size);
+
+    TEST_ASSERT_EQUAL(0xFF, value.base.mpr[0]);
+    TEST_ASSERT_EQUAL(0xF4, value.base.mpr[1]);
+    TEST_ASSERT_EQUAL(0, value.base.mpr[2]);
+    TEST_ASSERT_EQUAL(1, value.base.mpr[3]);
+    TEST_ASSERT_EQUAL(2, value.base.mpr[4]);
+    TEST_ASSERT_EQUAL(3, value.base.mpr[5]);
+    TEST_ASSERT_EQUAL(4, value.base.mpr[6]);
+    TEST_ASSERT_EQUAL(0, value.base.mpr[7]);
+
+    TEST_ASSERT_EQUAL_STRING("data.asm", value.base.output.data);
+    TEST_ASSERT_EQUAL_STRING("d00", value.base.name.data);
+    TEST_ASSERT_EQUAL_STRING("data", value.base.description.data);
+
+    TEST_ASSERT_EQUAL(DATA_TYPE_HEX, value.data.hex.type);
+    TEST_ASSERT_EQUAL(98, value.data.hex.element_size);
+    TEST_ASSERT_EQUAL(76, value.data.hex.elements_per_line);
+
+    TEST_ASSERT_FALSE(section_array_get(&array, 2, &value));
+
+    section_array_release(&array);
+}
+
+TEST(section, section_array_delete) {
+    SectionArray array = {0};
+    Section section[5] = {
+        { .base = { .type = SECTION_TYPE_CODE, .page = 0xA0, .output = string_view_from_literal("out0"), .name = string_view_from_literal("name0"), .description = string_view_from_literal("desc0") } },
+        { .base = { .type = SECTION_TYPE_CODE, .page = 0xA1, .output = string_view_from_literal("out1"), .name = string_view_from_literal("name1"), .description = string_view_from_literal("desc1") } },
+        { .base = { .type = SECTION_TYPE_CODE, .page = 0xA2, .output = string_view_from_literal("out2"), .name = string_view_from_literal("name2"), .description = string_view_from_literal("desc2") } },
+        { .base = { .type = SECTION_TYPE_CODE, .page = 0xA3, .output = string_view_from_literal("out3"), .name = string_view_from_literal("name3"), .description = string_view_from_literal("desc3") } },
+        { .base = { .type = SECTION_TYPE_CODE, .page = 0xA4, .output = string_view_from_literal("out4"), .name = string_view_from_literal("name4"), .description = string_view_from_literal("desc4") } },
     };
-    Section b = {
-        .type = SECTION_TYPE_CODE,
-        .page = 0x01,
-    };
 
-    a.logical = 0xe000;
-    a.size = 0x100;
+    for(size_t i=0; i<5; i++) {
+        TEST_ASSERT_EQUAL(1, section_array_add(&array, &section[i]));
+    }
+    TEST_ASSERT_EQUAL(5, array.count);
 
-    b.logical = 0xe010;
-    b.size = 0x40;
-   
-    munit_assert_int(section_overlap(&a, &b), ==, 1);
+    TEST_ASSERT_FALSE(section_array_delete(&array, 7));
+    TEST_ASSERT_TRUE(section_array_delete(&array, 2));
 
-    b.type = SECTION_TYPE_DATA;
-    munit_assert_int(section_overlap(&a, &b), ==, -1);
+    TEST_ASSERT_EQUAL(4, array.count);
 
-    a.type = SECTION_TYPE_DATA;
-    a.logical = 0x0200;
-    a.size = 0x10;
+    Section value = {0};
+    TEST_ASSERT_TRUE(section_array_get(&array, 2, &value));
 
-    b.logical = 0x01e0;
-    b.size = 0x50;
+    TEST_ASSERT_EQUAL_STRING("out3", value.base.output.data);
+    TEST_ASSERT_EQUAL_STRING("name3", value.base.name.data);
+    TEST_ASSERT_EQUAL_STRING("desc3", value.base.description.data);
 
-    munit_assert_int(section_overlap(&a, &b), ==, 1);
+    value = (Section){0};
+    TEST_ASSERT_TRUE(section_array_get(&array, 3, &value));
 
-    b.page = 0x02;
-    munit_assert_int(section_overlap(&a, &b), ==, 0);
-
-    b.page = a.page;
-    b.size = 0x01;
-    munit_assert_int(section_overlap(&a, &b), ==, 0);
-
-    return MUNIT_OK;
+    TEST_ASSERT_EQUAL_STRING("out4", value.base.output.data);
+    TEST_ASSERT_EQUAL_STRING("name4", value.base.name.data);
+    TEST_ASSERT_EQUAL_STRING("desc4", value.base.description.data);
 }
 
-
-MunitResult section_add_test(const MunitParameter params[], void* fixture) {
-    // [todo] add sections
-    // [todo] add one that merge
-    // [todo] add one with merge+error
-    return MUNIT_OK;
+TEST_GROUP_RUNNER(section) {
+    RUN_TEST_CASE(section, section_type_name);
+    RUN_TEST_CASE(section, data_type_name);
+    RUN_TEST_CASE(section, section_compare);
+    RUN_TEST_CASE(section, section_overlap);
+    RUN_TEST_CASE(section, section_merge);
+    RUN_TEST_CASE(section, section_array_add);
+    RUN_TEST_CASE(section, section_array_delete);
+// [todo]    RUN_TEST_CASE(section, section_tidy);
 }
 
-static MunitTest section_tests[] = {
-    { "/load", section_load_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { "/overlap", section_overlap_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { "/add", section_add_test, setup, tear_down, MUNIT_TEST_OPTION_NONE, NULL },
-    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
-};
+static void run_all_tests(void) {
+    RUN_TEST_GROUP(section);
+}
 
-static const MunitSuite section_suite = {
-    "Section test suite", section_tests, NULL, 1, MUNIT_SUITE_OPTION_NONE
-};
-
-int main (int argc, char* const* argv) {
-    return munit_suite_main(&section_suite, NULL, argc, argv);
+int main(int argc, const char * argv[]) {
+    return UnityMain(argc, argv, run_all_tests);
 }

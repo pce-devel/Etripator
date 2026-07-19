@@ -51,17 +51,17 @@ static uint8_t g_hcd8004_ipl[] = {
     0x41, 0x64, 0x76, 0x65, 0x6E, 0x74, 0x75, 0x72, 0x65, 0x20, 0x43, 0x4F, 0x42, 0x52, 0x41, 0x20, 
 };
 
-void* setup(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+void* setup(const MunitParameter params[] __unused, void* user_data __unused) {
     message_printer_init();    
     console_message_printer_init();
     return NULL;
 }
 
-void tear_down(void* fixture __attribute__((unused))) {
+void tear_down(void* fixture __unused) {
     message_printer_destroy();
 }
 
-MunitResult ipl_read_test(const MunitParameter params[] __attribute__((unused)), void* fixture __attribute__((unused))) {
+MunitResult ipl_read_test(const MunitParameter params[] __unused, void* fixture __unused) {
     IPL ipl = {0};
     const char *filename = "data/HCD8004.ipl";
 

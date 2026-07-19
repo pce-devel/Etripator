@@ -15,7 +15,7 @@
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 
   This file is part of Etripator,
-  copyright (c) 2009--2024 Vincent Cruz.
+  copyright (c) 2009--2026 Vincent Cruz.
  
   Etripator is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@
 
 static char g_buffer[1024];
 
-void* open_mem_output(const MunitParameter params[] __attribute__((unused)), void* user_data __attribute__((unused))) {
+void* open_mem_output(const MunitParameter params[] __unused, void* user_data __unused) {
     message_printer_init();    
     console_message_printer_init();
     memset(g_buffer, 0, sizeof(g_buffer));
@@ -52,7 +52,7 @@ void close_mem_output(void* fixture) {
     fclose((FILE*)fixture);
 }
 
-MunitResult output_char_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_char_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -75,7 +75,7 @@ MunitResult output_char_test(const MunitParameter params[] __attribute__((unused
     return MUNIT_OK;
 }
 
-MunitResult output_newline_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_newline_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -103,7 +103,7 @@ MunitResult output_newline_test(const MunitParameter params[] __attribute__((unu
     return MUNIT_OK;
 }
 
-MunitResult output_string_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_string_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -133,7 +133,7 @@ MunitResult output_string_test(const MunitParameter params[] __attribute__((unus
     return MUNIT_OK;
 }
 
-MunitResult output_inline_comment_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_inline_comment_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -166,7 +166,7 @@ MunitResult output_inline_comment_test(const MunitParameter params[] __attribute
     return MUNIT_OK;
 }
 
-MunitResult output_comment_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_comment_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -202,7 +202,7 @@ MunitResult output_comment_test(const MunitParameter params[] __attribute__((unu
     return MUNIT_OK;
 }
 
-MunitResult output_comment_address_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_comment_address_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -240,7 +240,7 @@ MunitResult output_comment_address_test(const MunitParameter params[] __attribut
     return MUNIT_OK;
 }
 
-MunitResult output_label_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_label_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -284,7 +284,7 @@ MunitResult output_label_test(const MunitParameter params[] __attribute__((unuse
     return MUNIT_OK;
 }
 
-MunitResult output_fill_to_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_fill_to_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -311,7 +311,7 @@ MunitResult output_fill_to_test(const MunitParameter params[] __attribute__((unu
     return MUNIT_OK;
 }
 
-MunitResult output_fill_n_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_fill_n_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -338,7 +338,7 @@ MunitResult output_fill_n_test(const MunitParameter params[] __attribute__((unus
     return MUNIT_OK;
 }
 
-MunitResult output_byte_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_byte_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -374,7 +374,7 @@ MunitResult output_byte_test(const MunitParameter params[] __attribute__((unused
     return MUNIT_OK;
 }
 
-MunitResult output_word_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_word_test(const MunitParameter params[] __unused, void* fixture) {
     Output output = {
         .filename = "ram0",
         .stream = (FILE*)fixture
@@ -402,7 +402,7 @@ MunitResult output_word_test(const MunitParameter params[] __attribute__((unused
     return MUNIT_OK;
 }
 
-MunitResult output_registry_test(const MunitParameter params[] __attribute__((unused)), void* fixture) {
+MunitResult output_registry_test(const MunitParameter params[] __unused, void* fixture) {
     OutputRegistry registry = {0};
 
     const char* filename[] = {

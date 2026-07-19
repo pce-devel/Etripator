@@ -33,73 +33,74 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <unity.h>
-#include <unity_fixture.h>
-
-#include <fff.h>
+#include <jansson.h>
 
 #include <etripator/message.h>
-#include <etripator/memory.h>
+#include <etripator/comment.h>
 
-DEFINE_FFF_GLOBALS;
+#include "../json_helpers.h"
 
-FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
+static bool load_comment(CommentRepository* repository, json_t* node) {
+    // Retrieve logical address.
+    uint16_t logical = 0;
+    if(!json_load_logical(node, &logical)) {
+        return false;
+    }
 
-TEST_GROUP(memory);
+    // Retrieve page.
+    uint8_t page = 0;
+    if(!json_load_page(node, &page)) {
+        return false;
+    }
 
-TEST_SETUP(memory) {
-    RESET_FAKE(message_print);
-    FFF_RESET_HISTORY();
+    bool ret = false;
+
+    // text (same format as section/label description)
+    String description;
+    string_init(&description);
+    if(json_load_description (node, "text", &description) != true) {
+        ERROR_MSG("Faile to load comment text.");
+    } else if(!comment_repository_add(repository, logical, page, string_get_view(&description))) {
+        ERROR_MSG("Failed to add comment (logical: %04x, page: %02x)", logical, page);
+    } else {
+        ret = true;
+    }
+    string_release(&description);
+    return ret;
 }
 
-TEST_TEAR_DOWN(memory) {
-}
+// Load comments from file.
+bool comment_repository_load(CommentRepository* repository, Data *in) {
+    assert(in != NULL);
+    assert(repository != NULL);
 
-TEST(memory, create) {
-    Memory mem = {0};
+    json_error_t err;
 
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
+    json_t* root = json_load_callback(json_load_callback_impl, in, 0, &err);
+    if(!root) {
+        ERROR_MSG("Failed to parse %d:%d: %s", err.line, err.column, err.text);
+        return false;
+    }
 
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
+    bool ret = false;
+    if(!json_is_array(root)) {
+        ERROR_MSG("Array expected.");
+    } else {
+        const size_t count = json_array_size(root);
+        size_t index = 0;
+        for (index = 0, ret = true; ret && (index < count); index++) {
+            ret = false;
+            json_t* value = json_array_get(root, index);
+            if(value == NULL) {
+                ERROR_MSG("Failed to retrieve object %zu", index);
+            } else if(!json_is_object(value)) {
+                ERROR_MSG("Expected object.");
+            } else {
+                ret = load_comment(repository, value);
+            }
+        }
+    }
+    json_decref(root);
 
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-}
-
-TEST(memory, fill) {
-    Memory mem = {0};
-
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
-}
-
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
-}
-
-static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
-}
-
-int main(int argc, const char * argv[]) {
-    return UnityMain(argc, argv, run_all_tests);
+    return ret;
 }

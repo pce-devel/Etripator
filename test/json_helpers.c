@@ -39,65 +39,102 @@
 #include <fff.h>
 
 #include <etripator/message.h>
-#include <etripator/memory.h>
+#include "../src/json_helpers.h"
 
 DEFINE_FFF_GLOBALS;
 
 FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
 
-TEST_GROUP(memory);
+TEST_GROUP(json_helpers);
 
-TEST_SETUP(memory) {
+TEST_SETUP(json_helpers) {
     RESET_FAKE(message_print);
     FFF_RESET_HISTORY();
 }
 
-TEST_TEAR_DOWN(memory) {
+TEST_TEAR_DOWN(json_helpers) {
 }
 
-TEST(memory, create) {
-    Memory mem = {0};
+TEST(json_helpers, validate_int) {
+    int n = 0;
 
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
+    json_t *node;
 
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
+    node = json_integer(65535);
+    TEST_ASSERT_TRUE(json_validate_int(node, &n));
+    TEST_ASSERT_EQUAL_INT(n, 65535);
+    json_decref(node);
 
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
+    node = json_string("0xE07C");
+    TEST_ASSERT_TRUE(json_validate_int(node, &n));
+    TEST_ASSERT_EQUAL_INT(n, 0xE07C);
+    json_decref(node);
+
+    node = json_string("bozo");
+    TEST_ASSERT_FALSE(json_validate_int(node, &n));
+    json_decref(node);
+
+    node = json_array();
+    TEST_ASSERT_FALSE(json_validate_int(node, &n));
+    json_decref(node);
 }
 
-TEST(memory, fill) {
-    Memory mem = {0};
+TEST(json_helpers, load_description) {
+    json_t *node;
+    json_error_t error;
 
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
+    String out = {0};
 
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
+    node = json_integer(65535);
+    string_init(&out);
+    TEST_ASSERT_TRUE(json_load_description(node, "key", &out));
+    TEST_ASSERT_EQUAL(0, string_length(&out));
+    json_decref(node);
 
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
+    node = json_loads("{\"desc\": \"description\"}", 0, &error);
+    TEST_ASSERT_TRUE(json_load_description(node, "desc", &out));
+    TEST_ASSERT_EQUAL_STRING(string_ptr(&out), "description");
+    json_decref(node);
+    string_release(&out);
 
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
+    node = json_loads("{\"desc\": [\"line 0\",\"line 1\",\"line 2\",\"line 3\"] }", 0, &error);
+    TEST_ASSERT_TRUE(json_load_description(node, "desc", &out));
+    TEST_ASSERT_EQUAL_STRING(string_ptr(&out), "line 0\nline 1\nline 2\nline 3");
+    json_decref(node);
+    string_release(&out);
 }
 
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
+TEST(json_helpers, print_description) {
+    char buffer[512];
+    size_t size = sizeof(buffer);
+    
+    Data* data = data_buffer_create((uint8_t*)buffer, size);
+    TEST_ASSERT_NOT_NULL(data);
+    TEST_ASSERT_TRUE(data_open(data));
+    TEST_ASSERT_TRUE(json_print_description(data, "desc", string_view_from_literal("")));
+    data_close(data);
+    data_release(data);
+    
+    TEST_ASSERT_EQUAL_MEMORY("\"desc\":[]", buffer, 9U);
+
+    data = data_buffer_create((uint8_t*)buffer, size);
+    TEST_ASSERT_NOT_NULL(data);
+    TEST_ASSERT_TRUE(data_open(data));
+    TEST_ASSERT_TRUE(json_print_description(data, "desc", string_view_from_literal("line 0\nline 1\nline 2")));
+    data_close(data);
+    data_release(data);
+    
+    TEST_ASSERT_EQUAL_MEMORY("\"desc\":[\n\t\t\"line 0\",\n\t\t\"line 1\",\n\t\t\"line 2\" \n\t]", buffer, 47U);
+}
+
+TEST_GROUP_RUNNER(json_helpers) {
+    RUN_TEST_CASE(json_helpers, load_description);
+    RUN_TEST_CASE(json_helpers, print_description);
+    RUN_TEST_CASE(json_helpers, validate_int);
 }
 
 static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
+    RUN_TEST_GROUP(json_helpers);
 }
 
 int main(int argc, const char * argv[]) {

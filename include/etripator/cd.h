@@ -33,73 +33,37 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <unity.h>
-#include <unity_fixture.h>
+#ifndef ETRIPATOR_CD_H
+#define ETRIPATOR_CD_H
 
-#include <fff.h>
+#include "config.h"
+#include "data.h"
+#include "memory_map.h"
 
-#include <etripator/message.h>
-#include <etripator/memory.h>
+#define PCE_CD_RAM_BANK_COUNT (8U)
+#define PCE_SYSCARD_RAM_BANK_COUNT (24U)
 
-DEFINE_FFF_GLOBALS;
+#define PCE_CD_RAM_FIRST_PAGE (0x80U)
+#define PCE_SYSCARD_RAM_FIRST_PAGE (0x68U)
 
-FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
+/// Adds CD RAM to memory map.
+/// \param map Memory map.
+/// \return true if the CD RAM and SYSCARD RAM memory areas were successfully created.
+/// \return false if an error occured.
+bool cd_memory_map(MemoryMap *map);
 
-TEST_GROUP(memory);
+// [todo] arcade card
 
-TEST_SETUP(memory) {
-    RESET_FAKE(message_print);
-    FFF_RESET_HISTORY();
-}
+/// Load CDROM data from file.
+/// \param [out] map         Memory map.
+/// \param [in]  input       Input data.
+/// \param [in]  start       CDROM data offset.
+/// \param [in]  len         CDROM data length (in bytes).
+/// \param [in]  sector_size CD sector size.
+/// \param [in]  page        Memory page.
+/// \param [in]  offset      Memory page offset.
+/// \return true
+/// \return false
+bool cd_load(MemoryMap* map, Data* input, size_t start, size_t len, size_t sector_size, uint8_t page, size_t offset);
 
-TEST_TEAR_DOWN(memory) {
-}
-
-TEST(memory, create) {
-    Memory mem = {0};
-
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-}
-
-TEST(memory, fill) {
-    Memory mem = {0};
-
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
-}
-
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
-}
-
-static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
-}
-
-int main(int argc, const char * argv[]) {
-    return UnityMain(argc, argv, run_all_tests);
-}
+#endif // ETRIPATOR_CD_H

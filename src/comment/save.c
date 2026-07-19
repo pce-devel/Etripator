@@ -33,73 +33,74 @@
 ¬°¤*,¸¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸
 ¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯¬°¤*,¸_¸,*¤°¬°¤*,¸,*¤°¬¯
 */
-#include <unity.h>
-#include <unity_fixture.h>
-
-#include <fff.h>
-
 #include <etripator/message.h>
-#include <etripator/memory.h>
+#include <etripator/comment.h>
 
-DEFINE_FFF_GLOBALS;
+#include "../json_helpers.h"
 
-FAKE_VOID_FUNC_VARARG(message_print, MessageType, const char*, size_t, const char*, const char*, ...);
+static bool comment_save(Comment *comment, Data *out) {
+    bool ret = false;
+    String str;
+    string_init(&str);
+    if(!string_format(&str, "\t{ \"logical\":\"%04x\", \"page\":\"%02x\", ", comment->logical, comment->page)) {
+        ERROR_MSG("failed to format output for comment at offset: %04x, page: %02x", comment->logical, comment->page);    
+    } else if(!data_print(out, string_get_view(&str))) {
+        ERROR_MSG("failed to output comment at offset: %04x, page: %02x", comment->logical, comment->page);    
+    } else {
+        ret = true;
+    }
+    string_release(&str);
+    
+    if(!ret) {
+        return false;
+    }
 
-TEST_GROUP(memory);
+    if(!json_print_description(out, "text", comment->text)) {
+        ERROR_MSG("failed to write comment test at offset: %04x, page: %02x", comment->logical, comment->page);
+        return false;
+    }
 
-TEST_SETUP(memory) {
-    RESET_FAKE(message_print);
-    FFF_RESET_HISTORY();
+    uint8_t end = '}';
+    if(!data_write(out, &end, 1, NULL)) {
+        ERROR_MSG("failed to write commet at offset: %04x, page: %02x", comment->logical, comment->page);
+        return false;
+    }
+
+    return true;
 }
 
-TEST_TEAR_DOWN(memory) {
-}
+// Save comments to file.
+bool comment_repository_save(CommentRepository* repository,  Data* out) {
+    assert(out != NULL);
+    assert(repository != NULL);
 
-TEST(memory, create) {
-    Memory mem = {0};
+    int count = comment_repository_size(repository);
 
-    mem.data = NULL;
-    mem.length = 0xCAFEU;
-    TEST_ASSERT_FALSE(memory_create(&mem, 0U));
-    TEST_ASSERT_EQUAL_size_t(0xCAFEU, mem.length);
-    TEST_ASSERT_NULL(mem.data);
+    if(!data_print(out, string_view_from_literal("[\n"))) {
+        return false;
+    }
 
-    TEST_ASSERT_TRUE(memory_create(&mem, 32U));
-    TEST_ASSERT_EQUAL_size_t(32U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
+    for(int i=0; i<count; i++) {
+        Comment comment = {0};
+        if(!comment_repository_get(repository, i, &comment)) {
+            ERROR_MSG("failed to retrieve comment #%d", i);
+            return false;
+        }
+        if(!comment_save(&comment, out)) {
+            return false;
+        }
+        char buffer[2] = {
+            [0] = (i<(count-1)) ? ',' : ' ',
+            [1] = '\n'
+        };
+        if(!data_write(out, (const uint8_t*)buffer, sizeof(buffer), NULL)) {
+            return false;
+        }
+    }
 
-    memory_destroy(&mem);
-    TEST_ASSERT_EQUAL_size_t(0U, mem.length);
-    TEST_ASSERT_NULL(mem.data);
-}
+    if(!data_print(out, string_view_from_literal("]\n"))) {
+        return false;
+    }
 
-TEST(memory, fill) {
-    Memory mem = {0};
-
-    TEST_ASSERT_FALSE(memory_fill(&mem, 0x7C));
-
-    TEST_ASSERT_TRUE(memory_create(&mem, 256U));
-    TEST_ASSERT_EQUAL_size_t(256U, mem.length);
-    TEST_ASSERT_NOT_NULL(mem.data);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0x7C));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0x7C, mem.data, mem.length);
-
-    TEST_ASSERT_TRUE(memory_fill(&mem, 0xA0));
-    TEST_ASSERT_EACH_EQUAL_UINT8(0xA0, mem.data, mem.length);
-
-    memory_destroy(&mem);
-}
-
-TEST_GROUP_RUNNER(memory) {
-    RUN_TEST_CASE(memory, create);
-    RUN_TEST_CASE(memory, fill);
-}
-
-static void run_all_tests(void) {
-    RUN_TEST_GROUP(memory);
-}
-
-int main(int argc, const char * argv[]) {
-    return UnityMain(argc, argv, run_all_tests);
+    return true;
 }
