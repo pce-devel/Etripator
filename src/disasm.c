@@ -37,8 +37,6 @@
 
 #include <etripator/utils.h>
 #include <etripator/string.h>
-#include <etripator/memory_map.h>
-#include <etripator/label.h>
 
 #define PCE_ARG_NONE     (0)
 #define PCE_ARG_A        (1)
@@ -82,7 +80,7 @@ enum PCE_ADDRESSING_MODE {
     PCE_OP_ZZ,
     PCE_OP_ZZ_X,
     PCE_OP_ZZ_Y,
-    PCE_OP_ZZ_HHLL,   
+    PCE_OP_ZZ_HHLL,
     PCE_OP_ZZ_IND,
     PCE_OP_ZZ_X_IND,
     PCE_OP_ZZ_IND_Y,
@@ -97,6 +95,7 @@ enum PCE_ADDRESSING_MODE {
 
 enum PCE_TAG {
     PCE_TAG_NONE = 0,
+    PCE_TAG_FAR_JUMP,
     PCE_TAG_LOCAL_JUMP,
     PCE_TAG_MMAP,
     PCE_TAG_UNKNOWN,
@@ -128,7 +127,7 @@ static const uint16_t pce_opstring[PCE_TYPE_COUNT][3] = {
 
 static bool pce_arg(MemoryMap *map, LabelRepository *repository, String *out, uint16_t arg, uint8_t data[2]) {
     SANITY_CHECK((map != NULL) && (repository != NULL) && (out != NULL), false);
-    
+
     Label label = {0};
     switch(arg) {
         case PCE_ARG_A:
@@ -144,9 +143,9 @@ static bool pce_arg(MemoryMap *map, LabelRepository *repository, String *out, ui
                 uint16_t address = 0x2000U | data[0];
                 uint8_t page = memory_map_page(map, address);
                 if (label_repository_find(repository, address, page, &label)) {
-                    return string_append_format(out, "<%s", label.name.data); 
+                    return string_append_format(out, "<%s", label.name.data);
                 } else {
-                    return string_append_format(out, "<$%02x", data[0]); 
+                    return string_append_format(out, "<$%02x", data[0]);
                 }
             }
         case PCE_ARG_HHLL:
@@ -154,9 +153,9 @@ static bool pce_arg(MemoryMap *map, LabelRepository *repository, String *out, ui
                 uint16_t address = (data[1] << 8) | data[0];
                 uint8_t page = memory_map_page(map, address);
                 if (label_repository_find(repository, address, page, &label)) {
-                    return string_append(out, label.name.data, label.name.length); 
+                    return string_append(out, label.name.data, label.name.length);
                 } else {
-                    return string_append_format(out, "$%04x", address); 
+                    return string_append_format(out, "$%04x", address);
                 }
             }
         default:
@@ -183,7 +182,7 @@ static bool pce_arg_list(MemoryMap *map, LabelRepository *repository, String *ou
         if(i > 0) {
             if(string_append_n(out, ',', 1) != true) {
                 return false;
-            }   
+            }
         }
 
         previous = current;
@@ -197,7 +196,7 @@ static bool pce_arg_list(MemoryMap *map, LabelRepository *repository, String *ou
             data++;
         } else if(current == PCE_ARG_HHLL) {
             data += 2;
-        } 
+        }
     }
     if(previous & PCE_ARG_INDIRECT) {
         if(string_append_n(out, ']', 1) != true) {
@@ -235,7 +234,7 @@ static const Opcode g_pce_opcode[256] = {
   /* 0D: ORA  hhll           */  { "ora ", 3, PCE_OP_HHLL, PCE_TAG_NONE },
   /* 0E: ASL  hhll           */  { "asl ", 3, PCE_OP_HHLL, PCE_TAG_NONE },
   /* 0F: BBR0 ZZ, lhhll      */  { "bbr0", 3, PCE_OP_ZZ_HHLL, PCE_TAG_LOCAL_JUMP },
-  /* 10: BPL  lhhll          */  { "bpl ", 2, PCE_OP_HHLL, PCE_TAG_LOCAL_JUMP},      
+  /* 10: BPL  lhhll          */  { "bpl ", 2, PCE_OP_HHLL, PCE_TAG_LOCAL_JUMP},
   /* 11: ORA  (ZZ), Y        */  { "ora ", 2, PCE_OP_ZZ_IND_Y, PCE_TAG_NONE },
   /* 12: ORA  (ZZ)           */  { "ora ", 2, PCE_OP_ZZ_IND, PCE_TAG_NONE },
   /* 13: ST1  #nn            */  { "st1 ", 2, PCE_OP_ABS, PCE_TAG_NONE },
@@ -251,7 +250,7 @@ static const Opcode g_pce_opcode[256] = {
   /* 1D: ORA  hhll, X        */  { "ora ", 3, PCE_OP_HHLL_X, PCE_TAG_NONE },
   /* 1E: ASL  hhll, X        */  { "asl ", 3, PCE_OP_HHLL_X, PCE_TAG_NONE },
   /* 1F: BBR1 ZZ, lhhll      */  { "bbr1", 3, PCE_OP_ZZ_HHLL, PCE_TAG_LOCAL_JUMP },
-  /* 20: JSR  lhhll          */  { "jsr ", 3, PCE_OP_HHLL, PCE_TAG_NONE },
+  /* 20: JSR  lhhll          */  { "jsr ", 3, PCE_OP_HHLL, PCE_TAG_FAR_JUMP },
   /* 21: AND  (ZZ, X)        */  { "and ", 2, PCE_OP_ZZ_X_IND, PCE_TAG_NONE },
   /* 22: SAX                 */  { "sax ", 1, PCE_OP, PCE_TAG_NONE },
   /* 23: ST2  #nn            */  { "st2 ", 2, PCE_OP_ABS, PCE_TAG_NONE },
@@ -295,7 +294,7 @@ static const Opcode g_pce_opcode[256] = {
   /* 49: EOR  #nn            */  { "eor ", 2, PCE_OP_ABS, PCE_TAG_NONE },
   /* 4A: LSR  A              */  { "lsr ", 1, PCE_OP_A, PCE_TAG_NONE },
   /* 4B: UNUSED              */  { ".db ", 1, PCE_OP_ABS, PCE_TAG_UNKNOWN },
-  /* 4C: JMP  lhhll          */  { "jmp ", 3, PCE_OP_HHLL, PCE_TAG_NONE },
+  /* 4C: JMP  lhhll          */  { "jmp ", 3, PCE_OP_HHLL, PCE_TAG_FAR_JUMP },
   /* 4D: EOR  hhll           */  { "eor ", 3, PCE_OP_HHLL, PCE_TAG_NONE },
   /* 4E: LSR  hhll           */  { "lsr ", 3, PCE_OP_HHLL, PCE_TAG_NONE },
   /* 4F: BBR4 ZZ, lhhll      */  { "bbr4", 3, PCE_OP_ZZ_HHLL, PCE_TAG_LOCAL_JUMP },
@@ -327,7 +326,7 @@ static const Opcode g_pce_opcode[256] = {
   /* 69: ADC  #nn            */  { "adc ", 2, PCE_OP_ABS, PCE_TAG_NONE },
   /* 6A: ROR  A              */  { "ror ", 1, PCE_OP_A, PCE_TAG_NONE },
   /* 6B: UNUSED              */  { ".db ", 1, PCE_OP_ABS, PCE_TAG_UNKNOWN },
-  /* 6C: JMP  (hhll)         */  { "jmp ", 3, PCE_OP_HHLL_IND, PCE_TAG_NONE },
+  /* 6C: JMP  (hhll)         */  { "jmp ", 3, PCE_OP_HHLL_IND, PCE_TAG_FAR_JUMP },
   /* 6D: ADC  hhll           */  { "adc ", 3, PCE_OP_HHLL, PCE_TAG_NONE },
   /* 6E: ROR  hhll           */  { "ror ", 3, PCE_OP_HHLL, PCE_TAG_NONE },
   /* 6F: BBR6 ZZ, lhhll      */  { "bbr6", 3, PCE_OP_ZZ_HHLL, PCE_TAG_LOCAL_JUMP },
@@ -343,7 +342,7 @@ static const Opcode g_pce_opcode[256] = {
   /* 79: ADC  hhll, Y        */  { "adc ", 3, PCE_OP_HHLL_Y, PCE_TAG_NONE },
   /* 7A: PLY                 */  { "ply ", 1, PCE_OP, PCE_TAG_NONE },
   /* 7B: UNUSED              */  { ".db ", 1, PCE_OP_ABS, PCE_TAG_UNKNOWN },
-  /* 7C: JMP  (hhll, X)      */  { "jmp ", 3, PCE_OP_HHLL_X_IND, PCE_TAG_NONE },
+  /* 7C: JMP  (hhll, X)      */  { "jmp ", 3, PCE_OP_HHLL_X_IND, PCE_TAG_FAR_JUMP },
   /* 7D: ADC  hhll, X        */  { "adc ", 3, PCE_OP_HHLL_X, PCE_TAG_NONE },
   /* 7E: ROR  hhll, X        */  { "ror ", 3, PCE_OP_HHLL_X, PCE_TAG_NONE },
   /* 7F: BBR7 ZZ, lhhll      */  { "bbr7", 3, PCE_OP_ZZ_HHLL, PCE_TAG_LOCAL_JUMP },
@@ -356,7 +355,7 @@ static const Opcode g_pce_opcode[256] = {
   /* 86: STX  ZZ             */  { "stx ", 2, PCE_OP_ZZ, PCE_TAG_NONE },
   /* 87: SMB0 ZZ             */  { "smb0", 2, PCE_OP_ZZ, PCE_TAG_NONE },
   /* 88: DEY                 */  { "dey ", 1, PCE_OP, PCE_TAG_NONE },
-  /* 89: BIT  #nn            */  { "bit ", 2, PCE_OP_ABS, PCE_TAG_NONE }, 
+  /* 89: BIT  #nn            */  { "bit ", 2, PCE_OP_ABS, PCE_TAG_NONE },
   /* 8A: TXA                 */  { "txa ", 1, PCE_OP, PCE_TAG_NONE },
   /* 8B: UNUSED              */  { ".db ", 1, PCE_OP_ABS, PCE_TAG_UNKNOWN },
   /* 8C: STY  hhll           */  { "sty ", 3, PCE_OP_HHLL, PCE_TAG_NONE },
@@ -527,23 +526,30 @@ static void pce_tag(uint16_t logical, uint8_t data[8], size_t *size) {
     }
 }
 
-bool pce_disasm(MemoryMap *map, LabelRepository *labels, uint16_t *logical, String *out) {
-    // 0. sanity check
-    SANITY_CHECK((map != NULL) && (labels != NULL) && (logical != NULL) && (out != NULL), false);
+const Opcode* pce_fetch(MemoryMap *map, uint16_t logical, uint8_t data[8]) {
+    memset(data, 0, sizeof(uint8_t[8]));
 
-    // 1. retrieve opcode
-    uint16_t offset = *logical;
-    uint8_t data[8] = {0};
-    data[0] = memory_map_read(map, offset);
+    // 1. read opcode
+    data[0] = memory_map_read(map, logical);
     const Opcode *opcode = &g_pce_opcode[data[0]];
-    size_t size = opcode->size-1U;
 
     // 2. prepare data
     for(size_t i=1; i<opcode->size; i++) {
-        data[i] = memory_map_read(map, offset + i);
+        data[i] = memory_map_read(map, logical + i);
     }
+    return opcode;
+}
 
-    pce_tag(offset+1, data, &size);
+
+bool pce_code(MemoryMap *map, LabelRepository *labels, uint16_t *logical, String *out) {
+    // 0. sanity check
+    SANITY_CHECK((map != NULL) && (labels != NULL) && (logical != NULL) && (out != NULL), false);
+
+    uint8_t data[8] = {0};
+    const Opcode *opcode = pce_fetch(map, *logical, data);
+    size_t size = opcode->size-1U;
+
+    pce_tag(*logical+opcode->size, data, &size);
 
     // 3. output opcode
     if(!string_append(out, opcode->name, OPCODE_NAME_MAX_LEN-1U)) {
@@ -566,33 +572,47 @@ bool pce_disasm(MemoryMap *map, LabelRepository *labels, uint16_t *logical, Stri
 }
 
 // output a jump_table element
-bool pce_jump_table(MemoryMap *map, LabelRepository *labels, uint16_t *logical, String *out) {
+bool pce_jump_table(MemoryMap *map, LabelRepository *labels, uint16_t *logical, size_t element_size, size_t element_count, String *out) {
     SANITY_CHECK((map != NULL) && (labels != NULL) && (logical != NULL) && (out != NULL), false);
 
     uint16_t offset = *logical;
-    const uint8_t data[2] = {
-        [0] = memory_map_read(map, offset),
-        [1] = memory_map_read(map, offset + 1),
-    };
-    
-    uint16_t jump_logical = data[0] | (data[1] << 8);
-    uint8_t jump_page = memory_map_page(map, jump_logical);
-    Label label = {0};
-    bool ret;
-    if (label_repository_find(labels, jump_logical, jump_page, &label)) {
-        ret = string_append(out, label.name.data, label.name.length);
-    } else {
-        ret = string_append_format(out, "$%02x", jump_logical);
+
+    for(size_t j=0; j<element_count; j++) {
+        uint64_t value = 0;
+        for(size_t i=0; i<element_size; i++) {
+            value |= memory_map_read(map, offset++) << (8*i);
+        }
+
+        uint8_t page = memory_map_page(map, value);
+        Label label = {0};
+
+        if (label_repository_find(labels, value, page, &label)) {
+            if(!string_append(out, label.name.data, label.name.length)) {
+                ERROR_MSG("failed to output label for page:%02x, logical:%04x", page, (uint16_t)value);
+                return false;
+            }
+        } else {
+            if(!string_append_n(out, '$', 1)) {
+                ERROR_MSG("failed to output hexadecimal descriptor");
+                return false;
+            }
+            if(!string_append_hex_msb(out, value, element_size)) {
+                ERROR_MSG("failed to output hexadecimal value %0x", (uint16_t)value);
+                return false;
+            }
+        }
+        if(j<(element_count-1)) {
+            if(!string_append(out, ", ", 2)) {
+                ERROR_MSG("failed to output separator");
+                return false;
+            }
+        }
     }
-    if(!ret) {
-        ERROR_MSG("failed to output jump table lement (%02x:%04x)", jump_page, jump_logical);
-        return false;
-    }
-    *logical += 2;
-    return ret;
+    *logical = offset;
+    return true;
 }
 
-// 
+//
 bool pce_data_hex(MemoryMap *map, LabelRepository *labels, uint16_t *logical, size_t element_size, size_t element_count, String *out) {
     SANITY_CHECK((map != NULL) && (labels != NULL) && (logical != NULL) && (out != NULL), false);
 
@@ -623,7 +643,6 @@ bool pce_data_hex(MemoryMap *map, LabelRepository *labels, uint16_t *logical, si
     return true;
 }
 
-// [todo] len computed before hand (len = char per line, until comment, until label, delimiter found)
 bool pce_data_string(MemoryMap *map, LabelRepository *labels, uint16_t *logical, size_t length, String *out) {
     SANITY_CHECK((map != NULL) && (labels != NULL) && (logical != NULL) && (out != NULL), false);
 
@@ -672,3 +691,157 @@ bool pce_data_string(MemoryMap *map, LabelRepository *labels, uint16_t *logical,
     *logical = offset;
     return true;
 }
+
+bool pce_disasm_impl(Context *context, int index, uint16_t *logical, [[maybe_unused]] size_t length, String *out) {
+    SANITY_CHECK((context != NULL) && (logical != NULL) && (out != NULL), false);
+
+    Section section = {0};
+    if(!section_repository_get(&context->sections, index, &section)) {
+        ERROR_MSG("Out of bound section index %d", index);
+        return false;
+    }
+
+    MemoryMap *map = &context->map;
+    LabelRepository *labels = &context->labels;
+
+    if(section.base.type == SECTION_TYPE_DATA) {
+        switch(section.data.type) {
+            case DATA_TYPE_HEX:
+                return pce_data_hex(map, labels, logical, section.data.hex.element_size, length, out);
+            case DATA_TYPE_STRING:
+                return pce_data_string(map, labels, logical, length, out);
+            case DATA_TYPE_JUMP_TABLE:
+                return pce_jump_table(map, labels, logical, section.data.hex.element_size, length, out);
+            default:
+                ERROR_MSG("Unknown or unsupported data type %d", section.data.type);
+                break;
+        }
+    } else if(section.base.type == SECTION_TYPE_CODE) {
+        return pce_code(map, labels, logical, out);
+    } else {
+        ERROR_MSG("Unknown or unsupported section type %d", section.base.type);
+    }
+
+    return false;
+}
+
+#if 0
+// [todo] emit_line function
+// [todo] string => output
+// [todo] Pass section
+// [todo] put map/label repo/comment repo/curr section in to something
+bool pce_disasm(MemoryMap *map, LabelRepository *labels, CommentRepository *comments, uint16_t *logical, size_t length, String *out) {
+    SANITY_CHECK((map != NULL) && (labels != NULL) && (comments != NULL) && (logical != NULL) && (out != NULL), false);
+
+    Comment comment = {0};
+    Label label = {0};
+
+    uint16_t begin = *logical;
+    uint8_t page = memory_map_page(map, begin);
+
+    bool has_label = label_repository_find(labels, begin, page, &label);
+    bool has_comment = comment_repository_find(comments, begin, page, &comment);
+
+    if(has_label) {
+        // -> output label
+        // [todo] emit mulitline comment from label.description
+        // [todo] str = label name
+        // [todo] str += comment
+        // [todo] emit line
+    }
+
+    // [todo] get theoritical length from section
+
+    // [todo] compute length
+
+    // [todo] outout section
+    // [todo] output comment
+
+    return true;
+}
+
+#endif
+
+size_t pce_code_size(Context *context, int index) {
+    SANITY_CHECK(context != 0, 0);
+
+    SectionRepository *sections = &context->sections;
+    Section current = {0};
+    if(!section_repository_get(sections, index, &current)) {
+        ERROR_MSG("Out of bound section index %d", index);
+        return false;
+    }
+
+    MemoryMap *map = &context->map;
+
+    // Search for the closest section past the current one.
+    // This also ensures that we don't cross the current page.
+    uint32_t logical_max = 0xFFFFFFFFU;
+    for (int i = 0; i < (int)sections->count; i++) {
+        if (i == index) {
+            continue;
+        }
+        Section other = {0};
+        if(section_repository_get(sections, i, &other)) {
+            if (current.base.page == other.base.page) {
+                uint32_t logical_current = current.base.logical & 0x1fff;
+                uint32_t logical_other = other.base.logical & 0x1fff;
+                if ((logical_current < logical_other) && (logical_max > logical_other)) {
+                    logical_max = logical_other;
+                }
+            }
+        }
+    }
+
+    // Walk along the code.
+    // Take jumps going forward.
+    // Stop at the first backward unconditinal jump or rts/rti/brk.
+    uint32_t start = current.base.logical;
+    uint32_t logical = start;
+    for (int eor = 0; !eor;) {
+        // we reached the limit (next section or page boundary)
+        if ((logical & 0x1fff) >= logical_max) {
+            break;
+        }
+        // fetch intruction & data
+        uint8_t data[8] = {0};
+        const Opcode *opcode = pce_fetch(map, logical, data);
+        logical += opcode->size;
+
+        if (opcode->tag == PCE_TAG_FAR_JUMP) {
+            uint32_t jump = data[1] | (data[2] << 8);
+            if (data[0] == 0x4C) {                                          // jmp hhll
+                uint8_t current_page = memory_map_page(map, logical);
+                uint8_t jump_page = memory_map_page(map, jump);
+                if (current_page == jump_page) {
+                    if (jump < logical) {                                   // are we going backward?
+                        eor = 1;
+                    } else {
+                        logical = jump;
+                    }
+                }
+            }
+        } else if (opcode->tag == PCE_TAG_LOCAL_JUMP) {
+           // For BBR* and BBS* displacement is stored in the 2nd byte
+            uint8_t offset = ((data[0] & 0x0F) == 0x0F) ? data[2] : data[1];
+            if(offset & 128) {  // negative offset ?
+                // bra is an unconditional jump.
+                // We can't go any further if the offset is negative.
+                if (data[0] == 0x80) {
+                    eor = 1;
+                }
+            } else {
+                // The offset is positive.
+                // Jump over the code.
+                // [todo] Note the "jumped" code may contain branch instructions that may lead us farther.
+                logical += offset;
+            }
+        } else if ((data[0] == 0x40) || (data[0] == 0x60) || (data[0] == 0x00)) { // rts, rti or brk
+            eor = 1;
+        }
+    }
+    return (logical - start);
+}
+
+// [todo] print label
+// [todo] print comment

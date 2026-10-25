@@ -79,4 +79,14 @@
 #   endif
 #endif
 
+#if !defined(__unused)
+#   define __unused
+#   if defined(__has_attribute)
+#       if __has_attribute(unused)
+#           undef __unused
+#           define __unused __attribute__((unused))
+#       endif
+#   endif
+#endif
+
 #endif // ETRIPATOR_CONFIG_H

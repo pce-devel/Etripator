@@ -114,3 +114,54 @@ void memory_map_mpr(MemoryMap *map, const uint8_t mpr[PCE_MPR_COUNT]) {
         map->mpr[i] = mpr[i];
     }
 }
+
+bool memory_map_read_lsb(MemoryMap *map, size_t logical, size_t length, uint64_t *out) {
+    assert(map != NULL);
+
+    *out = (uint64_t)-1;
+
+    const uint8_t id = memory_map_page(map, (uint16_t)logical);
+    const Page *page = &map->page[id];
+    if(page->id == PCE_MEMORY_NONE) {
+        return false;
+    }
+
+    const size_t offset = (logical & 0x1FFFU) + (page->bank * PCE_BANK_SIZE);
+    const Memory *mem = &map->memory[page->id];
+
+    if((offset >= mem->length) || ((offset + length) >= mem->length)) {
+        return false;
+    }
+    *out = 0;
+    for(size_t i=0; i<length; i++) {
+        *out |= mem->data[offset+i] << (8*i);
+    }
+
+    return true;
+}
+
+bool memory_map_read_msb(MemoryMap *map, size_t logical, size_t length, uint64_t *out) {
+    assert(map != NULL);
+
+    *out = (uint64_t)-1;
+
+    const uint8_t id = memory_map_page(map, (uint16_t)logical);
+    const Page *page = &map->page[id];
+    if(page->id == PCE_MEMORY_NONE) {
+        return false;
+    }
+
+    const size_t offset = (logical & 0x1FFFU) + (page->bank * PCE_BANK_SIZE);
+    const Memory *mem = &map->memory[page->id];
+
+    if((offset >= mem->length) || ((offset + length) >= mem->length)) {
+        return false;
+    }
+    *out = 0;
+    for(size_t i=0; i<length; i++) {
+        *out <<= 8;
+        *out |= mem->data[offset+i];
+    }
+
+    return true;
+}

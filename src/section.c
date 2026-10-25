@@ -155,8 +155,7 @@ struct SectionStorage {
     String description;
 };
 
-// Reset a section repository.
-void section_repository_reset(SectionRepository *arr) {
+static void inline section_repository_reset(SectionRepository *arr) {
     SANITY_CHECK(arr != NULL);
     if(arr->data != NULL) {
         for(size_t i=0; i<arr->count; i++) {
@@ -169,8 +168,14 @@ void section_repository_reset(SectionRepository *arr) {
     arr->count = 0;
 }
 
+// Create/reset a section repository.
+void section_repository_create(SectionRepository *arr) {
+    SANITY_CHECK(arr != NULL);
+    *arr = (SectionRepository) {0};
+}
+
 // Release section repository memory.
-void section_repository_release(SectionRepository *arr) {
+void section_repository_destroy(SectionRepository *arr) {
     SANITY_CHECK(arr != NULL);
     section_repository_reset(arr);
     free(arr->data);

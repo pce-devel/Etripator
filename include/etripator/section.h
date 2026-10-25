@@ -96,6 +96,8 @@ typedef struct {
 /// [todo]
 typedef struct {
     DataType type;
+    int32_t element_size;       //< element size (string=0, byte=1, word=2)
+    int32_t elements_per_line;  //< number of elements per line
 } JumpTable;
 
 /// [todo]
@@ -114,11 +116,13 @@ typedef struct {
 /// [todo]
 typedef struct {
     BaseSection base;
-    DataType type;
-    BinaryData binary;
-    HexData hex;
-    StringData string;
-    JumpTable jump_table;
+    union {
+        DataType type;
+        BinaryData binary;
+        HexData hex;
+        StringData string;
+        JumpTable jump_table;
+    };
 } DataSection;
 
 /// [todo]
@@ -145,11 +149,11 @@ typedef struct {
 /// Reset a section repository.
 /// \note The internal data pointer will not be freed.
 /// \param [in out] arr Section repository to be reseted.
-void section_repository_reset(SectionRepository *arr);
+void section_repository_create(SectionRepository *arr);
 
 /// Release section repository memory.
 /// \param [in out] arr Section repository.
-void section_repository_release(SectionRepository *arr);
+void section_repository_destroy(SectionRepository *arr);
 
 /// Add a new section.
 /// \param [in out] arr Section repository the section will be added to.

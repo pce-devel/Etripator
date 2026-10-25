@@ -89,6 +89,24 @@ uint8_t memory_map_page(MemoryMap* map, uint16_t logical);
 /// \return The value stored at the specified logical address.
 uint8_t memory_map_read(MemoryMap *map, size_t logical);
 
+/// Reads a LSB multi-byte value from memory.
+/// \param [in] map Memory map.
+/// \param [in] logical Logical address.
+/// \param [in] size Size in bytes.
+/// \param [out] out Output.
+/// \return false If the read goes out of memory bounds.
+/// \return true on success.
+bool memory_map_read_lsb(MemoryMap *map, size_t logical, size_t length, uint64_t *out);
+
+/// Reads a MSB multi-byte value from memory.
+/// \param [in] map Memory map.
+/// \param [in] logical Logical address.
+/// \param [in] size Size in bytes.
+/// \param [out] out Output.
+/// \return false If the read goes out of memory bounds.
+/// \return true on success.
+bool memory_map_read_msb(MemoryMap *map, size_t logical, size_t length, uint64_t *out);
+
 /// Update the whole mprs list
 /// \param [in out] map Memory map.
 /// \param [in]     mpr Memory page registers.

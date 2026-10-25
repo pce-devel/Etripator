@@ -73,8 +73,56 @@ TEST(memory_map, read) {
     memory_map_destroy(&map);
 }
 
+TEST(memory_map, read_lsb) {
+    MemoryMap map = {0};
+
+    TEST_ASSERT_TRUE(memory_map_init(&map));
+
+    map.mpr[1] = 0xF8U;
+
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0000] = 0xC5;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0001] = 0x7E;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0002] = 0xA9;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0003] = 0x70;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0004] = 0x12;
+ 
+    uint64_t value;
+    TEST_ASSERT_TRUE(memory_map_read_lsb(&map, 0x2000, 3, &value));
+    TEST_ASSERT_EQUAL_UINT64(0xA97EC5U, value);
+
+    TEST_ASSERT_TRUE(memory_map_read_lsb(&map, 0x2003, 2, &value));
+    TEST_ASSERT_EQUAL_UINT64(0x1270, value);
+
+    memory_map_destroy(&map);
+}
+
+TEST(memory_map, read_msb) {
+    MemoryMap map = {0};
+
+    TEST_ASSERT_TRUE(memory_map_init(&map));
+
+    map.mpr[1] = 0xF8U;
+
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0000] = 0xC5;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0001] = 0x7E;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0002] = 0xA9;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0003] = 0x70;
+    map.memory[PCE_MEMORY_BASE_RAM].data[0x0004] = 0x12;
+ 
+    uint64_t value;
+    TEST_ASSERT_TRUE(memory_map_read_msb(&map, 0x2000, 3, &value));
+    TEST_ASSERT_EQUAL_UINT64(0xC57EA9U, value);
+
+    TEST_ASSERT_TRUE(memory_map_read_msb(&map, 0x2003, 2, &value));
+    TEST_ASSERT_EQUAL_UINT64(0x7012U, value);
+
+    memory_map_destroy(&map);
+}
+
 TEST_GROUP_RUNNER(memory_map) {
     RUN_TEST_CASE(memory_map, read);
+    RUN_TEST_CASE(memory_map, read_lsb)
+    RUN_TEST_CASE(memory_map, read_msb)
 }
 
 static void run_all_tests(void) {

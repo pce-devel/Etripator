@@ -323,3 +323,52 @@ bool string_from_view(String *str, const StringView view) {
     ptr[view.length] = '\0';
     return true;
 }
+
+static inline char hex(uint8_t b) {
+    b &= 0x0F;
+    return (b < 10) ? ('0' + b) : ('A' + (b - 10));
+}
+
+bool string_append_hex_msb(String *str, uint64_t value, size_t size) {
+    if(str == NULL) {
+        return false;
+    }
+    size_t requested = str->length + (size * 2U);
+    char *ptr = string_reserve(str, requested);
+    if(ptr == NULL) {
+        return false;
+    }
+
+    ptr += requested;
+    *ptr-- = '\0';
+    for(size_t i=0; i<size; i++) {
+        uint8_t b = value & 0xFF;
+        *ptr-- = hex(b);
+        *ptr-- = hex(b >> 4);
+        value >>= 8;
+    }
+    str->length = requested;
+    return true;
+}
+
+bool string_append_hex_lsb(String *str, uint64_t value, size_t size) {
+    if(str == NULL) {
+        return false;
+    }
+    size_t requested = str->length + (size * 2U);
+    char *ptr = string_reserve(str, requested);
+    if(ptr == NULL) {
+        return false;
+    }
+
+    ptr += str->length;
+    for(size_t i=0; i<size; i++) {
+        uint8_t b = value & 0xFF;
+        *ptr++ = hex(b >> 4);
+        *ptr++ = hex(b);
+        value >>= 8;
+    }
+    *ptr = '\0';
+    str->length = requested;
+    return true;
+}

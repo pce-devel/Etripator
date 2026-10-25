@@ -386,6 +386,44 @@ TEST(string, clone) {
     string_release(&s1);
 }
 
+TEST(string, append_hex_msb) {
+    String str;
+    string_init(&str);
+    
+    TEST_ASSERT_TRUE(string_append_hex_msb(&str, 0xCAFE, 2U));
+    TEST_ASSERT_EQUAL(4U, str.length);
+    TEST_ASSERT_EQUAL_STRING("CAFE", string_ptr(&str));
+
+    TEST_ASSERT_TRUE(string_append_hex_msb(&str, 0x800D07, 3U));
+    TEST_ASSERT_EQUAL(10U, str.length);
+    TEST_ASSERT_EQUAL_STRING("CAFE800D07", string_ptr(&str));
+
+    TEST_ASSERT_TRUE(string_append_hex_msb(&str, 0x94FE, 1U));
+    TEST_ASSERT_EQUAL(str.length, 12U);
+    TEST_ASSERT_EQUAL_STRING("CAFE800D07FE", string_ptr(&str));
+
+    string_release(&str);
+}
+
+TEST(string, append_hex_lsb) {
+    String str;
+    string_init(&str);
+    
+    TEST_ASSERT_TRUE(string_append_hex_lsb(&str, 0xCAFE, 2U));
+    TEST_ASSERT_EQUAL(4U, str.length);
+    TEST_ASSERT_EQUAL_STRING("FECA", string_ptr(&str));
+
+    TEST_ASSERT_TRUE(string_append_hex_lsb(&str, 0x800D07, 3U));
+    TEST_ASSERT_EQUAL(10U, str.length);
+    TEST_ASSERT_EQUAL_STRING("FECA070D80", string_ptr(&str));
+
+    TEST_ASSERT_TRUE(string_append_hex_lsb(&str, 0x94FE, 1U));
+    TEST_ASSERT_EQUAL(str.length, 12U);
+    TEST_ASSERT_EQUAL_STRING("FECA070D80FE", string_ptr(&str));
+
+    string_release(&str);
+}
+
 TEST_GROUP_RUNNER(string) {
     RUN_TEST_CASE(string, init); 
     RUN_TEST_CASE(string, reserve); 
@@ -399,6 +437,8 @@ TEST_GROUP_RUNNER(string) {
     RUN_TEST_CASE(string, append_format); 
     RUN_TEST_CASE(string, prepend_format); 
     RUN_TEST_CASE(string, clone);
+    RUN_TEST_CASE(string, append_hex_lsb);
+    RUN_TEST_CASE(string, append_hex_msb);
 }
 
 static void run_all_tests(void) {

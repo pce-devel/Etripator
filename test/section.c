@@ -293,7 +293,7 @@ TEST(section, section_repository_add) {
 
     TEST_ASSERT_FALSE(section_repository_get(&repository, 2, &value));
 
-    section_repository_release(&repository);
+    section_repository_destroy(&repository);
 }
 
 TEST(section, section_repository_delete) {
@@ -330,7 +330,7 @@ TEST(section, section_repository_delete) {
     TEST_ASSERT_EQUAL_STRING("name4", value.base.name.data);
     TEST_ASSERT_EQUAL_STRING("desc4", value.base.description.data);
 
-    section_repository_release(&repository);
+    section_repository_destroy(&repository);
 }
 
 TEST(section, section_tidy) {
@@ -373,7 +373,7 @@ TEST(section, section_tidy) {
         TEST_ASSERT_EQUAL_STRING(expected[i].base.description.data, value.base.description.data);
     }
     
-    section_repository_release(&repository);
+    section_repository_destroy(&repository);
 }
 
 TEST_GROUP_RUNNER(section) {

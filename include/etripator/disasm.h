@@ -38,6 +38,27 @@
 
 #include "config.h"
 
-// [todo] nothing atm
+#include "memory_map.h"
+#include "label.h"
+#include "comment.h"
+#include "section.h"
+
+typedef struct {
+    MemoryMap map;
+    LabelRepository labels;
+    CommentRepository comments;
+    SectionRepository sections;
+} Context;
+
+
+/// Compute the size of a code section.
+/// First it will search the section repository for the closest section past the one we are processing.
+/// Until the next section or page boundary, it will goes over each instruction, and stops on the first 
+/// rts, rti or jmp that is not jumped over by a positive local branch instruction.
+/// @param [in] context Disassembler context.
+/// @param [in] index Section id.
+/// @return Section size.
+/// @todo return a boolean and pass output size as pointer?
+size_t pce_code_size(Context *context, int index);
 
 #endif // ETRIPATOR_DISASM_H

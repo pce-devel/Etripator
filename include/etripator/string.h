@@ -111,6 +111,12 @@ bool string_append_format(String *str, const char *fmt, ...) __printflike(2, 3);
 /// Formatted string prepend.
 bool string_prepend_format(String *str, const char *fmt, ...) __printflike(2, 3);
 
+/// Append number in hexadecimal MSB first.
+bool string_append_hex_msb(String *str, uint64_t value, size_t size);
+
+/// Append number in hexadecimal LSB first.
+bool string_append_hex_lsb(String *str, uint64_t value, size_t size);
+
 /// Clone string.
 bool string_clone(String *dst, const String *src);
 

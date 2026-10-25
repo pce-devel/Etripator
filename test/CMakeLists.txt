@@ -205,9 +205,12 @@ add_unit_test(
         ${ETRIPATOR_SRC_DIR}/data/buffer.c
         ${ETRIPATOR_SRC_DIR}/rom.c
         ${ETRIPATOR_SRC_DIR}/label.c
+        ${ETRIPATOR_SRC_DIR}/comment.c
+        ${ETRIPATOR_SRC_DIR}/section.c
     INCLUDE_DIRECTORIES
         ${PROJECT_SOURCE_DIR}
         ${ETRIPATOR_INC_DIR}
+    LIBRARIES cwalk jansson
 )
 
 #[[

@@ -163,7 +163,7 @@ bool label_repository_find(LabelRepository* repository, uint16_t logical, uint8_
     if(ret) {
         label_from_impl(out, &repository->labels[index]);
     } else {
-        memset(out, 0, sizeof(Label));
+        *out = (Label){0};
     }
     return ret;
 }
